@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงานผลการตรวจนับเงินสด</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+        .currency-input { text-align: right; }
+        .summary-value { font-weight: 700; font-size: 1.125rem; }
+        .result-positive { color: #16a34a; }
+        .result-negative { color: #dc2626; }
+        .result-zero { color: #374151; }
+        .dynamic-row { transition: all 0.3s ease-in-out; overflow: hidden; max-height: 100px; }
+        .dynamic-row.removing { transform: translateX(100%); max-height: 0; opacity: 0; padding: 0; margin: 0; }
+        .print-only { display: none; }
+
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 10pt; background-color: #fff; }
+            .no-print { display: none !important; }
+            .print-container { max-width: 100% !important; box-shadow: none !important; border: 1px solid #e5e7eb; padding: 1rem; margin-bottom: 1rem; page-break-inside: avoid; }
+            .main-grid { display: block; }
+            .lg\:col-span-2, .lg\:col-span-1 { width: 100%; }
+            .sticky { position: static !important; }
+            .print-only { display: block; }
+            header, footer { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Headers -->
+        <header class="text-center mb-6 no-print">
+            <h1 class="text-3xl font-bold text-gray-800">ระบบตรวจนับเงินสด</h1>
+            <p class="text-gray-600 mt-1">(Cash Control)</p>
+        </header>
+        <div class="print-only text-center mb-4">
+            <h1 class="text-xl font-bold">สรุปผลการตรวจนับเงิน (Cash Control)</h1>
+        </div>
+
+        <!-- Header Information Section -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-6 print-container">
+            <h2 class="text-xl font-bold text-gray-700 border-b pb-3 mb-4">ข้อมูลการตรวจนับ</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="department" class="block text-sm font-medium text-gray-700">สาขา/แผนก</label>
+                    <input type="text" id="department" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="เช่น สาขาสยามพารากอน">
+                </div>
+                <div>
+                    <label for="custodian" class="block text-sm font-medium text-gray-700">ผู้ดูแลเงิน (ชื่อ-ตำแหน่ง)</label>
+                    <input type="text" id="custodian" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="เช่น นายกันต์กฤช พุ่มเจริญ">
+                </div>
+                <div>
+                    <label for="count-date" class="block text-sm font-medium text-gray-700">วันที่ตรวจนับ</label>
+                    <input type="date" id="count-date" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 main-grid">
+            <!-- Left Column: Details -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Cash Count Sections -->
+                <div class="bg-white p-6 rounded-xl shadow-lg print-container">
+                    <h2 class="text-xl font-bold text-gray-700 border-b pb-3 mb-4">ส่วนที่ 1: การนับเงินสดและกองอื่นๆ</h2>
+                    
+                    <h3 class="text-lg font-semibold text-gray-600 mb-2">เงินสดย่อย (Petty Cash Fund)</h3>
+                    <div id="cash-items">
+                        <div class="grid grid-cols-3 gap-4 items-center mb-2 font-medium text-gray-600 text-sm">
+                            <span>ประเภทเงินสดในมือ</span><span class="text-center">จำนวน</span><span class="text-right">รวมเงิน (บาท)</span>
+                        </div>
+                    </div>
+                     <div class="mt-3">
+                        <label for="bank-balance-counted" class="block text-sm font-medium text-gray-700">เงินสดย่อยในบัญชีธนาคาร</label>
+                        <input type="number" id="bank-balance-counted" value="0" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                    </div>
+                    <div class="border-t pt-2 mt-2 flex justify-between items-center">
+                        <span class="font-bold text-gray-800">รวมเงินสดย่อยทั้งหมด (ในมือ+ในบัญชี)</span>
+                        <span id="total-petty-cash" class="font-bold text-blue-600">0.00</span>
+                    </div>
+
+                    <h3 class="text-lg font-semibold text-gray-600 mt-6 mb-2">เงินกองอื่นๆ</h3>
+                    <div>
+                        <label for="change-fund-counted" class="block text-sm font-medium text-gray-700">เงินทอนที่นับได้ (Change Fund)</label>
+                        <input type="number" id="change-fund-counted" value="0" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                    </div>
+                     <div class="mt-3">
+                        <label for="prev-sales-counted" class="block text-sm font-medium text-gray-700">เงินสดจากยอดขายวันก่อน (ที่ยังไม่นำส่ง)</label>
+                        <input type="number" id="prev-sales-counted" value="0" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                    </div>
+                    <div class="mt-3">
+                        <label for="today-sales-counted" class="block text-sm font-medium text-gray-700">เงินสดจากยอดขายวันนี้</label>
+                        <input type="number" id="today-sales-counted" value="0" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                    </div>
+                </div>
+
+                <!-- Vouchers & Reimbursements -->
+                <div class="bg-white p-6 rounded-xl shadow-lg print-container">
+                     <h2 class="text-xl font-bold text-gray-700 border-b pb-3 mb-4">ส่วนที่ 2: เอกสารประกอบเงินสดย่อย</h2>
+                    <h3 class="text-lg font-semibold text-gray-600 mb-2">เอกสารจ่ายรอเบิก (Vouchers)</h3>
+                    <div id="voucher-list" class="space-y-3">
+                         <div class="grid grid-cols-12 gap-2 items-center mb-2 font-medium text-gray-600 text-sm">
+                            <span class="col-span-8 md:col-span-9">รายละเอียด</span><span class="text-right col-span-4 md:col-span-3">จำนวนเงิน</span>
+                        </div>
+                    </div>
+                    <button id="add-voucher" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 no-print">+ เพิ่มรายการเอกสารจ่าย</button>
+                    <div class="border-t pt-2 mt-2 flex justify-between items-center">
+                        <span class="font-bold text-gray-800">รวมเงินตามเอกสารจ่าย</span>
+                        <span id="total-vouchers" class="font-bold text-orange-600">0.00</span>
+                    </div>
+
+                     <h3 class="text-lg font-semibold text-gray-600 mt-6 mb-2">รายการรอโอนเงินคืน</h3>
+                    <div id="reimbursement-list" class="space-y-3">
+                         <div class="grid grid-cols-12 gap-2 items-center mb-2 font-medium text-gray-600 text-sm">
+                            <span class="col-span-8 md:col-span-9">รายละเอียด</span><span class="text-right col-span-4 md:col-span-3">จำนวนเงิน</span>
+                        </div>
+                    </div>
+                    <button id="add-reimbursement" class="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 no-print">+ เพิ่มรายการรอโอนคืน</button>
+                    <div class="border-t pt-2 mt-2 flex justify-between items-center">
+                        <span class="font-bold text-gray-800">รวมเงินรอโอนคืน</span>
+                        <span id="total-reimbursements" class="font-bold text-green-600">0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-white p-6 rounded-xl shadow-lg sticky top-8 print-container">
+                    <h2 class="text-xl font-bold text-gray-700 border-b pb-3 mb-4">ส่วนที่ 3: สรุปผลกระทบยอด</h2>
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-600">ยอดเงินตามระบบ</h3>
+                        <div>
+                            <label for="approved-petty-cash" class="block text-sm font-medium text-gray-700">วงเงินสดย่อยอนุมัติ</label>
+                            <input type="number" id="approved-petty-cash" value="5000" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                        </div>
+                         <div>
+                            <label for="approved-change-fund" class="block text-sm font-medium text-gray-700">วงเงินทอนอนุมัติ</label>
+                            <input type="number" id="approved-change-fund" value="1000" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label for="prev-sales-system" class="block text-sm font-medium text-gray-700">ยอดขายวันก่อน (ตามรายงาน)</label>
+                            <input type="number" id="prev-sales-system" value="0" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label for="today-sales-system" class="block text-sm font-medium text-gray-700">ยอดขายวันนี้ (ตามรายงาน)</label>
+                            <input type="number" id="today-sales-system" value="0" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                        </div>
+                        
+                        <div class="border-t pt-3">
+                            <p class="text-sm font-medium text-gray-700">เงินที่นับได้ทั้งหมด (A)</p>
+                            <p id="total-assets-counted" class="summary-value text-blue-600">0.00</p>
+                            <p class="text-xs text-gray-500">(กองเงินสดย่อย+กองอื่นๆ)</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">ยอดเงินที่ควรมีทั้งหมด (B)</p>
+                            <p id="expected-balance" class="summary-value text-gray-800">0.00</p>
+                            <p class="text-xs text-gray-500">(ยอดตามระบบ - รอคืน - เอกสารจ่าย)</p>
+                        </div>
+
+                        <div class="border-t-2 border-gray-300 pt-4">
+                            <p class="text-lg font-bold text-gray-700">ผลต่างรวม (A-B)</p>
+                            <p id="difference" class="text-2xl font-bold result-zero">0.00</p>
+                            <p id="difference-label" class="text-sm font-bold result-zero"></p>
+                        </div>
+                    </div>
+                    <div class="mt-6 space-y-2 no-print">
+                         <button id="export-csv-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">Export to CSV</button>
+                         <button id="print-btn" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg transition">พิมพ์รายงาน</button>
+                         <button id="reset-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition">เริ่มใหม่</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signature Section -->
+        <div class="mt-8 pt-8 border-t-2 border-dashed border-gray-400 print-only">
+            <div class="grid grid-cols-2 gap-8 text-center" style="font-size: 11pt;">
+                <div>
+                    <p class="mb-16">ลงชื่อ .................................................</p>
+                    <p>(ผู้ตรวจนับ / Auditor)</p>
+                    <p>วันที่: ........ / ................ / ............</p>
+                </div>
+                <div>
+                    <p class="mb-16">ลงชื่อ .................................................</p>
+                    <p>(ผู้ดูแลเงิน / Auditee)</p>
+                    <p>วันที่: ........ / ................ / ............</p>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center mt-12 text-gray-500 text-sm no-print">
+            <p>Cash Control Application</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('count-date');
+            dateInput.value = new Date().toISOString().substring(0, 10);
+            
+            const cashItemsContainer = document.getElementById('cash-items');
+            const denominations = [
+                { value: 1000, label: 'ธนบัตร ฿1,000' }, { value: 500, label: 'ธนบัตร ฿500' },
+                { value: 100, label: 'ธนบัตร ฿100' }, { value: 50, label: 'ธนบัตร ฿50' },
+                { value: 20, label: 'ธนบัตร ฿20' }, { value: 0, label: 'เหรียญ (รวม)', isCoin: true }
+            ];
+            denominations.forEach(denom => {
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-3 gap-4 items-center';
+                row.innerHTML = `<label class="text-gray-700 text-sm">${denom.label}</label>
+                    <input type="number" min="0" data-value="${denom.value}" data-type="${denom.isCoin ? 'coin' : 'note'}" class="cash-denom-input w-full p-2 border border-gray-300 rounded-md shadow-sm text-center" placeholder="0">
+                    <span class="total-denom-value text-right text-gray-800 text-sm">0.00</span>`;
+                cashItemsContainer.appendChild(row);
+            });
+            
+            function setupDynamicSection(addButtonId, listId, inputClassName, placeholder) {
+                const addButton = document.getElementById(addButtonId);
+                const list = document.getElementById(listId);
+                let rowCount = 0;
+                const addRow = () => {
+                    rowCount++;
+                    const row = document.createElement('div');
+                    row.id = `${listId}-row-${rowCount}`;
+                    row.className = 'grid grid-cols-12 gap-2 items-center dynamic-row';
+                    row.innerHTML = `<input type="text" class="col-span-8 md:col-span-9 p-2 border border-gray-300 rounded-md shadow-sm" placeholder="${placeholder}">
+                        <div class="col-span-4 md:col-span-3 flex items-center gap-1">
+                            <input type="number" min="0" class="w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input ${inputClassName}" placeholder="0.00">
+                            <button class="remove-row text-red-500 hover:text-red-700 p-1 no-print" title="ลบรายการ"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg></button>
+                        </div>`;
+                    list.appendChild(row);
+                    row.querySelector('.remove-row').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const rowToRemove = e.target.closest('.dynamic-row');
+                        rowToRemove.classList.add('removing');
+                        rowToRemove.addEventListener('transitionend', () => { rowToRemove.remove(); calculateAll(); });
+                    });
+                };
+                addButton.addEventListener('click', addRow);
+                addRow();
+            }
+
+            setupDynamicSection('add-voucher', 'voucher-list', 'voucher-amount', 'เช่น ค่าทางด่วน, ค่าอุปกรณ์');
+            setupDynamicSection('add-reimbursement', 'reimbursement-list', 'reimbursement-amount', 'เช่น รอรับโอนคืนค่าซ่อม');
+
+            const formatCurrency = (num) => isNaN(num) ? '0.00' : num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            
+            const calculateAll = () => {
+                // 1. Get all counted values
+                let physicalPettyCash = Array.from(document.querySelectorAll('.cash-denom-input')).reduce((sum, input) => {
+                    const count = parseFloat(input.value) || 0;
+                    const totalForItem = input.dataset.type === 'note' ? count * parseFloat(input.dataset.value) : count;
+                    input.nextElementSibling.textContent = formatCurrency(totalForItem);
+                    return sum + totalForItem;
+                }, 0);
+                const bankBalanceCounted = parseFloat(document.getElementById('bank-balance-counted').value) || 0;
+                
+                const totalPettyCashFund = physicalPettyCash + bankBalanceCounted;
+                document.getElementById('total-petty-cash').textContent = formatCurrency(totalPettyCashFund);
+
+                const changeFundCounted = parseFloat(document.getElementById('change-fund-counted').value) || 0;
+                const prevSalesCounted = parseFloat(document.getElementById('prev-sales-counted').value) || 0;
+                const todaySalesCounted = parseFloat(document.getElementById('today-sales-counted').value) || 0;
+
+                const totalAssetsCounted = totalPettyCashFund + changeFundCounted + prevSalesCounted + todaySalesCounted;
+                document.getElementById('total-assets-counted').textContent = formatCurrency(totalAssetsCounted);
+                
+                // 2. Get all system/approved values
+                const approvedPettyCash = parseFloat(document.getElementById('approved-petty-cash').value) || 0;
+                const approvedChangeFund = parseFloat(document.getElementById('approved-change-fund').value) || 0;
+                const prevSalesSystem = parseFloat(document.getElementById('prev-sales-system').value) || 0;
+                const todaySalesSystem = parseFloat(document.getElementById('today-sales-system').value) || 0;
+                
+                // 3. Get all transaction documents
+                let totalVouchers = Array.from(document.querySelectorAll('.voucher-amount')).reduce((sum, el) => sum + (parseFloat(el.value) || 0), 0);
+                document.getElementById('total-vouchers').textContent = formatCurrency(totalVouchers);
+                let totalReimbursements = Array.from(document.querySelectorAll('.reimbursement-amount')).reduce((sum, el) => sum + (parseFloat(el.value) || 0), 0);
+                document.getElementById('total-reimbursements').textContent = formatCurrency(totalReimbursements);
+
+                // Calculate Total Expected Balance (B) - UPDATED FORMULA
+                const expectedSystemTotal = approvedPettyCash + approvedChangeFund + prevSalesSystem + todaySalesSystem;
+                const expectedBalance = expectedSystemTotal - totalReimbursements - totalVouchers;
+                document.getElementById('expected-balance').textContent = formatCurrency(expectedBalance);
+
+                // Calculate Final Difference (A - B)
+                const difference = totalAssetsCounted - expectedBalance;
+                const diffElem = document.getElementById('difference');
+                const diffLabelElem = document.getElementById('difference-label');
+                
+                diffElem.textContent = formatCurrency(Math.abs(difference));
+                diffElem.className = 'text-2xl font-bold';
+                diffLabelElem.className = 'text-sm font-bold';
+
+                if (difference > 0.005) {
+                    diffElem.classList.add('result-positive');
+                    diffLabelElem.classList.add('result-positive');
+                    diffLabelElem.textContent = 'เงินเกิน (Overage)';
+                } else if (difference < -0.005) {
+                    diffElem.classList.add('result-negative');
+                    diffLabelElem.classList.add('result-negative');
+                    diffLabelElem.textContent = 'เงินขาด (Shortage)';
+                } else {
+                    diffElem.classList.add('result-zero');
+                    diffLabelElem.classList.add('result-zero');
+                    diffLabelElem.textContent = 'ยอดเงินถูกต้อง';
+                }
+            };
+
+            function exportToCSV() {
+                const csvRows = [];
+                const escapeCsv = (str) => `"${(str || '').toString().replace(/"/g, '""')}"`;
+                const getVal = (id) => document.getElementById(id).value;
+                const getTxt = (id) => document.getElementById(id).textContent;
+                
+                csvRows.push("ข้อมูลการตรวจนับ");
+                csvRows.push(`สาขา/แผนก,${escapeCsv(getVal('department'))}`);
+                csvRows.push(`ผู้ดูแลเงิน,${escapeCsv(getVal('custodian'))}`);
+                csvRows.push(`วันที่ตรวจนับ,${getVal('count-date')}`);
+                csvRows.push("");
+
+                csvRows.push("สรุปผลกระทบยอด");
+                csvRows.push("รายการ,จำนวนเงิน");
+                csvRows.push(`เงินที่นับได้ทั้งหมด (A),${escapeCsv(getTxt('total-assets-counted'))}`);
+                csvRows.push(`ยอดเงินที่ควรจะมีทั้งหมด (B),${escapeCsv(getTxt('expected-balance'))}`);
+                csvRows.push(`ผลต่างรวม (A-B),${escapeCsv(getTxt('difference'))}`);
+                csvRows.push(`สถานะ,${escapeCsv(getTxt('difference-label'))}`);
+                csvRows.push("");
+
+                csvRows.push("รายละเอียดเงินที่นับได้");
+                csvRows.push("รายการ,จำนวนเงิน");
+                csvRows.push(`รวมเงินสดย่อยทั้งหมด (ในมือ+ในบัญชี),${escapeCsv(getTxt('total-petty-cash'))}`);
+                csvRows.push(`เงินทอนที่นับได้,${escapeCsv(getVal('change-fund-counted'))}`);
+                csvRows.push(`เงินสดจากยอดขายวันก่อน,${escapeCsv(getVal('prev-sales-counted'))}`);
+                csvRows.push(`เงินสดจากยอดขายวันนี้,${escapeCsv(getVal('today-sales-counted'))}`);
+                csvRows.push("");
+
+                csvRows.push("รายละเอียดเงินตามระบบ");
+                csvRows.push("รายการ,จำนวนเงิน");
+                csvRows.push(`วงเงินสดย่อยอนุมัติ,${escapeCsv(getVal('approved-petty-cash'))}`);
+                csvRows.push(`วงเงินทอนอนุมัติ,${escapeCsv(getVal('approved-change-fund'))}`);
+                csvRows.push(`ยอดขายวันก่อน (ตามรายงาน),${escapeCsv(getVal('prev-sales-system'))}`);
+                csvRows.push(`ยอดขายวันนี้ (ตามรายงาน),${escapeCsv(getVal('today-sales-system'))}`);
+                csvRows.push("");
+
+                csvRows.push("รายการเอกสารจ่ายรอเบิก");
+                csvRows.push("รายละเอียด,จำนวนเงิน");
+                document.querySelectorAll('#voucher-list .dynamic-row').forEach(row => {
+                    const desc = row.querySelector('input[type="text"]').value;
+                    const amount = row.querySelector('input[type="number"]').value;
+                    if(desc || amount) csvRows.push(`${escapeCsv(desc)},${escapeCsv(amount)}`);
+                });
+                csvRows.push(`รวม,${escapeCsv(getTxt('total-vouchers'))}`);
+                csvRows.push("");
+
+                csvRows.push("รายการรอโอนเงินคืน");
+                csvRows.push("รายละเอียด,จำนวนเงิน");
+                document.querySelectorAll('#reimbursement-list .dynamic-row').forEach(row => {
+                    const desc = row.querySelector('input[type="text"]').value;
+                    const amount = row.querySelector('input[type="number"]').value;
+                    if(desc || amount) csvRows.push(`${escapeCsv(desc)},${escapeCsv(amount)}`);
+                });
+                csvRows.push(`รวม,${escapeCsv(getTxt('total-reimbursements'))}`);
+
+                const csvContent = "\uFEFF" + csvRows.join("\n");
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                if (link.download !== undefined) {
+                    const url = URL.createObjectURL(blob);
+                    const dateStr = getVal('count-date');
+                    const department = getVal('department');
+                    const safeDept = department.replace(/[^a-zA-Z0-9ก-๙ _-]/g, '').replace(/\s+/g, '_'); // sanitize for filename
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", `cash_count_report_${dateStr}_${safeDept}.csv`);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            }
+            
+            // --- EVENT LISTENERS ---
+            document.body.addEventListener('input', (e) => { if (e.target.matches('input')) calculateAll(); });
+            document.getElementById('reset-btn').addEventListener('click', () => { if (confirm('คุณต้องการล้างข้อมูลทั้งหมด?')) window.location.reload(); });
+            document.getElementById('print-btn').addEventListener('click', () => window.print());
+            document.getElementById('export-csv-btn').addEventListener('click', exportToCSV);
+            calculateAll();
+        });
+    </script>
+</body>
+</html>
