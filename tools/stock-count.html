@@ -632,6 +632,9 @@
                 getEl('main-panel-workflow').classList.toggle('hidden', isDemo);
                 getEl('main-tab-demo').classList.toggle('active', isDemo);
                 getEl('main-tab-workflow').classList.toggle('active', !isDemo);
+
+                // Add this line to re-setup the barcode scanner when DEMO tab is shown
+                if (isDemo) setupBarcodeScanner();
             }
 
             function changeWorkflowTab(tabIndex) {
