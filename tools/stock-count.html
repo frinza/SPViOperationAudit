@@ -8,6 +8,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
     
@@ -37,6 +39,24 @@
             border-radius: 50%;
             display: inline-block;
             margin-right: 8px;
+        }
+        /* Center vertical line for barcode alignment */
+        #scanner-modal {
+            position: relative;
+        }
+        #qr-reader {
+            position: relative;
+        }
+        #camera-center-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: rgba(59,130,246,0.7); /* blue-500 */
+            transform: translateX(-50%);
+            z-index: 10;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -147,6 +167,12 @@
                              </select>
                          </div>
                          <div id="demo-count-container" class="table-container border rounded-lg"></div>
+                         <button id="exportDemoCsvButton" class="bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm text-sm mt-2">
+                             Export DEMO Table as CSV
+                         </button>
+                         <button id="openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm mt-2">
+                             Scan Barcode/QR
+                         </button>
                      </div>
                 </div>
                 <div id="main-panel-workflow" class="hidden">
@@ -276,6 +302,28 @@
 
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Barcode Scanner Modal -->
+    <div id="scanner-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-[2000] hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md text-center relative">
+            <button id="closeScannerBtn" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl">&times;</button>
+            <h3 class="text-lg font-bold mb-2">Scan Barcode/QR</h3>
+            <div id="qr-reader" style="width: 100%;">
+                <div id="camera-center-line" style="
+                    position: absolute;
+                    left: 50%;
+                    top: 0;
+                    width: 2px;
+                    height: 100%;
+                    background: rgba(59,130,246,0.7); /* blue-500 */
+                    transform: translateX(-50%);
+                    z-index: 10;
+                    pointer-events: none;
+                "></div>
+            </div>
+            <div id="qr-reader-results" class="mt-2 text-green-600 font-bold"></div>
         </div>
     </div>
     
@@ -766,6 +814,21 @@
                 setUnsavedChanges(true);
             }
             
+            function exportDemoTable() {
+                const dataToExport = state.demoMaster.map(item => ({
+                    SKU: item.SKU,
+                    Description: item.Description,
+                    Age: item.Age,
+                    SRP: item.Price,
+                    SOH: item.SOH,
+                    Counted: item.counted,
+                    Diff: item.counted === null ? '' : item.counted - item.SOH
+                }));
+                const csv = Papa.unparse(dataToExport, { header: true });
+                const fileName = `DEMO_Count_${state.branchName.replace(/\s+/g, '_')}_${state.countDate}.csv`;
+                downloadFile(csv, fileName);
+            }
+
             // --- Workflow Tab Logic ---
             function downloadMasterForScan() {
                 const rowsForCsv = state.scannerMaster.map(item => [item.SKU, item.Description, item.Price, item.Age, item.SOH]);
@@ -1077,6 +1140,87 @@
                 downloadFile(csv, fileName);
             }
             
+            // --- Barcode Scanner Logic with QuaggaJS ---
+            function openScannerModal() {
+                getEl('scanner-modal').classList.remove('hidden');
+                getEl('qr-reader-results').textContent = '';
+                // Add center line overlay if not present
+                if (!getEl('camera-center-line')) {
+                    const line = document.createElement('div');
+                    line.id = 'camera-center-line';
+                    line.style.position = 'absolute';
+                    line.style.left = '50%';
+                    line.style.top = '0';
+                    line.style.width = '2px';
+                    line.style.height = '100%';
+                    line.style.background = 'rgba(59,130,246,0.7)';
+                    line.style.transform = 'translateX(-50%)';
+                    line.style.zIndex = '10';
+                    line.style.pointerEvents = 'none';
+                    getEl('qr-reader').style.position = 'relative';
+                    getEl('qr-reader').appendChild(line);
+                }
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: getEl('qr-reader'),
+                        constraints: {
+                            facingMode: "environment"
+                        }
+                    },
+                    decoder: {
+                        readers: [
+                            "code_128_reader",
+                            "ean_reader",
+                            "ean_8_reader",
+                            "code_39_reader",
+                            "upc_reader",
+                            "upc_e_reader"
+                        ]
+                    },
+                    locate: true
+                }, function(err) {
+                    if (err) {
+                        getEl('qr-reader-results').textContent = "Camera error: " + err;
+                        return;
+                    }
+                    Quagga.start();
+                });
+
+                Quagga.onDetected(onBarcodeDetected);
+            }
+
+            function closeScannerModal() {
+                getEl('scanner-modal').classList.add('hidden');
+                Quagga.offDetected(onBarcodeDetected);
+                Quagga.stop();
+            }
+
+            function onBarcodeDetected(result) {
+                const code = result.codeResult.code.trim();
+                getEl('qr-reader-results').textContent = `Scanned: ${code}`;
+                const sku = code.toUpperCase();
+                const item = state.demoMaster.find(i => i.SKU === sku);
+                if (item) {
+                    // Auto-increment counted value
+                    let current = typeof item.counted === 'number' ? item.counted : 0;
+                    item.counted = current + 1;
+                    state.demoCounts[sku] = { qty: item.counted, reason: 'Scanned' };
+                    applyDemoView();
+                    // Scroll to row and briefly highlight
+                    const row = getEl('demo-count-container').querySelector(`tr[data-sku="${sku}"]`);
+                    if (row) {
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        row.classList.add('ring', 'ring-green-400');
+                        setTimeout(() => row.classList.remove('ring', 'ring-green-400'), 800);
+                    }
+                    getEl('qr-reader-results').textContent = `+1 to ${sku} (${item.Description})`;
+                } else {
+                    getEl('qr-reader-results').textContent = `SKU not found: ${sku}`;
+                }
+            }
+
             // --- Event Listeners ---
             function initializeAppListeners() {
                 const listeners = {
@@ -1099,6 +1243,9 @@
                     'finalFilterSelect': { event: 'change', handler: applyFinalReportView },
                     'exportCsvButton': { event: 'click', handler: exportFinalReport },
                     'refreshChartsButton': { event: 'click', handler: renderFinalReportCharts },
+                    'exportDemoCsvButton': { event: 'click', handler: exportDemoTable },
+                    'openScannerBtn': { event: 'click', handler: openScannerModal },
+                    'closeScannerBtn': { event: 'click', handler: closeScannerModal },
                 };
 
                 for (const [id, { event, handler }] of Object.entries(listeners)) {
