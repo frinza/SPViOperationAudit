@@ -8,7 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
@@ -170,9 +169,19 @@
                          <button id="exportDemoCsvButton" class="bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm text-sm mt-2">
                              Export DEMO Table as CSV
                          </button>
-                         <button id="openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm mt-2">
-                             Scan Barcode/QR
-                         </button>
+                         <!-- OCR Camera Box under DEMO table -->
+                         <div id="ocr-camera-box" class="w-full flex flex-col items-center mt-4 p-4 bg-slate-100 rounded-lg border border-slate-300">
+                             <h4 class="font-semibold mb-2 text-slate-700">Scan Text (OCR)</h4>
+                             <button id="startOcrBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 mb-2">
+                                 Start OCR Scan
+                             </button>
+                             <video id="ocr-video" autoplay playsinline style="width:320px;max-width:100%;max-height:180px;background:#222;border-radius:8px;display:none;"></video>
+                             <canvas id="ocr-canvas" style="display:none;"></canvas>
+                             <button id="captureOcrBtn" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 mt-2" style="display:none;">
+                                 Capture & Detect Text
+                             </button>
+                             <div id="qr-reader-results" class="mt-2 text-green-600 font-bold"></div>
+                         </div>
                      </div>
                 </div>
                 <div id="main-panel-workflow" class="hidden">
@@ -302,20 +311,6 @@
 
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Barcode Scanner Modal -->
-    <div id="scanner-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-[2000] hidden">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md text-center relative">
-            <button id="closeScannerBtn" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl">&times;</button>
-            <h3 class="text-lg font-bold mb-2">Scan Text (OCR)</h3>
-            <video id="ocr-video" autoplay playsinline style="width:100%;max-height:240px;display:block;"></video>
-            <canvas id="ocr-canvas" style="display:none;"></canvas>
-            <button id="captureOcrBtn" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 mt-2" style="display:block;">
-                Capture & Detect Text
-            </button>
-            <div id="qr-reader-results" class="mt-2 text-green-600 font-bold"></div>
         </div>
     </div>
     
@@ -1132,50 +1127,44 @@
                 downloadFile(csv, fileName);
             }
             
-            // --- Barcode Scanner Logic with OCR ---
+            // --- OCR Camera Logic ---
             let ocrStream = null;
 
-            function openScannerModal() {
-                const modal = getEl('scanner-modal');
-                modal.classList.remove('hidden');
-                modal.style.display = 'flex';
-                getEl('qr-reader-results').textContent = '';
-                const video = getEl('ocr-video');
-                video.style.display = 'block';
-                getEl('captureOcrBtn').style.display = 'block';
-
-                // Start camera for OCR
-                navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-                    .then(stream => {
-                        ocrStream = stream;
-                        video.srcObject = stream;
-                    })
-                    .catch(err => {
-                        getEl('qr-reader-results').textContent = "Camera error: " + err;
-                    });
+            async function startOcrCamera() {
+                const video = document.getElementById('ocr-video');
+                const captureBtn = document.getElementById('captureOcrBtn');
+                if (ocrStream) return; // Already started
+                try {
+                    ocrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                    video.srcObject = ocrStream;
+                    video.style.display = 'block';
+                    captureBtn.style.display = 'block';
+                    document.getElementById('qr-reader-results').textContent = "Camera started. Point at text and press Capture.";
+                } catch (err) {
+                    document.getElementById('qr-reader-results').textContent = "Camera error: " + err;
+                    captureBtn.style.display = 'none';
+                }
             }
 
-            function closeScannerModal() {
-                const modal = getEl('scanner-modal');
-                modal.classList.add('hidden');
-                modal.style.display = '';
-                // Stop OCR camera if running
+            function stopOcrCamera() {
+                const video = document.getElementById('ocr-video');
+                const captureBtn = document.getElementById('captureOcrBtn');
                 if (ocrStream) {
                     ocrStream.getTracks().forEach(track => track.stop());
                     ocrStream = null;
                 }
-                getEl('ocr-video').style.display = 'none';
-                getEl('captureOcrBtn').style.display = 'none';
+                video.style.display = 'none';
+                captureBtn.style.display = 'none';
             }
 
             async function captureAndDetectText() {
-                const video = getEl('ocr-video');
-                const canvas = getEl('ocr-canvas');
+                const video = document.getElementById('ocr-video');
+                const canvas = document.getElementById('ocr-canvas');
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                getEl('qr-reader-results').textContent = "Detecting text...";
+                document.getElementById('qr-reader-results').textContent = "Detecting text...";
                 const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
                 const detectedText = text.replace(/\s/g, '').toUpperCase();
 
@@ -1186,15 +1175,15 @@
                     matched.counted = current + 1;
                     state.demoCounts[matched.SKU] = { qty: matched.counted, reason: 'OCR' };
                     applyDemoView();
-                    const row = getEl('demo-count-container').querySelector(`tr[data-sku="${matched.SKU}"]`);
+                    const row = document.getElementById('demo-count-container').querySelector(`tr[data-sku="${matched.SKU}"]`);
                     if (row) {
                         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         row.classList.add('ring', 'ring-purple-400');
                         setTimeout(() => row.classList.remove('ring', 'ring-purple-400'), 800);
                     }
-                    getEl('qr-reader-results').textContent = `+1 to ${matched.SKU} (${matched.Description}) [OCR]`;
+                    document.getElementById('qr-reader-results').textContent = `+1 to ${matched.SKU} (${matched.Description}) [OCR]`;
                 } else {
-                    getEl('qr-reader-results').textContent = `No matching SKU found in DEMO. Detected: ${detectedText}`;
+                    document.getElementById('qr-reader-results').textContent = `No matching SKU found in DEMO. Detected: ${detectedText}`;
                 }
             }
 
@@ -1221,9 +1210,8 @@
                     'exportCsvButton': { event: 'click', handler: exportFinalReport },
                     'refreshChartsButton': { event: 'click', handler: renderFinalReportCharts },
                     'exportDemoCsvButton': { event: 'click', handler: exportDemoTable },
-                    'openScannerBtn': { event: 'click', handler: openScannerModal },
                     'captureOcrBtn': { event: 'click', handler: captureAndDetectText },
-                    'closeScannerBtn': { event: 'click', handler: closeScannerModal },
+                    'startOcrBtn': { event: 'click', handler: startOcrCamera },
                 };
 
                 for (const [id, { event, handler }] of Object.entries(listeners)) {
@@ -1266,6 +1254,8 @@
                 window.addEventListener('beforeunload', (e) => {
                     if (hasUnsavedChanges) e.preventDefault();
                 });
+                getEl('main-tab-workflow').addEventListener('click', stopOcrCamera);
+                window.addEventListener('beforeunload', stopOcrCamera);
             }
             
             initializeAppListeners();
