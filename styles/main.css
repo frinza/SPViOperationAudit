@@ -1,0 +1,31 @@
+/* Import the Inter font for a clean, modern look */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Base styles for the tool cards */
+.tool-card {
+    display: block;
+    background-color: white;
+    border-radius: 1.5rem; /* rounded-3xl */
+    border: 1px solid #e2e8f0; /* slate-200 */
+    text-decoration: none;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    overflow: hidden; /* Ensures content stays within the rounded corners */
+}
+
+/* Hover effect for the cards */
+.tool-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); /* shadow-xl */
+}
+
+/* Styles for the icon container within the card */
+.icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 4rem; /* h-16 */
+    width: 4rem; /* w-16 */
+    border-radius: 1rem; /* rounded-2xl */
+}
