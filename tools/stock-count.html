@@ -8,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@zxing/browser@0.1.1/umd/index.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
     
@@ -145,6 +146,14 @@
                                  <option value="discrepancy">แสดงรายการที่ผลต่างไม่เท่ากับ 0</option>
                                  <option value="matched">แสดงรายการที่นับตรง</option>
                              </select>
+                             <!-- Barcode scan button and preview -->
+                             <button id="start-scan-btn" type="button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+                                 📷 สแกนบาร์โค้ด IMEI
+                             </button>
+                         </div>
+                         <div id="barcode-scanner-container" class="mt-2 hidden">
+                             <video id="barcode-video" style="width:100%;max-width:400px;border-radius:8px;"></video>
+                             <button id="stop-scan-btn" class="mt-2 bg-gray-500 text-white py-1 px-3 rounded">หยุดสแกน</button>
                          </div>
                          <div id="demo-count-container" class="table-container border rounded-lg"></div>
                      </div>
@@ -1144,6 +1153,55 @@
             }
             
             initializeAppListeners();
+
+            // ZXing barcode scanner integration for DEMO tab
+            const { BrowserMultiFormatReader } = window.ZXingBrowser || {};
+            let codeReader, scanBtn, stopBtn, scannerContainer, video, scanning = false;
+
+            function setupBarcodeScanner() {
+                if (!BrowserMultiFormatReader) return;
+                codeReader = new BrowserMultiFormatReader();
+                scanBtn = document.getElementById('start-scan-btn');
+                stopBtn = document.getElementById('stop-scan-btn');
+                scannerContainer = document.getElementById('barcode-scanner-container');
+                video = document.getElementById('barcode-video');
+
+                scanBtn?.addEventListener('click', async () => {
+                    scannerContainer.classList.remove('hidden');
+                    scanBtn.disabled = true;
+                    scanning = true;
+                    try {
+                        await codeReader.decodeFromVideoDevice(null, video, (result, err) => {
+                            if (result && scanning) {
+                                scanning = false;
+                                codeReader.reset();
+                                scannerContainer.classList.add('hidden');
+                                scanBtn.disabled = false;
+                                // Autofill the search input with scanned value
+                                const searchInput = document.getElementById('demoSearchInput');
+                                if (searchInput) {
+                                    searchInput.value = result.text;
+                                    searchInput.dispatchEvent(new Event('keyup'));
+                                }
+                                alert('สแกนสำเร็จ: ' + result.text);
+                            }
+                        });
+                    } catch (e) {
+                        alert('ไม่สามารถเปิดกล้องได้: ' + e.message);
+                        scannerContainer.classList.add('hidden');
+                        scanBtn.disabled = false;
+                    }
+                });
+
+                stopBtn?.addEventListener('click', () => {
+                    scanning = false;
+                    codeReader.reset();
+                    scannerContainer.classList.add('hidden');
+                    scanBtn.disabled = false;
+                });
+            }
+
+            setupBarcodeScanner();
         });
     </script>
 </body>
