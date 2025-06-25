@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://unpkg.com/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
     
@@ -309,20 +309,12 @@
     <div id="scanner-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-[2000] hidden">
         <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md text-center relative">
             <button id="closeScannerBtn" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl">&times;</button>
-            <h3 class="text-lg font-bold mb-2">Scan Barcode/QR</h3>
-            <div id="qr-reader" style="width: 100%;">
-                <div id="camera-center-line" style="
-                    position: absolute;
-                    left: 50%;
-                    top: 0;
-                    width: 2px;
-                    height: 100%;
-                    background: rgba(59,130,246,0.7); /* blue-500 */
-                    transform: translateX(-50%);
-                    z-index: 10;
-                    pointer-events: none;
-                "></div>
-            </div>
+            <h3 class="text-lg font-bold mb-2">Scan Text (OCR)</h3>
+            <video id="ocr-video" autoplay playsinline style="width:100%;max-height:240px;"></video>
+            <canvas id="ocr-canvas" style="display:none;"></canvas>
+            <button id="captureOcrBtn" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 mt-2">
+                Capture & Detect Text
+            </button>
             <div id="qr-reader-results" class="mt-2 text-green-600 font-bold"></div>
         </div>
     </div>
@@ -1140,84 +1132,63 @@
                 downloadFile(csv, fileName);
             }
             
-            // --- Barcode Scanner Logic with QuaggaJS ---
+            // --- Barcode Scanner Logic with OCR ---
+            let ocrStream = null;
+
             function openScannerModal() {
                 getEl('scanner-modal').classList.remove('hidden');
                 getEl('qr-reader-results').textContent = '';
-                // Add center line overlay if not present
-                if (!getEl('camera-center-line')) {
-                    const line = document.createElement('div');
-                    line.id = 'camera-center-line';
-                    line.style.position = 'absolute';
-                    line.style.left = '50%';
-                    line.style.top = '0';
-                    line.style.width = '2px';
-                    line.style.height = '100%';
-                    line.style.background = 'rgba(59,130,246,0.7)';
-                    line.style.transform = 'translateX(-50%)';
-                    line.style.zIndex = '10';
-                    line.style.pointerEvents = 'none';
-                    getEl('qr-reader').style.position = 'relative';
-                    getEl('qr-reader').appendChild(line);
-                }
-                Quagga.init({
-                    inputStream: {
-                        name: "Live",
-                        type: "LiveStream",
-                        target: getEl('qr-reader'),
-                        constraints: {
-                            facingMode: "environment"
-                        }
-                    },
-                    decoder: {
-                        readers: [
-                            "code_128_reader",
-                            "ean_reader",
-                            "ean_8_reader",
-                            "code_39_reader",
-                            "upc_reader",
-                            "upc_e_reader"
-                        ]
-                    },
-                    locate: true
-                }, function(err) {
-                    if (err) {
+                getEl('ocr-video').style.display = '';
+                getEl('captureOcrBtn').style.display = '';
+                // Start camera for OCR
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                    .then(stream => {
+                        ocrStream = stream;
+                        getEl('ocr-video').srcObject = stream;
+                    })
+                    .catch(err => {
                         getEl('qr-reader-results').textContent = "Camera error: " + err;
-                        return;
-                    }
-                    Quagga.start();
-                });
-
-                Quagga.onDetected(onBarcodeDetected);
+                    });
             }
 
             function closeScannerModal() {
                 getEl('scanner-modal').classList.add('hidden');
-                Quagga.offDetected(onBarcodeDetected);
-                Quagga.stop();
+                // Stop OCR camera if running
+                if (ocrStream) {
+                    ocrStream.getTracks().forEach(track => track.stop());
+                    ocrStream = null;
+                }
+                getEl('ocr-video').style.display = 'none';
+                getEl('captureOcrBtn').style.display = 'none';
             }
 
-            function onBarcodeDetected(result) {
-                const code = result.codeResult.code.trim();
-                getEl('qr-reader-results').textContent = `Scanned: ${code}`;
-                const sku = code.toUpperCase();
-                const item = state.demoMaster.find(i => i.SKU === sku);
-                if (item) {
-                    // Auto-increment counted value
-                    let current = typeof item.counted === 'number' ? item.counted : 0;
-                    item.counted = current + 1;
-                    state.demoCounts[sku] = { qty: item.counted, reason: 'Scanned' };
+            async function captureAndDetectText() {
+                const video = getEl('ocr-video');
+                const canvas = getEl('ocr-canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                getEl('qr-reader-results').textContent = "Detecting text...";
+                const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
+                const detectedText = text.replace(/\s/g, '').toUpperCase();
+
+                // Try to match detected text to SKU in DEMO
+                const matched = state.demoMaster.find(item => detectedText.includes(item.SKU));
+                if (matched) {
+                    let current = typeof matched.counted === 'number' ? matched.counted : 0;
+                    matched.counted = current + 1;
+                    state.demoCounts[matched.SKU] = { qty: matched.counted, reason: 'OCR' };
                     applyDemoView();
-                    // Scroll to row and briefly highlight
-                    const row = getEl('demo-count-container').querySelector(`tr[data-sku="${sku}"]`);
+                    const row = getEl('demo-count-container').querySelector(`tr[data-sku="${matched.SKU}"]`);
                     if (row) {
                         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        row.classList.add('ring', 'ring-green-400');
-                        setTimeout(() => row.classList.remove('ring', 'ring-green-400'), 800);
+                        row.classList.add('ring', 'ring-purple-400');
+                        setTimeout(() => row.classList.remove('ring', 'ring-purple-400'), 800);
                     }
-                    getEl('qr-reader-results').textContent = `+1 to ${sku} (${item.Description})`;
+                    getEl('qr-reader-results').textContent = `+1 to ${matched.SKU} (${matched.Description}) [OCR]`;
                 } else {
-                    getEl('qr-reader-results').textContent = `SKU not found: ${sku}`;
+                    getEl('qr-reader-results').textContent = `No matching SKU found in DEMO. Detected: ${detectedText}`;
                 }
             }
 
@@ -1245,6 +1216,7 @@
                     'refreshChartsButton': { event: 'click', handler: renderFinalReportCharts },
                     'exportDemoCsvButton': { event: 'click', handler: exportDemoTable },
                     'openScannerBtn': { event: 'click', handler: openScannerModal },
+                    'captureOcrBtn': { event: 'click', handler: captureAndDetectText },
                     'closeScannerBtn': { event: 'click', handler: closeScannerModal },
                 };
 
