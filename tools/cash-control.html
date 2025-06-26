@@ -17,19 +17,100 @@
         .result-positive { color: #16a34a; }
         .result-negative { color: #dc2626; }
         .result-zero { color: #374151; }
-        .dynamic-row { transition: all 0.3s ease-in-out; overflow: hidden; max-height: 100px; }
-        .dynamic-row.removing { transform: translateX(100%); max-height: 0; opacity: 0; padding: 0; margin: 0; }
+        .dynamic-row { transition: all 0.3s ease-in-out; overflow: hidden; }
+        .dynamic-row.removing { transform: translateX(100%); max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; }
+        
         .print-only { display: none; }
+        .attachment-thumbnail {
+            width: 2.5rem;
+            height: 2.5rem;
+            object-fit: cover;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            border: 1px solid #e5e7eb;
+        }
+
+        #image-modal {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+        #modal-img {
+            max-height: 80vh;
+            max-width: 90vw;
+        }
 
         @media print {
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 10pt; background-color: #fff; }
+            html, body {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                overflow: visible;
+            }
+            body { 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+                font-size: 9pt; /* Reduced font size */
+                background-color: #fff; 
+            }
             .no-print { display: none !important; }
-            .print-container { max-width: 100% !important; box-shadow: none !important; border: 1px solid #e5e7eb; padding: 1rem; margin-bottom: 1rem; page-break-inside: avoid; }
-            .main-grid { display: block; }
-            .lg\:col-span-2, .lg\:col-span-1 { width: 100%; }
+
+            .print-wrapper {
+                max-width: 100% !important;
+                padding: 0.5cm !important; /* Add margins */
+                margin: 0 !important;
+            }
+
+            .print-container { 
+                max-width: 100% !important; 
+                box-shadow: none !important; 
+                border: 1px solid #ccc !important; 
+                padding: 0.4rem !important; /* Tighter padding */
+                margin-bottom: 0.5rem !important; /* Tighter margin */
+                page-break-inside: avoid !important; /* Crucial rule */
+            }
+            
+            .print-container h2, .print-container h3 {
+                font-size: 1.1em;
+                margin-bottom: 0.5rem;
+                padding-bottom: 0.25rem;
+            }
+
+            .main-grid { 
+                display: block !important; 
+                width: 100% !important;
+                gap: 0 !important;
+            }
+            .lg\:col-span-2, .lg\:col-span-1 { 
+                width: 100% !important;
+            }
             .sticky { position: static !important; }
             .print-only { display: block; }
-            header, footer { display: none; }
+            header, footer, #image-modal { display: none; }
+
+            /* Make dynamic rows very compact */
+            .dynamic-row {
+                margin-bottom: 0.2rem !important;
+                padding: 0 !important;
+            }
+             .dynamic-row input[type="text"], .dynamic-row input[type="number"] {
+                padding: 1px 4px !important;
+                font-size: 8.5pt !important;
+             }
+            
+            #print-appendix {
+                page-break-before: always;
+            }
+            .appendix-item {
+                page-break-inside: avoid;
+                border: 1px solid #ccc;
+                padding: 0.5rem;
+                margin-bottom: 1rem;
+            }
+            .appendix-item img {
+                max-width: 100%;
+                height: auto;
+                border: 1px solid #eee;
+            }
         }
     </style>
 </head>
@@ -40,10 +121,7 @@
     >
         &larr; กลับหน้าหลัก
     </button>
-    <div class="max-w-4xl mx-auto">
-        <!-- The rest of content -->
-
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-4xl mx-auto print-wrapper">
         <!-- Headers -->
         <header class="text-center mb-6 no-print">
             <h1 class="text-3xl font-bold text-gray-800">ระบบตรวจนับเงินสด</h1>
@@ -59,11 +137,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label for="department" class="block text-sm font-medium text-gray-700">สาขา/แผนก</label>
-                    <input type="text" id="department" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="เช่น สาขาสยามพารากอน">
+                    <input type="text" id="department" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="เช่น B000-คลังสินค้าสำนักงานใหญ่">
                 </div>
                 <div>
                     <label for="custodian" class="block text-sm font-medium text-gray-700">ผู้ดูแลเงิน (ชื่อ-ตำแหน่ง)</label>
-                    <input type="text" id="custodian" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="เช่น นายกันต์กฤช พุ่มเจริญ">
+                    <input type="text" id="custodian" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="เช่น นายกันต์กฤช พุ่มเจริญ (Operation Audit Officer)">
                 </div>
                 <div>
                     <label for="count-date" class="block text-sm font-medium text-gray-700">วันที่ตรวจนับ</label>
@@ -88,7 +166,7 @@
                     </div>
                      <div class="mt-3">
                         <label for="bank-balance-counted" class="block text-sm font-medium text-gray-700">เงินสดย่อยในบัญชีธนาคาร</label>
-                        <input type="number" id="bank-balance-counted" value="0" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                        <input type="number" id="bank-balance-counted" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
                     </div>
                     <div class="border-t pt-2 mt-2 flex justify-between items-center">
                         <span class="font-bold text-gray-800">รวมเงินสดย่อยทั้งหมด (ในมือ+ในบัญชี)</span>
@@ -98,15 +176,15 @@
                     <h3 class="text-lg font-semibold text-gray-600 mt-6 mb-2">เงินกองอื่นๆ</h3>
                     <div>
                         <label for="change-fund-counted" class="block text-sm font-medium text-gray-700">เงินทอนที่นับได้ (Change Fund)</label>
-                        <input type="number" id="change-fund-counted" value="0" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                        <input type="number" id="change-fund-counted" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
                     </div>
                      <div class="mt-3">
                         <label for="prev-sales-counted" class="block text-sm font-medium text-gray-700">เงินสดจากยอดขายวันก่อน (ที่ยังไม่นำส่ง)</label>
-                        <input type="number" id="prev-sales-counted" value="0" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                        <input type="number" id="prev-sales-counted" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
                     </div>
                     <div class="mt-3">
                         <label for="today-sales-counted" class="block text-sm font-medium text-gray-700">เงินสดจากยอดขายวันนี้</label>
-                        <input type="number" id="today-sales-counted" value="0" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                        <input type="number" id="today-sales-counted" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
                     </div>
                 </div>
 
@@ -114,9 +192,11 @@
                 <div class="bg-white p-6 rounded-xl shadow-lg print-container">
                      <h2 class="text-xl font-bold text-gray-700 border-b pb-3 mb-4">ส่วนที่ 2: เอกสารประกอบเงินสดย่อย</h2>
                     <h3 class="text-lg font-semibold text-gray-600 mb-2">เอกสารจ่ายรอเบิก (Vouchers)</h3>
-                    <div id="voucher-list" class="space-y-3">
+                    <div id="voucher-list" class="space-y-1">
                          <div class="grid grid-cols-12 gap-2 items-center mb-2 font-medium text-gray-600 text-sm">
-                            <span class="col-span-8 md:col-span-9">รายละเอียด</span><span class="text-right col-span-4 md:col-span-3">จำนวนเงิน</span>
+                            <span class="col-span-6 md:col-span-7">รายละเอียด</span>
+                            <span class="text-right col-span-3 md:col-span-3">จำนวนเงิน</span>
+                            <span class="text-center col-span-3 md:col-span-2 no-print">หลักฐาน</span>
                         </div>
                     </div>
                     <button id="add-voucher" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 no-print">+ เพิ่มรายการเอกสารจ่าย</button>
@@ -126,9 +206,11 @@
                     </div>
 
                      <h3 class="text-lg font-semibold text-gray-600 mt-6 mb-2">รายการรอโอนเงินคืน</h3>
-                    <div id="reimbursement-list" class="space-y-3">
+                    <div id="reimbursement-list" class="space-y-1">
                          <div class="grid grid-cols-12 gap-2 items-center mb-2 font-medium text-gray-600 text-sm">
-                            <span class="col-span-8 md:col-span-9">รายละเอียด</span><span class="text-right col-span-4 md:col-span-3">จำนวนเงิน</span>
+                            <span class="col-span-6 md:col-span-7">รายละเอียด</span>
+                            <span class="text-right col-span-3 md:col-span-3">จำนวนเงิน</span>
+                            <span class="text-center col-span-3 md:col-span-2 no-print">หลักฐาน</span>
                         </div>
                     </div>
                     <button id="add-reimbursement" class="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 no-print">+ เพิ่มรายการรอโอนคืน</button>
@@ -147,19 +229,19 @@
                         <h3 class="text-lg font-semibold text-gray-600">ยอดเงินตามระบบ</h3>
                         <div>
                             <label for="approved-petty-cash" class="block text-sm font-medium text-gray-700">วงเงินสดย่อยอนุมัติ</label>
-                            <input type="number" id="approved-petty-cash" value="5000" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                            <input type="number" id="approved-petty-cash" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
                         </div>
                          <div>
                             <label for="approved-change-fund" class="block text-sm font-medium text-gray-700">วงเงินทอนอนุมัติ</label>
-                            <input type="number" id="approved-change-fund" value="1000" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                            <input type="number" id="approved-change-fund" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
                         </div>
                         <div>
                             <label for="prev-sales-system" class="block text-sm font-medium text-gray-700">ยอดขายวันก่อน (ตามรายงาน)</label>
-                            <input type="number" id="prev-sales-system" value="0" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                            <input type="number" id="prev-sales-system" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
                         </div>
                         <div>
                             <label for="today-sales-system" class="block text-sm font-medium text-gray-700">ยอดขายวันนี้ (ตามรายงาน)</label>
-                            <input type="number" id="today-sales-system" value="0" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                            <input type="number" id="today-sales-system" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
                         </div>
                         
                         <div class="border-t pt-3">
@@ -181,6 +263,7 @@
                     </div>
                     <div class="mt-6 space-y-2 no-print">
                          <button id="export-csv-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">Export to CSV</button>
+                         <button id="export-json-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition">Export to JSON</button>
                          <button id="print-btn" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg transition">พิมพ์รายงาน</button>
                          <button id="reset-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition">เริ่มใหม่</button>
                     </div>
@@ -204,13 +287,27 @@
             </div>
         </div>
 
+        <!-- Appendix for Printing Attachments -->
+        <div id="print-appendix" class="print-only"></div>
+
         <footer class="text-center mt-12 text-gray-500 text-sm no-print">
             <p>Cash Control Application</p>
         </footer>
     </div>
 
+    <!-- Image Viewer Modal -->
+    <div id="image-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden no-print" onclick="this.classList.add('hidden')">
+        <div class="relative p-4">
+            <img id="modal-img" src="" alt="Full size attachment" class="rounded-lg shadow-2xl">
+        </div>
+    </div>
+    
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // State for storing attachments
+            let attachments = {};
+            let summaryData = {};
+
             const dateInput = document.getElementById('count-date');
             dateInput.value = new Date().toISOString().substring(0, 10);
             
@@ -229,39 +326,96 @@
                 cashItemsContainer.appendChild(row);
             });
             
-            function setupDynamicSection(addButtonId, listId, inputClassName, placeholder) {
+            function setupDynamicSection(addButtonId, listId, inputClassName, placeholder, hasAttachment = false) {
                 const addButton = document.getElementById(addButtonId);
                 const list = document.getElementById(listId);
                 let rowCount = 0;
+                
                 const addRow = () => {
                     rowCount++;
+                    const rowId = `${listId}-row-${rowCount}`;
                     const row = document.createElement('div');
-                    row.id = `${listId}-row-${rowCount}`;
-                    row.className = 'grid grid-cols-12 gap-2 items-center dynamic-row';
-                    row.innerHTML = `<input type="text" class="col-span-8 md:col-span-9 p-2 border border-gray-300 rounded-md shadow-sm" placeholder="${placeholder}">
-                        <div class="col-span-4 md:col-span-3 flex items-center gap-1">
-                            <input type="number" min="0" class="w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input ${inputClassName}" placeholder="0.00">
-                            <button class="remove-row text-red-500 hover:text-red-700 p-1 no-print" title="ลบรายการ"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg></button>
+                    row.id = rowId;
+                    row.className = 'grid grid-cols-12 gap-2 items-center dynamic-row mb-2';
+                    
+                    let attachmentHTML = '';
+                    if (hasAttachment) {
+                        attachmentHTML = `
+                        <div class="col-span-3 md:col-span-2 text-center no-print">
+                            <label for="attach-${rowId}" class="attachment-label cursor-pointer inline-block" data-row-id="${rowId}">
+                                <img src="https://placehold.co/40x40/e0e7ff/4338ca?text=+" class="attachment-thumbnail" id="thumb-${rowId}">
+                            </label>
+                            <input type="file" id="attach-${rowId}" accept="image/*" class="hidden">
                         </div>`;
+                    }
+                    
+                    row.innerHTML = `
+                        <input type="text" class="${hasAttachment ? 'col-span-6 md:col-span-7' : 'col-span-8 md:col-span-9'} p-2 border border-gray-300 rounded-md shadow-sm" placeholder="${placeholder}">
+                        <div class="${hasAttachment ? 'col-span-3 md:col-span-3' : 'col-span-4 md:col-span-3'} flex items-center gap-1">
+                            <input type="number" min="0" class="w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input ${inputClassName}" placeholder="0.00">
+                        </div>
+                        ${attachmentHTML}
+                        <div class="col-span-12 flex justify-end">
+                             <button class="remove-row text-red-500 hover:text-red-700 p-1 no-print text-xs" title="ลบรายการ">ลบรายการ</button>
+                        </div>
+                    `;
                     list.appendChild(row);
+
                     row.querySelector('.remove-row').addEventListener('click', (e) => {
                         e.preventDefault();
                         const rowToRemove = e.target.closest('.dynamic-row');
                         rowToRemove.classList.add('removing');
-                        rowToRemove.addEventListener('transitionend', () => { rowToRemove.remove(); calculateAll(); });
+                        rowToRemove.addEventListener('transitionend', () => { 
+                            delete attachments[rowId];
+                            rowToRemove.remove(); 
+                            calculateAll();
+                        });
                     });
+
+                    if (hasAttachment) {
+                        const fileInput = row.querySelector(`#attach-${rowId}`);
+                        fileInput.addEventListener('change', (e) => handleAttachment(e, rowId));
+                        
+                        const thumb = row.querySelector(`#thumb-${rowId}`);
+                        thumb.addEventListener('click', (e) => {
+                            if (attachments[rowId]) {
+                                e.preventDefault(); // prevent re-opening file dialog
+                                showImageModal(attachments[rowId].data);
+                            }
+                        });
+                    }
                 };
                 addButton.addEventListener('click', addRow);
                 addRow();
             }
 
-            setupDynamicSection('add-voucher', 'voucher-list', 'voucher-amount', 'เช่น ค่าทางด่วน, ค่าอุปกรณ์');
-            setupDynamicSection('add-reimbursement', 'reimbursement-list', 'reimbursement-amount', 'เช่น รอรับโอนคืนค่าซ่อม');
+            setupDynamicSection('add-voucher', 'voucher-list', 'voucher-amount', 'เช่น ค่าทางด่วน, ค่าอุปกรณ์', true);
+            setupDynamicSection('add-reimbursement', 'reimbursement-list', 'reimbursement-amount', 'เช่น รอรับโอนคืนค่าซ่อม', true);
+
+            const handleAttachment = (event, rowId) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const thumbnail = document.getElementById(`thumb-${rowId}`);
+                    thumbnail.src = e.target.result;
+                    attachments[rowId] = {
+                        data: e.target.result,
+                        name: file.name
+                    };
+                };
+                reader.readAsDataURL(file);
+            };
+
+            const showImageModal = (imageData) => {
+                document.getElementById('modal-img').src = imageData;
+                document.getElementById('image-modal').classList.remove('hidden');
+            };
 
             const formatCurrency = (num) => isNaN(num) ? '0.00' : num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
             
             const calculateAll = () => {
-                // 1. Get all counted values
                 let physicalPettyCash = Array.from(document.querySelectorAll('.cash-denom-input')).reduce((sum, input) => {
                     const count = parseFloat(input.value) || 0;
                     const totalForItem = input.dataset.type === 'note' ? count * parseFloat(input.dataset.value) : count;
@@ -280,24 +434,20 @@
                 const totalAssetsCounted = totalPettyCashFund + changeFundCounted + prevSalesCounted + todaySalesCounted;
                 document.getElementById('total-assets-counted').textContent = formatCurrency(totalAssetsCounted);
                 
-                // 2. Get all system/approved values
                 const approvedPettyCash = parseFloat(document.getElementById('approved-petty-cash').value) || 0;
                 const approvedChangeFund = parseFloat(document.getElementById('approved-change-fund').value) || 0;
                 const prevSalesSystem = parseFloat(document.getElementById('prev-sales-system').value) || 0;
                 const todaySalesSystem = parseFloat(document.getElementById('today-sales-system').value) || 0;
                 
-                // 3. Get all transaction documents
                 let totalVouchers = Array.from(document.querySelectorAll('.voucher-amount')).reduce((sum, el) => sum + (parseFloat(el.value) || 0), 0);
                 document.getElementById('total-vouchers').textContent = formatCurrency(totalVouchers);
                 let totalReimbursements = Array.from(document.querySelectorAll('.reimbursement-amount')).reduce((sum, el) => sum + (parseFloat(el.value) || 0), 0);
                 document.getElementById('total-reimbursements').textContent = formatCurrency(totalReimbursements);
 
-                // Calculate Total Expected Balance (B) - UPDATED FORMULA
                 const expectedSystemTotal = approvedPettyCash + approvedChangeFund + prevSalesSystem + todaySalesSystem;
                 const expectedBalance = expectedSystemTotal - totalReimbursements - totalVouchers;
                 document.getElementById('expected-balance').textContent = formatCurrency(expectedBalance);
 
-                // Calculate Final Difference (A - B)
                 const difference = totalAssetsCounted - expectedBalance;
                 const diffElem = document.getElementById('difference');
                 const diffLabelElem = document.getElementById('difference-label');
@@ -319,9 +469,109 @@
                     diffLabelElem.classList.add('result-zero');
                     diffLabelElem.textContent = 'ยอดเงินถูกต้อง';
                 }
+
+                // Update summaryData for JSON export
+                summaryData = {
+                    totalPettyCash: totalPettyCashFund,
+                    totalOtherFunds: changeFundCounted + prevSalesCounted + todaySalesCounted,
+                    totalAssetsCounted: totalAssetsCounted,
+                    totalVouchers: totalVouchers,
+                    totalReimbursements: totalReimbursements,
+                    expectedBalance: expectedBalance,
+                    difference: difference,
+                    status: diffLabelElem.textContent
+                };
             };
 
+            const preparePrintAppendix = () => {
+                const appendixContainer = document.getElementById('print-appendix');
+                appendixContainer.innerHTML = '';
+                
+                const processAttachments = (prefix, title) => {
+                    const attachedItems = Object.keys(attachments).filter(key => key.startsWith(prefix));
+                    if (attachedItems.length > 0) {
+                        const header = document.createElement('h2');
+                        header.className = 'text-xl font-bold mb-4';
+                        if (appendixContainer.innerHTML !== '') {
+                            header.classList.add('mt-8');
+                        }
+                        header.textContent = title;
+                        appendixContainer.appendChild(header);
+
+                        attachedItems.forEach(rowId => {
+                            const row = document.getElementById(rowId);
+                            const description = row.querySelector('input[type="text"]').value || 'ไม่มีคำอธิบาย';
+                            const amount = parseFloat(row.querySelector('input[type="number"]').value || 0);
+
+                            const appendixItem = document.createElement('div');
+                            appendixItem.className = 'appendix-item';
+                            appendixItem.innerHTML = `
+                                <p><strong>รายละเอียด:</strong> ${description}</p>
+                                <p><strong>จำนวนเงิน:</strong> ${formatCurrency(amount)}</p>
+                                <img src="${attachments[rowId].data}" alt="หลักฐานสำหรับ ${description}">
+                            `;
+                            appendixContainer.appendChild(appendixItem);
+                        });
+                    }
+                };
+                
+                processAttachments('voucher-list', 'ภาคผนวก: หลักฐานเอกสารจ่ายรอเบิก');
+                processAttachments('reimbursement-list', 'ภาคผนวก: หลักฐานรายการรอโอนเงินคืน');
+            };
+
+            const exportToJSON = () => {
+                const getVal = (id) => document.getElementById(id).value;
+                if (!getVal('department')) {
+                    alert('กรุณากรอกชื่อสาขา/แผนกก่อนทำการ Export');
+                    return;
+                }
+
+                calculateAll(); // Ensure summary data is up-to-date
+
+                const getDynamicSectionData = (listId) => {
+                    const items = [];
+                    document.querySelectorAll(`#${listId} .dynamic-row`).forEach(row => {
+                        const description = row.querySelector('input[type="text"]').value;
+                        const amount = parseFloat(row.querySelector('input[type="number"]').value) || 0;
+                        if (description || amount > 0) {
+                            items.push({
+                                description: description,
+                                amount: amount,
+                                hasAttachment: !!attachments[row.id]
+                            });
+                        }
+                    });
+                    return items;
+                };
+
+                const exportData = {
+                    tool: 'cash-control',
+                    details: {
+                        branch: getVal('department'),
+                        custodian: getVal('custodian'),
+                        date: getVal('count-date'),
+                    },
+                    summary: summaryData,
+                    data: {
+                        vouchers: getDynamicSectionData('voucher-list'),
+                        reimbursements: getDynamicSectionData('reimbursement-list')
+                    }
+                };
+
+                const jsonString = JSON.stringify(exportData, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Cash-Control_${getVal('department')}_${getVal('count-date')}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+            
             function exportToCSV() {
+                // This function remains the same
                 const csvRows = [];
                 const escapeCsv = (str) => `"${(str || '').toString().replace(/"/g, '""')}"`;
                 const getVal = (id) => document.getElementById(id).value;
@@ -332,7 +582,6 @@
                 csvRows.push(`ผู้ดูแลเงิน,${escapeCsv(getVal('custodian'))}`);
                 csvRows.push(`วันที่ตรวจนับ,${getVal('count-date')}`);
                 csvRows.push("");
-
                 csvRows.push("สรุปผลกระทบยอด");
                 csvRows.push("รายการ,จำนวนเงิน");
                 csvRows.push(`เงินที่นับได้ทั้งหมด (A),${escapeCsv(getTxt('total-assets-counted'))}`);
@@ -340,7 +589,6 @@
                 csvRows.push(`ผลต่างรวม (A-B),${escapeCsv(getTxt('difference'))}`);
                 csvRows.push(`สถานะ,${escapeCsv(getTxt('difference-label'))}`);
                 csvRows.push("");
-
                 csvRows.push("รายละเอียดเงินที่นับได้");
                 csvRows.push("รายการ,จำนวนเงิน");
                 csvRows.push(`รวมเงินสดย่อยทั้งหมด (ในมือ+ในบัญชี),${escapeCsv(getTxt('total-petty-cash'))}`);
@@ -348,7 +596,6 @@
                 csvRows.push(`เงินสดจากยอดขายวันก่อน,${escapeCsv(getVal('prev-sales-counted'))}`);
                 csvRows.push(`เงินสดจากยอดขายวันนี้,${escapeCsv(getVal('today-sales-counted'))}`);
                 csvRows.push("");
-
                 csvRows.push("รายละเอียดเงินตามระบบ");
                 csvRows.push("รายการ,จำนวนเงิน");
                 csvRows.push(`วงเงินสดย่อยอนุมัติ,${escapeCsv(getVal('approved-petty-cash'))}`);
@@ -356,23 +603,23 @@
                 csvRows.push(`ยอดขายวันก่อน (ตามรายงาน),${escapeCsv(getVal('prev-sales-system'))}`);
                 csvRows.push(`ยอดขายวันนี้ (ตามรายงาน),${escapeCsv(getVal('today-sales-system'))}`);
                 csvRows.push("");
-
                 csvRows.push("รายการเอกสารจ่ายรอเบิก");
-                csvRows.push("รายละเอียด,จำนวนเงิน");
+                csvRows.push("รายละเอียด,จำนวนเงิน,มีรูปแนบ");
                 document.querySelectorAll('#voucher-list .dynamic-row').forEach(row => {
                     const desc = row.querySelector('input[type="text"]').value;
                     const amount = row.querySelector('input[type="number"]').value;
-                    if(desc || amount) csvRows.push(`${escapeCsv(desc)},${escapeCsv(amount)}`);
+                    const hasAttachment = attachments[row.id] ? 'Y' : 'N';
+                    if(desc || amount) csvRows.push(`${escapeCsv(desc)},${escapeCsv(amount)},${hasAttachment}`);
                 });
                 csvRows.push(`รวม,${escapeCsv(getTxt('total-vouchers'))}`);
                 csvRows.push("");
-
                 csvRows.push("รายการรอโอนเงินคืน");
-                csvRows.push("รายละเอียด,จำนวนเงิน");
+                csvRows.push("รายละเอียด,จำนวนเงิน,มีรูปแนบ");
                 document.querySelectorAll('#reimbursement-list .dynamic-row').forEach(row => {
                     const desc = row.querySelector('input[type="text"]').value;
                     const amount = row.querySelector('input[type="number"]').value;
-                    if(desc || amount) csvRows.push(`${escapeCsv(desc)},${escapeCsv(amount)}`);
+                    const hasAttachment = attachments[row.id] ? 'Y' : 'N';
+                    if(desc || amount) csvRows.push(`${escapeCsv(desc)},${escapeCsv(amount)},${hasAttachment}`);
                 });
                 csvRows.push(`รวม,${escapeCsv(getTxt('total-reimbursements'))}`);
 
@@ -383,7 +630,7 @@
                     const url = URL.createObjectURL(blob);
                     const dateStr = getVal('count-date');
                     const department = getVal('department');
-                    const safeDept = department.replace(/[^a-zA-Z0-9ก-๙ _-]/g, '').replace(/\s+/g, '_'); // sanitize for filename
+                    const safeDept = department.replace(/[^a-zA-Z0-9ก-๙ _-]/g, '').replace(/\s+/g, '_');
                     link.setAttribute("href", url);
                     link.setAttribute("download", `cash_count_report_${dateStr}_${safeDept}.csv`);
                     link.style.visibility = 'hidden';
@@ -395,9 +642,17 @@
             
             // --- EVENT LISTENERS ---
             document.body.addEventListener('input', (e) => { if (e.target.matches('input')) calculateAll(); });
-            document.getElementById('reset-btn').addEventListener('click', () => { if (confirm('คุณต้องการล้างข้อมูลทั้งหมด?')) window.location.reload(); });
-            document.getElementById('print-btn').addEventListener('click', () => window.print());
+            document.getElementById('reset-btn').addEventListener('click', () => { 
+                if (confirm('คุณต้องการล้างข้อมูลทั้งหมด?')) {
+                    window.location.reload();
+                }
+            });
+            document.getElementById('print-btn').addEventListener('click', () => {
+                preparePrintAppendix();
+                window.print();
+            });
             document.getElementById('export-csv-btn').addEventListener('click', exportToCSV);
+            document.getElementById('export-json-btn').addEventListener('click', exportToJSON); // New listener
             calculateAll();
         });
     </script>

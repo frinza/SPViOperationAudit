@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ใบสรุปผลการตรวจสอบ - Operations Toolkit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        .status-pass { border-left: 4px solid #22c55e; }
+        .status-fail { border-left: 4px solid #ef4444; }
+        .status-na   { border-left: 4px solid #6b7280; }
+        .print-only { display: none; }
+
+        .progress-bar {
+            background-color: #e5e7eb;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+        .progress-bar-inner {
+            height: 100%;
+            border-radius: 0.5rem;
+            transition: width 0.5s ease-in-out;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .print-container { box-shadow: none !important; border: 1px solid #e5e7eb; page-break-inside: avoid; }
+            .audit-item { page-break-inside: avoid; }
+            .notes-input { border: 1px solid #d1d5db !important; }
+            .print-only { display: block; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <button 
+        onclick="window.location.href='../index.html'"
+        class="no-print bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded mb-4 mt-6 mx-8"
+    >
+        &larr; กลับหน้าหลัก
+    </button>
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-bold text-slate-800">ใบสรุปผลการตรวจสอบสาขา</h1>
+            <p class="text-lg text-slate-500 mt-1">รายงานสรุปผลการดำเนินงานของสาขา</p>
+        </header>
+
+        <div class="max-w-5xl mx-auto bg-white p-6 rounded-2xl shadow-lg border border-slate-200 mb-8 print-container" id="audit-details-container">
+            <h2 class="text-2xl font-bold text-slate-700 border-b pb-3 mb-4">รายละเอียดการตรวจสอบ</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label for="branch-name" class="block text-sm font-medium text-gray-700">ชื่อสาขา</label>
+                    <input type="text" id="branch-name" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                </div>
+                <div class="md:col-span-2">
+                     <label for="audit-date" class="block text-sm font-medium text-gray-700">วันที่ตรวจสอบ</label>
+                    <input type="date" id="audit-date" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                </div>
+                 <div>
+                    <label for="auditee-name" class="block text-sm font-medium text-gray-700">ชื่อผู้รับการตรวจสอบ</label>
+                    <input type="text" id="auditee-name" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="auditee-position" class="block text-sm font-medium text-gray-700">ตำแหน่ง (ผู้รับการตรวจสอบ)</label>
+                    <input type="text" id="auditee-position" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                </div>
+            </div>
+
+            <div class="border-t pt-4">
+                 <h3 class="text-lg font-semibold text-slate-600 mb-2">รายชื่อผู้ตรวจสอบ</h3>
+                <div id="auditor-list-container" class="space-y-3">
+                    </div>
+                <button id="add-auditor-btn" class="no-print mt-3 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded-md">
+                    + เพิ่มผู้ตรวจสอบ
+                </button>
+            </div>
+            
+            <div class="mt-6 pt-6 border-t">
+                <h3 class="text-lg font-semibold text-slate-600 mb-3">สรุปผลการตรวจสอบ</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    <div>
+                        <div id="audit-summary" class="flex gap-x-6 gap-y-2 flex-wrap text-md mb-3">
+                            <span class="font-semibold">สถานะ:</span>
+                            <span id="summary-pass" class="text-green-600 font-medium">ผ่าน: 0</span>
+                            <span id="summary-fail" class="text-red-600 font-medium">ไม่ผ่าน: 0</span>
+                            <span id="summary-na" class="text-gray-600 font-medium">ไม่เกี่ยวข้อง: 0</span>
+                        </div>
+                         <div class="flex items-center gap-4">
+                            <span id="audit-score-grade" class="text-5xl font-bold text-slate-700">-</span>
+                            <div>
+                                <p id="audit-score-text" class="text-lg font-semibold text-slate-600">คะแนน: 0 / 0</p>
+                                <p id="audit-score-percentage" class="text-md text-slate-500">0%</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ผลการประเมินโดยรวม</label>
+                        <div class="w-full h-8 progress-bar">
+                            <div id="audit-progress-bar" class="progress-bar-inner h-8 flex items-center justify-center">
+                                <span id="audit-progress-text"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <main id="checklist-sections" class="max-w-5xl mx-auto space-y-8">
+            </main>
+        
+        <footer class="max-w-5xl mx-auto mt-8 flex flex-col sm:flex-row gap-4 justify-center no-print">
+            <button id="print-button" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+                พิมพ์รายงาน
+            </button>
+             <button id="export-json-button" class="w-full sm:w-auto bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 transition-colors shadow-md">
+                Export to JSON
+            </button>
+            <button id="reset-button" class="w-full sm:w-auto bg-gray-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                เริ่มการตรวจสอบใหม่
+            </button>
+        </footer>
+
+        <div class="max-w-5xl mx-auto mt-12 pt-8 border-t-2 border-dashed border-gray-400 print-only">
+            <div class="grid grid-cols-2 gap-8 text-center" style="font-size: 11pt;">
+                <div>
+                    <p class="mb-16">ลงชื่อ .................................................</p>
+                    <p>(ผู้ตรวจสอบ / Auditor)</p>
+                    <p>วันที่: ........ / ................ / ............</p>
+                </div>
+                <div>
+                    <p class="mb-16">ลงชื่อ .................................................</p>
+                    <p>(ผู้รับการตรวจสอบ / Auditee)</p>
+                    <p>วันที่: ........ / ................ / ............</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sections = {
+                "การควบคุมเงินสด (Cash Control)": [
+                    { text: "เงินสดในมือตรงกับรายงานและยอดในระบบ", weight: 1 },
+                    { text: "เงินสดย่อย (Petty Cash) มีครบถ้วนและถูกต้อง", weight: 1 },
+                    { text: "เงินรับโอน QR Code ถูกต้องตรงกับหน้าบัญชีธนาคาร", weight: 1 },
+                    { text: "เงินรับบัตรเครดิต ถูกต้องตรงกับสลิปและหน้าสรุปรับชำระ", weight: 1 },
+                ],
+                "การควบคุมสต็อกสินค้า (Stock Control)": [
+                    { text: "จำนวนสินค้าจากการนับ (Stock Check) ตรงกับข้อมูลในระบบ", weight: 1 },
+                    { text: "ไม่มีผลต่างสต็อกที่ผิดปกติและไม่สามารถอธิบายได้", weight: 1 }
+                ],
+                "การปฏิบัติงาน (Operation)": [
+                    { text: "เอกสารโอนย้ายสินค้าระหว่างสาขา (รับเข้า/ส่งออก) ถูกต้องครบถ้วน", weight: 1 },
+                    { text: "การควบคุมเอกสารเงินสด (ใบเบิก/รอคืนเงิน) มีความถูกต้อง", weight: 1 },
+                    { text: "เอกสารลดหนี้ (Credit Note) และรายการในระบบ Smart Core ถูกต้องตรงกัน", weight: 1 },
+                    { text: "รายการขาย (Sales Order) ถูกจัดส่งครบถ้วน ไม่มีรายการค้างผิดปกติ", weight: 1 },
+                    { text: "การนำฝากเงินสดไม่มีปัญหา (ไม่มีรายการค้างหรือสถานะ Draft)", weight: 1 }
+                ],
+                "สภาพแวดล้อมและความเรียบร้อย (Environment and Orderliness)": [
+                    { text: "มีการจัดการสต็อกตามหลัก First-In, First-out (FIFO)", weight: 1 },
+                    { text: "สต็อกสินค้าถูกจัดเก็บอย่างเป็นระเบียบและจัดการได้ดี", weight: 1 },
+                    { text: "ร้านค้ามีความสะอาดและพร้อมให้บริการลูกค้า", weight: 1 },
+                    { text: "อุปกรณ์ล็อคสินค้าแขวน กุญแจตู้เก็บสินค้า ถูกปิดล็อคเรียบร้อยดีทุกครั้งหลังหยิบสินค้า", weight: 1 },
+                    { text: "สาย Security สินค้าอยู่ในสภาพพร้อมใช้งาน", weight: 1 }
+                ]
+            };
+
+            const sectionsContainer = document.getElementById('checklist-sections');
+            const auditDateInput = document.getElementById('audit-date');
+            const auditorListContainer = document.getElementById('auditor-list-container');
+            const addAuditorBtn = document.getElementById('add-auditor-btn');
+
+            let appState = {};
+            let scoreSummary = {};
+            const getStorageKey = () => `auditReport-${auditDateInput.value || new Date().toISOString().substring(0, 10)}`;
+
+            const createItemHTML = (item, sectionKey, itemIndex) => { 
+                return `<div id="item-${sectionKey}-${itemIndex}" class="audit-item bg-white p-4 rounded-lg shadow-sm border border-slate-200 transition-all"><p class="text-slate-800 font-medium">${item.text}</p><div class="mt-3 flex flex-wrap gap-x-6 gap-y-2 items-center"><div class="flex items-center"><input type="radio" id="pass-${sectionKey}-${itemIndex}" name="status-${sectionKey}-${itemIndex}" value="pass" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"><label for="pass-${sectionKey}-${itemIndex}" class="ml-2 text-sm text-gray-700">ผ่าน</label></div><div class="flex items-center"><input type="radio" id="fail-${sectionKey}-${itemIndex}" name="status-${sectionKey}-${itemIndex}" value="fail" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300"><label for="fail-${sectionKey}-${itemIndex}" class="ml-2 text-sm text-gray-700">ไม่ผ่าน</label></div><div class="flex items-center"><input type="radio" id="na-${sectionKey}-${itemIndex}" name="status-${sectionKey}-${itemIndex}" value="na" class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300"><label for="na-${sectionKey}-${itemIndex}" class="ml-2 text-sm text-gray-700">ไม่เกี่ยวข้อง</label></div></div><div class="mt-3"><textarea id="notes-${sectionKey}-${itemIndex}" placeholder="หมายเหตุและข้อเสนอแนะจากผู้ตรวจสอบ..." class="notes-input w-full p-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></textarea></div></div>`; 
+            };
+            const createSectionHTML = (title, items, sectionKey) => { 
+                const itemsHTML = items.map((item, index) => createItemHTML(item, sectionKey, index)).join(''); 
+                return `<section class="print-container"><h2 class="text-2xl font-bold text-slate-700 mb-4">${title}</h2><div class="space-y-4">${itemsHTML}</div></section>`; 
+            };
+
+            const addAuditorRow = (auditor = { name: '', position: '' }) => {
+                const row = document.createElement('div');
+                row.className = 'auditor-row grid grid-cols-12 gap-2 items-center';
+                row.innerHTML = `<div class="col-span-6"><input type="text" value="${auditor.name}" class="auditor-name-input mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="ชื่อ-สกุล ผู้ตรวจสอบ"></div><div class="col-span-5"><input type="text" value="${auditor.position}" class="auditor-position-input mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="ตำแหน่ง"></div><div class="col-span-1"><button class="remove-auditor-btn no-print text-red-500 hover:text-red-700">&times;</button></div>`;
+                auditorListContainer.appendChild(row);
+                row.querySelector('.remove-auditor-btn').addEventListener('click', () => { row.remove(); saveState(); });
+            };
+
+            const getInitialState = () => {
+                const initialState = { details: { branch: '', auditeeName: '', auditeePosition: '', date: auditDateInput.value, auditors: [{ name: '', position: '' }] }, sections: {} };
+                Object.keys(sections).forEach(sectionKey => { 
+                    initialState.sections[sectionKey] = sections[sectionKey].map(() => ({ status: null, notes: '' })); 
+                });
+                return initialState;
+            };
+
+            const saveState = () => {
+                const auditors = Array.from(document.querySelectorAll('.auditor-row')).map(row => ({
+                    name: row.querySelector('.auditor-name-input').value,
+                    position: row.querySelector('.auditor-position-input').value
+                }));
+                appState.details = { 
+                    branch: document.getElementById('branch-name').value, 
+                    auditeeName: document.getElementById('auditee-name').value, 
+                    auditeePosition: document.getElementById('auditee-position').value, 
+                    date: auditDateInput.value, 
+                    auditors: auditors 
+                };
+                Object.keys(sections).forEach((sectionKey, s_idx) => { 
+                    appState.sections[sectionKey] = sections[sectionKey].map((_, i_idx) => ({ 
+                        status: document.querySelector(`input[name="status-${s_idx}-${i_idx}"]:checked`)?.value || null, 
+                        notes: document.getElementById(`notes-${s_idx}-${i_idx}`).value 
+                    })); 
+                });
+                localStorage.setItem(getStorageKey(), JSON.stringify(appState));
+                calculateAndDisplayScore(); // Recalculate score on every save
+            };
+
+            const loadState = () => {
+                const savedData = localStorage.getItem(getStorageKey());
+                appState = savedData ? JSON.parse(savedData) : getInitialState();
+                document.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
+                document.getElementById('branch-name').value = appState.details?.branch || '';
+                document.getElementById('auditee-name').value = appState.details?.auditeeName || '';
+                document.getElementById('auditee-position').value = appState.details?.auditeePosition || '';
+                auditorListContainer.innerHTML = '';
+                if (appState.details?.auditors && appState.details.auditors.length > 0) { 
+                    appState.details.auditors.forEach(addAuditorRow); 
+                } else { 
+                    addAuditorRow(); 
+                }
+                Object.entries(appState.sections || {}).forEach(([sectionKey, items]) => {
+                    const sectionIndex = Object.keys(sections).indexOf(sectionKey);
+                    if (sectionIndex === -1) return;
+                    items.forEach(({ status, notes }, itemIndex) => {
+                        if (status) { 
+                            const radio = document.getElementById(`${status}-${sectionIndex}-${itemIndex}`); 
+                            if (radio) radio.checked = true; 
+                        }
+                        const notesEl = document.getElementById(`notes-${sectionIndex}-${itemIndex}`);
+                        if (notesEl) notesEl.value = notes || '';
+                    });
+                });
+                updateUI();
+            };
+            
+            const updateUI = () => {
+                let passCount = 0, failCount = 0, naCount = 0;
+                document.querySelectorAll('.audit-item').forEach(item => item.classList.remove('status-pass', 'status-fail', 'status-na')); 
+                
+                if (!appState.sections) return;
+                
+                Object.values(appState.sections).forEach((items, s_idx) => { 
+                    items.forEach(({ status }, i_idx) => { 
+                        if (status === 'pass') passCount++; 
+                        if (status === 'fail') failCount++; 
+                        if (status === 'na') naCount++; 
+                        const itemDiv = document.getElementById(`item-${s_idx}-${i_idx}`); 
+                        if (itemDiv && status) itemDiv.classList.add(`status-${status}`); 
+                    }); 
+                }); 
+                
+                document.getElementById('summary-pass').textContent = `ผ่าน: ${passCount}`; 
+                document.getElementById('summary-fail').textContent = `ไม่ผ่าน: ${failCount}`; 
+                document.getElementById('summary-na').textContent = `ไม่เกี่ยวข้อง: ${naCount}`;
+                
+                calculateAndDisplayScore();
+            };
+
+            const calculateAndDisplayScore = () => {
+                let actualScore = 0;
+                let possibleScore = 0;
+
+                Object.entries(appState.sections || {}).forEach(([sectionKey, items]) => {
+                    const sectionTemplate = sections[sectionKey];
+                    items.forEach(({ status }, itemIndex) => {
+                        if (status && status !== 'na') {
+                            const itemWeight = sectionTemplate[itemIndex]?.weight || 1;
+                            possibleScore += itemWeight;
+                            if (status === 'pass') {
+                                actualScore += itemWeight;
+                            }
+                        }
+                    });
+                });
+
+                const percentage = possibleScore > 0 ? (actualScore / possibleScore) * 100 : 0;
+                
+                let grade = '-';
+                let gradeColorClass = 'text-slate-700';
+                let progressColorClass = 'bg-slate-400';
+
+                if (possibleScore > 0) {
+                    if (percentage >= 90) { grade = 'A'; gradeColorClass = 'text-green-600'; progressColorClass = 'bg-green-500'; } 
+                    else if (percentage >= 80) { grade = 'B'; gradeColorClass = 'text-blue-600'; progressColorClass = 'bg-blue-500'; } 
+                    else if (percentage >= 70) { grade = 'C'; gradeColorClass = 'text-yellow-600'; progressColorClass = 'bg-yellow-500'; } 
+                    else if (percentage >= 60) { grade = 'D'; gradeColorClass = 'text-orange-600'; progressColorClass = 'bg-orange-500'; } 
+                    else { grade = 'F'; gradeColorClass = 'text-red-600'; progressColorClass = 'bg-red-500'; }
+                }
+
+                document.getElementById('audit-score-grade').textContent = grade;
+                document.getElementById('audit-score-grade').className = `text-5xl font-bold ${gradeColorClass}`;
+                document.getElementById('audit-score-text').textContent = `คะแนน: ${actualScore} / ${possibleScore}`;
+                document.getElementById('audit-score-percentage').textContent = `${percentage.toFixed(2)}%`;
+                
+                const progressBar = document.getElementById('audit-progress-bar');
+                const progressText = document.getElementById('audit-progress-text');
+
+                progressBar.style.width = `${percentage}%`;
+                progressBar.className = `progress-bar-inner h-8 flex items-center justify-center ${progressColorClass}`;
+                
+                progressText.textContent = possibleScore > 0 ? `${percentage.toFixed(0)}%` : '';
+
+                // Store summary for JSON export
+                scoreSummary = {
+                    score: percentage,
+                    grade: grade,
+                    actual: actualScore,
+                    possible: possibleScore,
+                };
+            };
+            
+            const exportToJSON = () => {
+                if (!appState.details || !appState.details.branch) {
+                    alert('กรุณากรอกชื่อสาขาก่อนทำการ Export');
+                    return;
+                }
+                
+                const exportData = {
+                    tool: 'checklist',
+                    details: appState.details,
+                    summary: scoreSummary,
+                    data: appState.sections,
+                };
+                
+                const jsonString = JSON.stringify(exportData, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Checklist_${appState.details.branch}_${appState.details.date}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            const resetForm = (confirmReset = true) => { 
+                const doReset = () => { 
+                    localStorage.removeItem(getStorageKey()); 
+                    auditDateInput.value = new Date().toISOString().substring(0, 10); 
+                    loadState(); 
+                }; 
+                if (confirmReset) { 
+                    if (confirm('คุณต้องการเริ่มการตรวจสอบใหม่หรือไม่? ข้อมูลที่กรอกในฟอร์มนี้จะถูกล้างทั้งหมด')) doReset(); 
+                } else { 
+                    doReset(); 
+                } 
+            };
+
+            const initialize = () => {
+                auditDateInput.value = new Date().toISOString().substring(0, 10);
+                let sectionIndex = 0;
+                sectionsContainer.innerHTML = Object.entries(sections)
+                    .map(([title, items]) => createSectionHTML(title, items, sectionIndex++))
+                    .join('');
+                
+                loadState();
+
+                addAuditorBtn.addEventListener('click', () => addAuditorRow());
+                document.getElementById('audit-details-container').addEventListener('input', saveState);
+                sectionsContainer.addEventListener('input', (e) => { 
+                    if (e.target.matches('input[type="radio"], textarea')) { 
+                        saveState(); 
+                    } 
+                });
+                auditDateInput.addEventListener('change', loadState);
+                document.getElementById('reset-button').addEventListener('click', () => resetForm(true));
+                document.getElementById('print-button').addEventListener('click', () => window.print());
+                document.getElementById('export-json-button').addEventListener('click', exportToJSON);
+            };
+            
+            initialize();
+        });
+    </script>
+</body>
+</html>
