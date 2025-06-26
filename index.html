@@ -7,15 +7,33 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        .tool-card {
+            background-color: white;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+        }
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        .icon-wrapper {
+            display: inline-flex;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+        }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
 
     <div class="container mx-auto px-6 py-12 md:py-20">
 
         <header class="text-center mb-12 md:mb-16">
-            <h1 class="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
                 Operations Audit SPVi Toolkit
             </h1>
             <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
@@ -24,7 +42,7 @@
         </header>
 
         <main>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
 
                 <a href="tools/stock-count.html" class="tool-card group">
                     <div class="p-8">
@@ -34,10 +52,10 @@
                             </svg>
                         </div>
                         <h2 class="mt-6 text-xl font-bold text-slate-900">
-                            ตรวจสอบสต็อก
+                            ตรวจนับสต็อก
                         </h2>
                         <p class="mt-2 text-slate-500">
-                            ตรวจนับสินค้าจริงของสาขาเปรียบเทียบรายงานในระบบ SMCO
+                            ตรวจนับสินค้าจริงของสาขาเปรียบเทียบรายงานในระบบ
                         </p>
                         <div class="mt-6 text-blue-600 font-semibold flex items-center gap-2">
                             เปิดใช้งาน
@@ -59,7 +77,7 @@
                             ตรวจนับเงิน
                         </h2>
                         <p class="mt-2 text-slate-500">
-                            ตรวจนับเงินของสาขาเปรียบเทียบตามเงินสนับสนุนการปฏิบัติงานสาขาที่บริษัทฯกำหนดวงเงินให้ไว้
+                            ตรวจนับเงินสดและเอกสารแทนเงินสดของสาขา
                         </p>
                         <div class="mt-6 text-green-600 font-semibold flex items-center gap-2">
                             เปิดใช้งาน
@@ -70,7 +88,73 @@
                     </div>
                 </a>
 
-                </div>
+                <a href="tools/checklist.html" class="tool-card group">
+                    <div class="p-8">
+                        <div class="icon-wrapper bg-yellow-100 text-yellow-700">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                           </svg>
+                        </div>
+                        <h2 class="mt-6 text-xl font-bold text-slate-900">
+                            บันทึกผลการตรวจสอบสาขา
+                        </h2>
+                        <p class="mt-2 text-slate-500">
+                           สรุปผลการตรวจสอบการปฏิบัติงานในรูปแบบ Checklist
+                        </p>
+                        <div class="mt-6 text-yellow-700 font-semibold flex items-center gap-2">
+                            เปิดใช้งาน
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+                
+                <a href="tools/risk-analyzer.html" class="tool-card group">
+                    <div class="p-8">
+                        <div class="icon-wrapper bg-rose-100 text-rose-600">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h2 class="mt-6 text-xl font-bold text-slate-900">
+                           วิเคราะห์ความเสี่ยงสาขา
+                        </h2>
+                        <p class="mt-2 text-slate-500">
+                           นำเข้าข้อมูลผลการตรวจสอบเพื่อประมวลผลและจัดลำดับความเสี่ยง
+                        </p>
+                        <div class="mt-6 text-rose-600 font-semibold flex items-center gap-2">
+                            เปิดใช้งาน
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="tools/audit-calendar.html" class="tool-card group">
+                    <div class="p-8">
+                        <div class="icon-wrapper bg-purple-100 text-purple-600">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                           </svg>
+                        </div>
+                        <h2 class="mt-6 text-xl font-bold text-slate-900">
+                           ปฏิทินตรวจสอบ
+                        </h2>
+                        <p class="mt-2 text-slate-500">
+                           ดูแผนและกำหนดการตรวจสอบทั้งหมดในรูปแบบปฏิทิน
+                        </p>
+                        <div class="mt-6 text-purple-600 font-semibold flex items-center gap-2">
+                            เปิดใช้งาน
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+
+            </div>
         </main>
 
         <footer class="text-center mt-16 md:mt-24 text-slate-500">
