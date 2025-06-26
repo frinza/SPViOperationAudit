@@ -10,6 +10,7 @@ This project provides a central hub for various internal tools. Each tool is a s
 
 - **Stock Count**: A tool for performing physical inventory counts and reconciling them against system data.
 - **Cash Control**: A tool for end-of-day cash drawer reconciliation, including cash, vouchers, and sales reporting.
+- and more**
 
 ## How to Use
 
