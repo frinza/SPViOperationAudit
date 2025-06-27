@@ -30,6 +30,44 @@
             100% { transform: rotate(360deg); }
         }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyZ_rL2E6POkCNTgxQUF8JHn0wf4P1SD2nYmFZMbXGIsY5b-tiHsRIXYXWyj9rS4xpEcA/exec';
+        let firebaseConfig;
+        let db;
+
+        // --- Fetch Firebase Config Once ---
+        async function fetchFirebaseConfig() {
+            if (firebaseConfig) return firebaseConfig;
+            try {
+                const response = await fetch(GAS_WEB_APP_URL);
+                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
+                const config = await response.json();
+                if (!config || !config.apiKey) {
+                    throw new Error("Invalid config received from server.");
+                }
+                firebaseConfig = config;
+                return firebaseConfig;
+            } catch (error) {
+                console.error("Failed to fetch Firebase config:", error);
+                const errorHtml = `<div class="text-center p-4 max-w-2xl mx-auto bg-red-100 border-l-4 border-red-500 text-red-700 dark:text-red-300 p-4" role="alert"><p class="font-bold">Configuration Error</p><p>${error.message}</p></div>`;
+                document.getElementById('error-display-event').innerHTML = errorHtml;
+                return null;
+            }
+        }
+
+        async function initFirebaseIfNeeded() {
+            if (db) return db;
+            const config = await fetchFirebaseConfig();
+            if (!config) throw new Error('No Firebase config available');
+            if (!firebase.apps.length) {
+                firebase.initializeApp(config);
+            }
+            db = firebase.firestore();
+            return db;
+        }
+    </script>
 </head>
 <body class="bg-slate-50 text-slate-800">
     <button 
@@ -67,10 +105,58 @@
                 </div>
             </div>
         </div>
+
+        <!-- =================== EVENT STATUS DASHBOARD =================== -->
+        <div class="w-full mb-8 mt-12">
+            <div id="error-display-event" class="mb-6"></div>
+            <div id="dashboard-content-event" class="bg-white rounded-2xl shadow-lg p-6 text-center relative">
+                <button id="toggle-uploader-btn-event" class="absolute top-4 right-4 p-2 text-gray-500 hover:bg-gray-200 rounded-full transition-colors" title="เปิด/ปิดส่วนอัพโหลด">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                </button>
+                <h1 class="text-2xl sm:text-3xl font-bold mb-2 text-slate-900">ภาพรวมสถานะกิจกรรม</h1>
+                <p class="text-slate-500 mb-6">สรุปความคืบหน้าของกิจกรรมทั้งหมด</p>
+                <div id="uploader-section-event" class="hidden pt-6 mt-6 border-t border-slate-200">
+                    <h3 class="font-bold text-xl mb-3 text-center text-slate-900">อัพเดทสถานะกิจกรรม (สำหรับผู้ดูแล)</h3>
+                    <div class="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-3">
+                        <input type="file" id="csv-uploader-event" accept=".csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                        <input type="password" id="admin-password-event" placeholder="รหัสผ่าน" class="w-full sm:w-auto p-2 border border-slate-300 rounded-full text-center focus:ring-2 focus:ring-blue-500">
+                        <button id="upload-btn-event" class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-full shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200 w-full sm:w-auto flex-shrink-0">อัพเดท</button>
+                    </div>
+                    <p id="upload-status-event" class="text-center text-sm mt-3 h-4"></p>
+                </div>
+                <div class="mb-4 pt-6">
+                    <div class="flex justify-between mb-1"><span class="text-base font-medium text-blue-700">ความคืบหน้า</span><span id="progress-percentage-event" class="text-sm font-medium text-blue-700">0%</span></div>
+                    <div class="w-full bg-slate-200 rounded-full h-4"><div id="progress-bar-event" class="bg-blue-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                </div>
+                <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div class="bg-green-100 p-4 rounded-lg"><p class="text-lg font-semibold text-green-800">เสร็จสิ้น</p><p id="finished-count-event" class="text-2xl font-bold text-green-600">0</p></div>
+                    <div class="bg-yellow-100 p-4 rounded-lg"><p class="text-lg font-semibold text-yellow-800">รอดำเนินการ</p><p id="pending-count-event" class="text-2xl font-bold text-yellow-600">0</p></div>
+                    <div class="bg-slate-200 p-4 rounded-lg"><p class="text-lg font-semibold text-slate-800">ทั้งหมด</p><p id="total-count-event" class="text-2xl font-bold text-slate-600">0</p></div>
+                </div>
+            </div>
+            <div id="table-container-event" class="bg-white rounded-2xl shadow-lg p-6 mt-8 hidden">
+                <div class="flex justify-between items-center cursor-pointer" id="toggle-table-btn-event">
+                    <h2 class="text-xl font-bold text-slate-900">รายการที่รอดำเนินการ (<span id="waiting-list-count-event">0</span>)</h2>
+                    <svg id="table-chevron-event" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-500 transition-transform transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                </div>
+                <div id="table-content-event" class="hidden pt-4">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50"><tr><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ชื่องาน</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">วันที่</th></tr></thead>
+                            <tbody id="waiting-list-tbody-event" class="bg-white divide-y divide-slate-200"></tbody>
+                        </table>
+                        <p id="no-waiting-message-event" class="text-center text-slate-500 py-4 hidden">ไม่มีรายการที่รอดำเนินการ</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- ================= END EVENT STATUS DASHBOARD ================= -->
     </div>
 
     <script>
-        const EVENT_LIST_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzRBn7W0QIsIKTPsCY3_4GdKpRfMvb8oGu51NBGTdBP7eXVt4YiiY-cZ7qI8pK5-7ZZaQ/exec';
+        const EVENT_LIST_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYgcMoR1ZVtRwSKWCwN6XvzRwyhzQY7MWLAoeMCtxwqNUTrWs8Mm3jF-Vbx0vDNWS8MQ/exec';
 
         async function fetchAndDisplayEvents() {
             const eventContainer = document.getElementById('event-list-container');
@@ -116,11 +202,50 @@
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            const todaysEvents = events.filter(event => {
-                const eventDate = new Date(event.start);
-                eventDate.setHours(0, 0, 0, 0);
-                return eventDate.getTime() === today.getTime();
-            });
+            function getLocalYMD(dateOrString) {
+                if (typeof dateOrString === 'string') {
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(dateOrString)) {
+                        const [y, m, d] = dateOrString.split('-').map(Number);
+                        return { y, m, d };
+                    }
+                    const d = new Date(dateOrString);
+                    return { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() };
+                } else if (dateOrString instanceof Date) {
+                    return { y: dateOrString.getFullYear(), m: dateOrString.getMonth() + 1, d: dateOrString.getDate() };
+                }
+                return null;
+            }
+
+            function isTodayInEvent(event) {
+                let start = event.start;
+                let end = event.end;
+                let isAllDay = event.isAllDay;
+                let tz = 'Asia/Bangkok';
+                let startDate, endDate;
+                if (isAllDay) {
+                    // All-day: start and end are YYYY-MM-DD, end is exclusive
+                    startDate = new Date(start + 'T00:00:00');
+                    if (end) {
+                        endDate = new Date(end + 'T00:00:00');
+                        endDate.setDate(endDate.getDate() - 1); // Make end inclusive
+                    } else {
+                        endDate = startDate;
+                    }
+                } else {
+                    startDate = new Date(start);
+                    if (end) {
+                        endDate = new Date(end);
+                    } else {
+                        endDate = startDate;
+                    }
+                }
+                // Set all to local midnight for comparison
+                startDate.setHours(0,0,0,0);
+                endDate.setHours(0,0,0,0);
+                return today >= startDate && today <= endDate;
+            }
+
+            const todaysEvents = events.filter(isTodayInEvent);
 
             if (todaysEvents.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 text-center mt-8">ไม่มีกิจกรรมสำหรับวันนี้</p>';
@@ -130,8 +255,10 @@
             let eventsHtml = '<div class="space-y-4">';
             todaysEvents.forEach(event => {
                 const startDate = new Date(event.start).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
-                const startTime = event.isAllDay ? 'ตลอดวัน' : new Date(event.start).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                
+                let startTime = 'ตลอดวัน';
+                if (!event.isAllDay && !/^\d{4}-\d{2}-\d{2}$/.test(event.start)) {
+                    startTime = new Date(event.start).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                }
                 eventsHtml += `
                     <div class="p-4 bg-slate-50 rounded-lg shadow-sm event-item">
                         <h3 class="font-bold text-lg text-slate-900">${event.title}</h3>
@@ -144,8 +271,125 @@
             container.innerHTML = eventsHtml;
         }
 
-        // Fetch events on page load
-        document.addEventListener('DOMContentLoaded', fetchAndDisplayEvents);
+        // =================== EVENT STATUS DASHBOARD LOGIC ===================
+        async function saveEventStatusToFirestore(eventList) {
+            try {
+                const db = await initFirebaseIfNeeded();
+                const batch = db.batch();
+                const collectionRef = db.collection('eventStatus');
+                const snapshot = await collectionRef.get();
+                snapshot.forEach(doc => batch.delete(doc.ref));
+                eventList.forEach(event => {
+                    const docRef = collectionRef.doc();
+                    batch.set(docRef, event);
+                });
+                await batch.commit();
+            } catch (error) {
+                console.error('Firestore Save Error:', error);
+            }
+        }
+
+        async function loadEventStatusFromFirestore() {
+            try {
+                const db = await initFirebaseIfNeeded();
+                const snapshot = await db.collection('eventStatus').get();
+                return snapshot.docs.map(doc => doc.data());
+            } catch (error) {
+                console.error('Firestore Load Error:', error);
+                return [];
+            }
+        }
+
+        function updateDashboardUIEvent(finished = 0, pending = 0) {
+            const total = finished + pending;
+            const percentage = total > 0 ? (finished / total) * 100 : 0;
+            document.getElementById('progress-bar-event').style.width = percentage.toFixed(2) + '%';
+            document.getElementById('progress-percentage-event').textContent = percentage.toFixed(0) + '%';
+            document.getElementById('finished-count-event').textContent = finished.toLocaleString();
+            document.getElementById('pending-count-event').textContent = pending.toLocaleString();
+            document.getElementById('total-count-event').textContent = total.toLocaleString();
+        }
+
+        function renderWaitingTableEvent(waitingEvents) {
+            const tbody = document.getElementById('waiting-list-tbody-event');
+            const tableCard = document.getElementById('table-container-event');
+            document.getElementById('waiting-list-count-event').textContent = waitingEvents.length;
+            tbody.innerHTML = '';
+            if (waitingEvents.length === 0) { tableCard.classList.add('hidden'); return; }
+            tableCard.classList.remove('hidden');
+            waitingEvents.forEach(event => {
+                const row = `<tr><td class="px-6 py-4 whitespace-normal text-sm font-medium text-slate-900 text-left">${event.title}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-left">${new Date(event.date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric'})}</td></tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function processNewDataEvent(eventList = []) {
+            const finished = eventList.filter(e => e.status === 'found').length;
+            const pending = eventList.filter(e => e.status === 'waiting').length;
+            updateDashboardUIEvent(finished, pending);
+            renderWaitingTableEvent(eventList.filter(e => e.status === 'waiting'));
+        }
+
+        function parseEventCSV(text) {
+            const lines = text.trim().replace(/^\uFEFF/, '').split(/\r?\n/);
+            if (lines.length < 2) throw new Error("ไฟล์ไม่มีข้อมูล");
+            const csvRegex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+            const headers = lines[0].split(csvRegex).map(h => h.trim().toLowerCase().replace(/"/g, ''));
+            const idx = { title: headers.indexOf("event title"), date: headers.indexOf("event date"), status: headers.indexOf("email status") };
+            if (idx.title === -1 || idx.date === -1 || idx.status === -1) throw new Error("ไม่พบคอลัมน์ที่จำเป็น (event title, event date, email status)");
+            const eventList = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i]) continue;
+                const row = lines[i].split(csvRegex);
+                if (row.length === headers.length) {
+                    eventList.push({ title: row[idx.title]?.replace(/"/g, '').trim(), date: row[idx.date]?.replace(/"/g, '').trim(), status: row[idx.status]?.replace(/"/g, '').trim().toLowerCase() });
+                }
+            }
+            return eventList;
+        }
+
+        async function handleFileUploadEvent() {
+            const uploader = document.getElementById('csv-uploader-event');
+            const passwordInput = document.getElementById('admin-password-event');
+            const statusEl = document.getElementById('upload-status-event');
+            const file = uploader.files[0];
+            if (passwordInput.value !== 'OA2025') { statusEl.textContent = "รหัสผ่านไม่ถูกต้อง"; statusEl.className = "text-center text-sm mt-3 h-4 text-red-500"; return; }
+            if (!file) { statusEl.textContent = "กรุณาเลือกไฟล์ CSV ก่อน"; statusEl.className = "text-center text-sm mt-3 h-4 text-yellow-500"; return; }
+            statusEl.textContent = "กำลังประมวลผล..."; statusEl.className = "text-center text-sm mt-3 h-4 text-blue-500";
+            try {
+                const text = await file.text();
+                const eventList = parseEventCSV(text);
+                statusEl.textContent = "กำลังอัพเดทข้อมูล...";
+                await saveEventStatusToFirestore(eventList); // Save to Firestore
+                processNewDataEvent(eventList);
+                statusEl.textContent = "อัพเดทสำเร็จ!"; statusEl.className = "text-center text-sm mt-3 h-4 text-green-500";
+                passwordInput.value = ''; uploader.value = '';
+                setTimeout(() => { statusEl.textContent = ""; document.getElementById('uploader-section-event').classList.add('hidden'); }, 2000);
+            } catch (error) { console.error("Upload Error:", error); statusEl.textContent = `ผิดพลาด: ${error.message}`; statusEl.className = "text-center text-sm mt-3 h-4 text-red-500"; }
+        }
+
+        async function setupEventListenersEvent() {
+            document.getElementById('upload-btn-event').addEventListener('click', handleFileUploadEvent);
+            document.getElementById('toggle-uploader-btn-event').addEventListener('click', () => {
+                document.getElementById('uploader-section-event').classList.toggle('hidden');
+            });
+            document.getElementById('toggle-table-btn-event').addEventListener('click', () => {
+                document.getElementById('table-content-event').classList.toggle('hidden');
+                document.getElementById('table-chevron-event').classList.toggle('rotate-180');
+            });
+        }
+
+        async function loadAndDisplayEventStatus() {
+            const eventList = await loadEventStatusFromFirestore();
+            processNewDataEvent(eventList);
+        }
+
+        // Initialize event dashboard and fetch events on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListenersEvent();
+            loadAndDisplayEventStatus(); // Load from Firestore on page load
+            fetchAndDisplayEvents();
+        });
     </script>
 </body>
 </html>
