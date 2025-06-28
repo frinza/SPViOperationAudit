@@ -358,9 +358,10 @@
                         </div>
                         <div id="final-report-table-container" class="table-container border border-slate-200 rounded-lg"></div>
                         <div class="mt-4 flex flex-col sm:flex-row gap-4 no-print">
-                             <button id="print-final-report-btn" class="flex-1 inline-flex items-center justify-center gap-2 bg-gray-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                            <button id="print-final-report-btn" class="flex-1 inline-flex items-center justify-center gap-2 bg-gray-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                                <!-- Printer icon (Heroicons) -->
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V4a1 1 0 011-1h10a1 1 0 011 1v5M6 18v2a1 1 0 001 1h10a1 1 0 001-1v-2M6 14h12a2 2 0 002-2V9a2 2 0 00-2-2H6a2 2 0 00-2 2v3a2 2 0 002 2z" />
                                 </svg>
                                 พิมพ์รายงาน
                             </button>
@@ -369,7 +370,8 @@
                                 Export CSV
                             </button>
                             <button id="exportJsonButton" class="flex-1 inline-flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
-                               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
+                                <!-- Curly braces icon for JSON -->
+                                <span class="text-lg font-bold">{ }</span>
                                 Export JSON
                             </button>
                         </div>
@@ -383,6 +385,27 @@
         let cvReady = false;
         function onOpenCvReady() {
             cvReady = true;
+            const textScannerTab = document.getElementById('text-scanner-tab');
+            const cameraViewBox = document.getElementById('camera-view-box');
+            const textScannerView = document.getElementById('text-scanner-view');
+            const textScannerVideo = document.getElementById('text-scanner-video');
+            if (
+                textScannerTab && textScannerTab.classList.contains('active') &&
+                cameraViewBox && !cameraViewBox.classList.contains('hidden')
+            ) {
+                // If video is not playing, start it
+                if (textScannerView && !textScannerView.classList.contains('hidden')) {
+                    if (textScannerVideo && textScannerVideo.srcObject == null) {
+                        if (typeof startTextScanner === 'function') startTextScanner();
+                    }
+                }
+                if (typeof stopOcrStreaming === 'function') stopOcrStreaming();
+                if (typeof startOcrStreaming === 'function') startOcrStreaming();
+                const scannerResultsEl = document.getElementById('scanner-results');
+                if (scannerResultsEl) {
+                    scannerResultsEl.innerHTML = `<p class="text-green-600">OpenCV is ready. Scanner refreshed.</p>`;
+                }
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -392,6 +415,8 @@
             let state = getInitialState();
             let finalSummaryData = {};
             let activeStream = null;
+            let ocrStreaming = false;
+            let ocrStreamInterval = null;
 
             function getInitialState() {
                 return {
@@ -798,6 +823,21 @@
 
             function finalizeFromFirstCount() {
                 if (!state.netDiffData.length) return showModal("Warning", "Please process the first count (Step 2).");
+                // --- Patch: Sync latest DEMO counts before finalizing ---
+                state.netDiffData.forEach(item => {
+                    if (item.isDemo) {
+                        const demoCount = state.demoCounts[item.SKU];
+                        if (demoCount && typeof demoCount.qty === 'number') {
+                            item.Recount = demoCount.qty;
+                            item.FinalDiff = demoCount.qty - item.SOH;
+                            item.ReasonFinal = demoCount.reason || 'Manual';
+                        } else {
+                            item.Recount = 0;
+                            item.FinalDiff = -item.SOH;
+                            item.ReasonFinal = 'Not Counted';
+                        }
+                    }
+                });
                 state.reconciledData = state.netDiffData.map(item => ({...item}));
                 applyFinalReportView();
                 renderFinalReportCharts();
@@ -1030,6 +1070,7 @@
                     barcodeScannerView.classList.remove('hidden');
                     textScannerView.classList.add('hidden');
                     stopTextScanner();
+                    stopOcrStreaming();
                     startBarcodeScanner();
                 } else {
                     textScannerTab.classList.add('active');
@@ -1038,6 +1079,7 @@
                     barcodeScannerView.classList.add('hidden');
                     stopBarcodeScanner();
                     startTextScanner();
+                    setTimeout(startOcrStreaming, 800); // Give camera time to start
                 }
             };
 
@@ -1054,13 +1096,16 @@
                 }
             };
             
-            const stopTextScanner = () => {
-                if (activeStream) {
-                    activeStream.getTracks().forEach(track => track.stop());
-                    activeStream = null;
+            function stopTextScanner() {
+                // Stop all video tracks from the video element, not just activeStream
+                const video = document.getElementById('text-scanner-video');
+                if (video && video.srcObject) {
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                    video.srcObject = null;
                 }
-                 textScannerVideo.srcObject = null;
-            };
+                activeStream = null;
+            }
             
             const captureAndRecognize = async () => {
                 if (!activeStream || !cvReady) {
@@ -1119,17 +1164,74 @@
                 }
             };
 
+            const startOcrStreaming = () => {
+                if (ocrStreaming) return;
+                ocrStreaming = true;
+                scannerResultsEl.innerHTML = '<p class="text-blue-500">กำลังสแกนแบบเรียลไทม์...</p>';
+                ocrStreamInterval = setInterval(processOcrFrame, 700); // every 700ms
+            };
+
+            const stopOcrStreaming = () => {
+                ocrStreaming = false;
+                if (ocrStreamInterval) clearInterval(ocrStreamInterval);
+                ocrStreamInterval = null;
+            };
+
+            const processOcrFrame = async () => {
+                if (!ocrStreaming || !activeStream || !cvReady) return;
+                const video = textScannerVideo;
+                if (video.readyState < 2) return;
+                const canvas = document.createElement('canvas');
+                // Crop to lower half, adjust as needed
+                const cropY = video.videoHeight * 0.55;
+                const cropHeight = video.videoHeight * 0.12;
+                canvas.width = video.videoWidth;
+                canvas.height = cropHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, cropY, video.videoWidth, cropHeight, 0, 0, video.videoWidth, cropHeight);
+                let src = cv.imread(canvas);
+                let dst = new cv.Mat();
+                cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                cv.equalizeHist(dst, dst);
+                cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
+                cv.imshow(canvas, dst);
+                src.delete();
+                dst.delete();
+                try {
+                    const result = await Tesseract.recognize(canvas, 'eng', {
+                        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+                    });
+                    const text = result.data.text.replace(/\s/g, '').toUpperCase();
+                    const match = text.match(/[A-Z0-9]{12}/);
+                    if (match) {
+                        scannerResultsEl.innerHTML = `<p>Serial Number: <b>${match[0]}</b></p>`;
+                        processScannedCode(match[0], 'Text Scan');
+                        stopOcrStreaming(); // Stop after successful scan
+                    } else {
+                        scannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning... (No serial found yet)</p>`;
+                    }
+                } catch (err) {
+                    scannerResultsEl.innerHTML = `<p class='text-red-500'>OCR Error: ${err.message}</p>`;
+                }
+            };
+
             const startBarcodeScanner = () => {
                  Quagga.init({ inputStream: { name: "Live", type: "LiveStream", target: getEl('qr-reader'), constraints: { facingMode: "environment" } }, decoder: { readers: [ "code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "upc_reader", "upc_e_reader" ] }, locate: true }, (err) => { if (err) { scannerResultsEl.innerHTML = `<p class="text-red-500">Camera error: ${err.message}</p>`; return; } Quagga.start(); });
                  Quagga.onDetected(onBarcodeDetected);
             };
             
-            const stopBarcodeScanner = () => {
-                if(typeof Quagga !== 'undefined' && Quagga.running) {
+            function stopBarcodeScanner() {
+                if (typeof Quagga !== 'undefined' && Quagga.running) {
                     Quagga.offDetected(onBarcodeDetected);
                     Quagga.stop();
                 }
-            };
+                // Extra cleanup: stop video tracks from Quagga's video element
+                const quaggaVideo = document.querySelector('#qr-reader video');
+                if (quaggaVideo && quaggaVideo.srcObject) {
+                    quaggaVideo.srcObject.getTracks().forEach(track => track.stop());
+                    quaggaVideo.srcObject = null;
+                }
+            }
             
             const openScannerModal = () => {
                 cameraViewBox.classList.remove('hidden');
@@ -1137,31 +1239,40 @@
             };
 
             const closeScannerModal = () => {
+                stopTextScanner(); // This will stop all video tracks and clear srcObject
                 cameraViewBox.classList.add('hidden');
                 stopBarcodeScanner();
-                stopTextScanner();
+                stopOcrStreaming();
+                const quaggaVideo = document.querySelector('#qr-reader video');
+                if (quaggaVideo && quaggaVideo.srcObject) {
+                    quaggaVideo.srcObject.getTracks().forEach(track => track.stop());
+                    quaggaVideo.srcObject = null;
+                }
             };
             
             const processScannedCode = (code, reason) => {
-                 const sku = code.toUpperCase();
-                 const item = state.demoMaster.find(i => i.SKU === sku);
+                const sku = code.toUpperCase();
+                // Try direct match
+                let item = state.demoMaster.find(i => i.SKU === sku);
+                // If not found, try with 'S' prefix
+                if (!item) item = state.demoMaster.find(i => i.SKU === 'S' + sku);
 
-                 if (item) {
+                if (item) {
                     playSound('success');
                     let currentCount = typeof item.counted === 'number' ? item.counted : 0;
                     item.counted = currentCount + 1;
-                    state.demoCounts[sku] = { qty: item.counted, reason: reason };
-                    
+                    state.demoCounts[item.SKU] = { qty: item.counted, reason: reason };
                     applyDemoView();
-                    
-                    const row = getEl('demo-count-container').querySelector(`tr[data-sku="${sku}"]`);
-                    if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); row.classList.add('ring-2', 'ring-offset-2', 'ring-green-500'); setTimeout(() => row.classList.remove('ring-2', 'ring-offset-2', 'ring-green-500'), 800); }
-                    
+                    const row = getEl('demo-count-container').querySelector(`tr[data-sku="${item.SKU}"]`);
+                    if (row) {
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        row.classList.add('ring-2', 'ring-offset-2', 'ring-green-500');
+                        setTimeout(() => row.classList.remove('ring-2', 'ring-offset-2', 'ring-green-500'), 800);
+                    }
                     const diff = item.counted - item.SOH;
                     let statusText = (diff === 0) ? 'Matched' : (diff > 0) ? 'Overage' : 'Shortage';
                     let statusColor = (diff === 0) ? 'text-green-600' : (diff > 0) ? 'text-yellow-600' : 'text-blue-600';
-
-                    scannerResultsEl.innerHTML = `<div class="text-left w-full space-y-1"><p class="font-medium text-slate-800">${item.Description}</p><p class="text-sm text-slate-500">SKU: ${sku}</p><div class="flex justify-between items-baseline pt-1"><span class="text-lg font-bold text-slate-700">Count: <span class="text-blue-600">${item.counted}</span> / ${item.SOH}</span><span class="text-lg font-bold ${statusColor}">${statusText}</span></div></div>`;
+                    scannerResultsEl.innerHTML = `<div class="text-left w-full space-y-1"><p class="font-medium text-slate-800">${item.Description}</p><p class="text-sm text-slate-500">SKU: ${item.SKU}</p><div class="flex justify-between items-baseline pt-1"><span class="text-lg font-bold text-slate-700">Count: <span class="text-blue-600">${item.counted}</span> / ${item.SOH}</span><span class="text-lg font-bold ${statusColor}">${statusText}</span></div></div>`;
                 } else {
                     playSound('error');
                     scannerResultsEl.innerHTML = `<div class="text-center w-full"><p class="font-bold text-red-600">SKU Not Found</p><p class="text-sm text-slate-500">${sku}</p></div>`;
