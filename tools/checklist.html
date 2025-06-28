@@ -37,6 +37,10 @@
             .audit-item { page-break-inside: avoid; }
             .notes-input { border: 1px solid #d1d5db !important; }
             .print-only { display: block; }
+            .signature-section {
+                break-inside: avoid-page !important;
+                page-break-inside: avoid !important;
+            }
         }
     </style>
 </head>
@@ -129,17 +133,17 @@
             </button>
         </footer>
 
-        <div class="max-w-5xl mx-auto mt-12 pt-8 border-t-2 border-dashed border-gray-400 print-only">
+        <div class="max-w-5xl mx-auto mt-12 pt-8 border-t-2 border-dashed border-gray-400 print-only signature-section">
             <div class="grid grid-cols-2 gap-8 text-center" style="font-size: 11pt;">
                 <div>
-                    <p class="mb-16">ลงชื่อ .................................................</p>
+                    <p class="mb-2">ลงชื่อ .................................................</p>
                     <p>(ผู้ตรวจสอบ / Auditor)</p>
-                    <p>วันที่: ........ / ................ / ............</p>
+                    <p class="mt-4">วันที่: ........ / ................ / ............</p>
                 </div>
                 <div>
-                    <p class="mb-16">ลงชื่อ .................................................</p>
+                    <p class="mb-2">ลงชื่อ .................................................</p>
                     <p>(ผู้รับการตรวจสอบ / Auditee)</p>
-                    <p>วันที่: ........ / ................ / ............</p>
+                    <p class="mt-4">วันที่: ........ / ................ / ............</p>
                 </div>
             </div>
         </div>

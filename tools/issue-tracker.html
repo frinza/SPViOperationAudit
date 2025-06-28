@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบติดตามประเด็น (Issue Tracker) - Google Script</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        .modal-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background-color: white; padding: 2rem; border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); width: 90%; max-width: 500px;
+        }
+        tr.is-new { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { background-color: #eff6ff; } to { background-color: white; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">  
+    <button 
+        onclick="window.location.href='../index.html'"
+        class="no-print bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded mb-4 mt-6 mx-8"
+    >
+        &larr; กลับหน้าหลัก
+    </button>
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-slate-900">ระบบติดตามประเด็น (Issue Tracker)</h1>
+            <p class="mt-2 text-slate-500">จัดการและติดตามรายการที่ต้องแก้ไขจากการตรวจสอบทั้งหมด</p>
+             <div id="connection-status" class="mt-4 text-sm text-slate-400">Loading...</div>
+        </header>
+
+        <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+                <button id="add-issue-btn" class="w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                    + เพิ่มประเด็นใหม่
+                </button>
+                <input type="text" id="filter-input" placeholder="ค้นหาประเด็น..." class="w-full md:flex-grow p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">สาขา</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ประเด็น</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">สถานะ</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ผู้รับผิดชอบ</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ครบกำหนด</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="issue-list" class="bg-white divide-y divide-slate-200">
+                        <tr><td colspan="6" class="text-center p-8 text-slate-500">กำลังโหลดข้อมูล...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="issue-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h2 id="modal-title" class="text-2xl font-bold mb-6">เพิ่มประเด็นใหม่</h2>
+            <form id="issue-form">
+                <input type="hidden" id="modal-issue-id">
+                <div class="mb-4">
+                    <label for="modal-branch" class="block text-sm font-medium text-slate-700 mb-1">ชื่อสาขา</label>
+                    <input type="text" id="modal-branch" class="w-full p-2 border border-slate-300 rounded-lg" required>
+                </div>
+                <div class="mb-6">
+                    <label for="modal-issue" class="block text-sm font-medium text-slate-700 mb-1">รายละเอียดประเด็น</label>
+                    <textarea id="modal-issue" rows="3" class="w-full p-2 border border-slate-300 rounded-lg" required></textarea>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="modal-cancel-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">ยกเลิก</button>
+                    <button type="submit" id="modal-save-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">ยืนยันการลบ</h2>
+            <p>คุณต้องการลบประเด็นนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+            <div class="flex justify-end gap-4 mt-6">
+                <button type="button" id="delete-cancel-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">ยกเลิก</button>
+                <button type="button" id="delete-confirm-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">ยืนยันการลบ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwnDq_TuWsM-0ICVNX9MzmSYnsCTEhAjob44CKeKmS4W-APbwpsyIQc7mWkQeS53WsuMA/exec';
+        const APP_ID = 'main-branch-audits'; // A unique ID for this instance of the tracker
+
+        // --- State ---
+        let allIssues = [];
+        let issueToDeleteId = null;
+
+        // --- UI Elements ---
+        const issueListEl = document.getElementById('issue-list');
+        const filterInput = document.getElementById('filter-input');
+        const statusEl = document.getElementById('connection-status');
+        const addIssueBtn = document.getElementById('add-issue-btn');
+        
+        // Modals
+        const issueModal = document.getElementById('issue-modal');
+        const deleteModal = document.getElementById('delete-modal');
+        const issueForm = document.getElementById('issue-form');
+
+        // --- Data Fetching & Saving ---
+        function showStatus(message, isError = false) {
+            statusEl.textContent = message;
+            statusEl.className = `mt-4 text-sm ${isError ? 'text-red-500' : 'text-slate-400'}`;
+        }
+        
+        async function saveData() {
+            if (!GAS_WEB_APP_URL.startsWith('http')) {
+                showStatus('Please set your Google Apps Script URL first.', true);
+                return;
+            }
+            showStatus('Saving...');
+            try {
+                // IMPORTANT: Apps Script simple POSTs often work best with 'no-cors' mode 
+                // and sending the payload as text. The script then parses the text.
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', 
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ appId: APP_ID, issues: allIssues }),
+                    redirect: 'follow'
+                });
+                
+                // NOTE: 'no-cors' mode means we can't read the response. We optimistically assume it worked.
+                // This is a common pattern for simple Apps Script webhooks.
+                showStatus('All changes saved.', false);
+
+            } catch (error) {
+                console.error('Error saving data:', error);
+                showStatus(`Save failed: ${error.message}`, true);
+            }
+        }
+
+        async function loadData() {
+            if (!GAS_WEB_APP_URL.startsWith('http')) {
+                issueListEl.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500">Please configure the Google Apps Script URL in the code.</td></tr>`;
+                showStatus('Not configured.', true);
+                return;
+            }
+            showStatus('Loading data from cloud...');
+            try {
+                const response = await fetch(`${GAS_WEB_APP_URL}?appId=${APP_ID}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                allIssues = data.issues || [];
+                renderIssues();
+                showStatus('Data loaded successfully.', false);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                issueListEl.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500">Failed to load data: ${error.message}</td></tr>`;
+                showStatus(`Load failed: ${error.message}`, true);
+            }
+        }
+
+        // --- Rendering ---
+        const renderIssues = () => {
+            issueListEl.innerHTML = '';
+            const filterText = filterInput.value.toLowerCase();
+            
+            const filteredIssues = allIssues.filter(issue => 
+                (issue.branch && issue.branch.toLowerCase().includes(filterText)) ||
+                (issue.issue && issue.issue.toLowerCase().includes(filterText))
+            );
+
+            if (filteredIssues.length === 0) {
+                 issueListEl.innerHTML = '<tr><td colspan="6" class="text-center p-8 text-slate-500">ไม่พบประเด็นที่ตรงกัน หรือยังไม่มีข้อมูล</td></tr>';
+                 return;
+            }
+
+            filteredIssues.sort((a, b) => b.id - a.id); // Sort by most recent first
+
+            filteredIssues.forEach(issue => {
+                const row = document.createElement('tr');
+                row.className = issue.isNew ? "hover:bg-slate-50 is-new" : "hover:bg-slate-50";
+                delete issue.isNew; // remove the flag after use
+
+                row.innerHTML = `
+                    <td class="px-4 py-4 whitespace-nowrap font-medium text-slate-800">${issue.branch || ''}</td>
+                    <td class="px-4 py-4 text-slate-600">${issue.issue || ''}</td>
+                    <td class="px-4 py-4">
+                        <select class="status-select w-full p-1 border border-slate-300 rounded-md focus:ring-1 focus:ring-blue-500" data-id="${issue.id}">
+                            <option value="รอดำเนินการ" ${issue.status === 'รอดำเนินการ' ? 'selected' : ''}>รอดำเนินการ</option>
+                            <option value="กำลังแก้ไข" ${issue.status === 'กำลังแก้ไข' ? 'selected' : ''}>กำลังแก้ไข</option>
+                            <option value="เสร็จสิ้น" ${issue.status === 'เสร็จสิ้น' ? 'selected' : ''}>เสร็จสิ้น</option>
+                        </select>
+                    </td>
+                    <td class="px-4 py-4">
+                        <input type="text" class="field-input w-full p-1 border border-slate-300 rounded-md" data-id="${issue.id}" data-field="assignee" value="${issue.assignee || ''}" placeholder="ระบุผู้รับผิดชอบ">
+                    </td>
+                    <td class="px-4 py-4">
+                        <input type="date" class="field-input w-full p-1 border border-slate-300 rounded-md" data-id="${issue.id}" data-field="dueDate" value="${issue.dueDate || ''}">
+                    </td>
+                    <td class="px-4 py-4 text-right whitespace-nowrap">
+                        <button class="edit-btn text-blue-600 hover:text-blue-800 mr-3" data-id="${issue.id}">แก้ไข</button>
+                        <button class="delete-btn text-red-600 hover:text-red-800" data-id="${issue.id}">ลบ</button>
+                    </td>
+                `;
+                issueListEl.appendChild(row);
+            });
+        };
+
+        // --- Event Handlers & Modal Logic ---
+        function showIssueModal(issue = null) {
+            const modalTitle = document.getElementById('modal-title');
+            const modalIssueId = document.getElementById('modal-issue-id');
+            const modalBranch = document.getElementById('modal-branch');
+            const modalIssue = document.getElementById('modal-issue');
+
+            if (issue) { // Editing existing issue
+                modalTitle.textContent = 'แก้ไขประเด็น';
+                modalIssueId.value = issue.id;
+                modalBranch.value = issue.branch;
+                modalIssue.value = issue.issue;
+            } else { // Adding new issue
+                modalTitle.textContent = 'เพิ่มประเด็นใหม่';
+                issueForm.reset();
+            }
+            issueModal.classList.remove('hidden');
+        }
+        function hideIssueModal() { issueModal.classList.add('hidden'); }
+        function showDeleteModal(id) { issueToDeleteId = id; deleteModal.classList.remove('hidden'); }
+        function hideDeleteModal() { issueToDeleteId = null; deleteModal.classList.add('hidden'); }
+
+        // --- Event Listeners ---
+        addIssueBtn.addEventListener('click', () => showIssueModal());
+
+        issueForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('modal-issue-id').value);
+            const branch = document.getElementById('modal-branch').value;
+            const issueText = document.getElementById('modal-issue').value;
+
+            if (id) { // Editing existing item
+                const issue = allIssues.find(i => i.id === id);
+                if (issue) {
+                    issue.branch = branch;
+                    issue.issue = issueText;
+                }
+            } else { // Adding new item
+                const newIssue = {
+                    id: Date.now(),
+                    branch: branch,
+                    issue: issueText,
+                    status: 'รอดำเนินการ',
+                    assignee: '',
+                    dueDate: '',
+                    isNew: true // flag for animation
+                };
+                allIssues.push(newIssue);
+            }
+            renderIssues();
+            saveData();
+            hideIssueModal();
+        });
+        
+        document.getElementById('modal-cancel-btn').addEventListener('click', hideIssueModal);
+        document.getElementById('delete-cancel-btn').addEventListener('click', hideDeleteModal);
+        
+        document.getElementById('delete-confirm-btn').addEventListener('click', () => {
+            if (issueToDeleteId) {
+                allIssues = allIssues.filter(i => i.id !== issueToDeleteId);
+                renderIssues();
+                saveData();
+                hideDeleteModal();
+            }
+        });
+        
+        issueListEl.addEventListener('click', e => {
+            const id = parseInt(e.target.dataset.id);
+            if (!id) return;
+            
+            if (e.target.classList.contains('delete-btn')) showDeleteModal(id);
+            if (e.target.classList.contains('edit-btn')) {
+                const issueToEdit = allIssues.find(i => i.id === id);
+                if (issueToEdit) showIssueModal(issueToEdit);
+            }
+        });
+
+        // Debounce for live input saving
+        let debounceTimer;
+        function handleFieldUpdate(e) {
+            const target = e.target;
+            const id = parseInt(target.dataset.id);
+            const issue = allIssues.find(i => i.id === id);
+            if(issue) {
+                const field = target.dataset.field || (target.classList.contains('status-select') ? 'status' : null);
+                if(field) {
+                  issue[field] = target.value;
+                }
+            }
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(saveData, 750); // Save 750ms after user stops typing
+        }
+
+        issueListEl.addEventListener('input', e => {
+            if (e.target.classList.contains('field-input')) handleFieldUpdate(e);
+        });
+        issueListEl.addEventListener('change', e => {
+            if (e.target.classList.contains('status-select')) handleFieldUpdate(e);
+        });
+
+        filterInput.addEventListener('keyup', renderIssues);
+        
+        // --- Initial Load ---
+        window.onload = loadData;
+    </script>
+</body>
+</html>

@@ -41,40 +41,36 @@
 
         @media print {
             html, body {
-                width: 100%;
-                margin: 0;
+                width: 210mm;
+                min-height: 297mm;
+                margin: 0 auto;
                 padding: 0;
-                overflow: visible;
+                background: #fff;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 18mm 12mm 18mm 12mm;
             }
             body { 
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
-                font-size: 9pt; /* Reduced font size */
-                background-color: #fff; 
+                font-size: 9pt;
             }
             .no-print { display: none !important; }
-
             .print-wrapper {
                 max-width: 100% !important;
-                padding: 0.5cm !important; /* Add margins */
+                padding: 0 !important;
                 margin: 0 !important;
             }
-
             .print-container { 
                 max-width: 100% !important; 
                 box-shadow: none !important; 
                 border: 1px solid #ccc !important; 
-                padding: 0.4rem !important; /* Tighter padding */
-                margin-bottom: 0.5rem !important; /* Tighter margin */
-                page-break-inside: avoid !important; /* Crucial rule */
+                padding: 0.4rem !important;
+                margin-bottom: 0.5rem !important;
+                break-inside: avoid-page !important;
+                page-break-inside: avoid !important;
             }
-            
-            .print-container h2, .print-container h3 {
-                font-size: 1.1em;
-                margin-bottom: 0.5rem;
-                padding-bottom: 0.25rem;
-            }
-
             .main-grid { 
                 display: block !important; 
                 width: 100% !important;
@@ -86,30 +82,43 @@
             .sticky { position: static !important; }
             .print-only { display: block; }
             header, footer, #image-modal { display: none; }
-
-            /* Make dynamic rows very compact */
             .dynamic-row {
                 margin-bottom: 0.2rem !important;
                 padding: 0 !important;
+                break-inside: avoid-page !important;
+                page-break-inside: avoid !important;
             }
-             .dynamic-row input[type="text"], .dynamic-row input[type="number"] {
+            .dynamic-row input[type="text"], .dynamic-row input[type="number"] {
                 padding: 1px 4px !important;
                 font-size: 8.5pt !important;
-             }
-            
+            }
             #print-appendix {
-                page-break-before: always;
+                page-break-before: auto !important;
+                break-before: auto !important;
+                margin-top: 1.5rem;
             }
             .appendix-item {
-                page-break-inside: avoid;
+                break-inside: avoid-page !important;
+                page-break-inside: avoid !important;
                 border: 1px solid #ccc;
                 padding: 0.5rem;
                 margin-bottom: 1rem;
             }
             .appendix-item img {
-                max-width: 100%;
+                max-width: 60%;
                 height: auto;
                 border: 1px solid #eee;
+                display: block;
+                margin: 0.5rem auto;
+            }
+            /* Prevent grid headers from being orphaned */
+            .print-container h2, .print-container h3, .print-container .grid {
+                break-after: avoid-page !important;
+                page-break-after: avoid !important;
+            }
+            .signature-section {
+                break-inside: avoid-page !important;
+                page-break-inside: avoid !important;
             }
         }
     </style>
@@ -272,17 +281,17 @@
         </div>
 
         <!-- Signature Section -->
-        <div class="mt-8 pt-8 border-t-2 border-dashed border-gray-400 print-only">
+        <div class="max-w-5xl mx-auto mt-12 pt-8 border-t-2 border-dashed border-gray-400 print-only signature-section">
             <div class="grid grid-cols-2 gap-8 text-center" style="font-size: 11pt;">
                 <div>
-                    <p class="mb-16">ลงชื่อ .................................................</p>
-                    <p>(ผู้ตรวจนับ / Auditor)</p>
-                    <p>วันที่: ........ / ................ / ............</p>
+                    <p class="mb-2">ลงชื่อ .................................................</p>
+                    <p>(ผู้ตรวจสอบ / Auditor)</p>
+                    <p class="mt-4">วันที่: ........ / ................ / ............</p>
                 </div>
                 <div>
-                    <p class="mb-16">ลงชื่อ .................................................</p>
-                    <p>(ผู้ดูแลเงิน / Auditee)</p>
-                    <p>วันที่: ........ / ................ / ............</p>
+                    <p class="mb-2">ลงชื่อ .................................................</p>
+                    <p>(ผู้รับการตรวจสอบ / Auditee)</p>
+                    <p class="mt-4">วันที่: ........ / ................ / ............</p>
                 </div>
             </div>
         </div>
