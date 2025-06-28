@@ -93,13 +93,78 @@
         }
         /* Print Styles */
         @media print {
-            body { font-size: 9pt; }
-            .no-print { display: none !important; }
-            #final-report-container { display: block !important; }
-            .table-container { max-height: none; overflow-y: visible; }
-            canvas { max-width: 100% !important; height: auto !important; }
-            .grid { display: block !important; }
-            .md\:grid-cols-2 > * { width: 100%; margin-bottom: 1rem; }
+            body {
+                font-size: 10pt;
+                background: #fff !important;
+                color: #000 !important;
+            }
+            .container, .max-w-4xl, .mx-auto, .p-4, .md\:p-8 {
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 0 !important;
+            }
+            .table-container {
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+            }
+            th, td {
+                border: 1px solid #888 !important;
+                padding: 4px 8px !important;
+                background: #fff !important;
+                color: #000 !important;
+            }
+            th {
+                background: #f1f5f9 !important;
+                font-weight: bold !important;
+            }
+            .bg-white, .bg-slate-50, .bg-slate-100, .bg-slate-200, .bg-blue-100, .bg-green-100, .bg-red-100, .bg-amber-50 {
+                background: #fff !important;
+            }
+            .rounded-2xl, .rounded-lg, .rounded {
+                border-radius: 0 !important;
+            }
+            .shadow-lg, .shadow-sm, .shadow-xl {
+                box-shadow: none !important;
+            }
+            .border, .border-slate-200, .border-blue-200, .border-amber-200, .border-amber-300 {
+                border-color: #888 !important;
+            }
+            .text-slate-500, .text-slate-600, .text-slate-700, .text-slate-800, .text-slate-900,
+            .text-blue-600, .text-green-600, .text-red-600, .text-amber-800 {
+                color: #000 !important;
+            }
+            .font-bold, .font-semibold {
+                font-weight: bold !important;
+            }
+            .no-print, #loader-overlay, #modal-container, #camera-view-box, #file-ops-container, #upload-container, #workspace-container > nav, #main-tab-demo, #main-tab-workflow, #openScannerBtn, #closeScannerBtn, #barcode-scanner-tab, #text-scanner-tab, #scanner-results, #print-final-report-btn, #exportCsvButton, #exportJsonButton, #refreshChartsButton, #exportDemoCsvButton, #newJobButton {
+                display: none !important;
+            }
+            canvas {
+                max-width: 100% !important;
+                height: auto !important;
+                display: block !important;
+                page-break-inside: avoid !important;
+            }
+            h1, h2, h3, h4, h5 {
+                page-break-after: avoid;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            input, button, select, textarea {
+                display: none !important;
+            }
+            th {
+                position: static !important;
+                top: auto !important;
+                background-color: #f1f5f9 !important;
+                z-index: auto !important;
+                box-shadow: none !important;
+            }
         }
     </style>
 </head>
