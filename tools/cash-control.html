@@ -46,6 +46,8 @@
                 margin: 0 auto;
                 padding: 0;
                 background: #fff;
+                font-family: 'TH SarabunPSK', 'TH Sarabun New', 'Sarabun', 'Times New Roman', Times, serif !important;
+                color: #222 !important;
             }
             @page {
                 size: A4 portrait;
@@ -54,20 +56,26 @@
             body { 
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
-                font-size: 9pt;
+                font-size: 9pt !important;
+                line-height: 1.6 !important;
             }
             .no-print { display: none !important; }
             .print-wrapper {
                 max-width: 100% !important;
                 padding: 0 !important;
                 margin: 0 !important;
+                border: 2px solid #222 !important;
+                box-shadow: none !important;
+                background: #fff !important;
             }
             .print-container { 
                 max-width: 100% !important; 
                 box-shadow: none !important; 
-                border: 1px solid #ccc !important; 
-                padding: 0.4rem !important;
-                margin-bottom: 0.5rem !important;
+                border: 1px solid #bbb !important; 
+                border-radius: 0.5rem !important;
+                padding: 0.8rem 1.2rem !important;
+                margin-bottom: 1rem !important;
+                background: #fff !important;
                 break-inside: avoid-page !important;
                 page-break-inside: avoid !important;
             }
@@ -90,7 +98,41 @@
             }
             .dynamic-row input[type="text"], .dynamic-row input[type="number"] {
                 padding: 1px 4px !important;
-                font-size: 8.5pt !important;
+                font-size: 9pt !important;
+                border: 1px solid #bbb !important;
+                background: #fafafa !important;
+            }
+            h1, h2, h3 {
+                font-family: 'TH SarabunPSK', 'TH Sarabun New', 'Sarabun', 'Times New Roman', Times, serif !important;
+                color: #111 !important;
+                font-weight: bold !important;
+            }
+            h1 { font-size: 1rem !important; }
+            h2 { font-size: 1rem !important; }
+            h3 { font-size: 1rem !important; }
+            label, .text-gray-700, .text-gray-800, .text-gray-600 {
+                color: #222 !important;
+            }
+            .summary-value, .font-bold {
+                font-weight: bold !important;
+            }
+            .border-t, .border-t-2, .border-b, .border-dashed, .border-gray-400, .border-gray-300, .border-gray-700, .border-gray-800 {
+                border-color: #222 !important;
+            }
+            .certification {
+                border: 1.5px solid #222 !important;
+                border-radius: 0.5rem !important;
+                background: #f7f7f7 !important;
+                color: #222 !important;
+                font-size: 9pt !important;
+                margin: 2rem 0 1.5rem 0 !important;
+                padding: 1.2rem 1rem !important;
+            }
+            .signature-section {
+                margin-top: 2.5rem !important;
+                padding-top: 2rem !important;
+                border-top: 2px dashed #222 !important;
+                font-size: 9pt !important;
             }
             #print-appendix {
                 page-break-before: auto !important;
@@ -100,14 +142,16 @@
             .appendix-item {
                 break-inside: avoid-page !important;
                 page-break-inside: avoid !important;
-                border: 1px solid #ccc;
-                padding: 0.5rem;
-                margin-bottom: 1rem;
+                border: 1px solid #bbb !important;
+                border-radius: 0.4rem !important;
+                padding: 0.7rem 1rem !important;
+                margin-bottom: 1.2rem !important;
+                background: #fafafa !important;
             }
             .appendix-item img {
-                max-width: 60%;
+                max-width: 30%;
                 height: auto;
-                border: 1px solid #eee;
+                border: 1px solid #bbb;
                 display: block;
                 margin: 0.5rem auto;
             }
@@ -116,10 +160,50 @@
                 break-after: avoid-page !important;
                 page-break-after: avoid !important;
             }
-            .signature-section {
-                break-inside: avoid-page !important;
-                page-break-inside: avoid !important;
+
+            /* Print header */
+            .print-header {
+                display: block !important;
+                text-align: center;
+                font-size: 1.25rem;
+                font-weight: bold;
+                margin-bottom: 1.5rem;
+                border-bottom: 2px solid #222;
+                padding-bottom: 0.5rem;
+                letter-spacing: 1px;
             }
+ 
+            .header-info {
+                margin-bottom: 0.5rem !important;
+                padding-bottom: 0.5rem !important;
+                break-after: avoid !important;
+                page-break-after: avoid !important;
+            }
+            .print-container {
+                margin-bottom: 0.5rem !important;
+                padding-bottom: 0.5rem !important;
+            }
+            .mb-6, .my-8, .mt-12, .pt-8, .mt-6, .mb-4, .mt-4, .mb-2, .mt-2 {
+                margin-bottom: 0.5rem !important;
+                margin-top: 0.5rem !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+            }
+            .print-container {
+                break-after: avoid !important;
+                page-break-after: avoid !important;
+            }
+            .print-container + .print-container {
+                margin-top: 0 !important;
+            }
+            .print-wrapper {
+                padding-bottom: 0 !important;
+            }
+            .appendix-pagebreak {
+                page-break-before: always !important;
+                break-before: page !important;
+            }
+            .align-top { vertical-align: top !important; }
         }
     </style>
 </head>
@@ -131,6 +215,12 @@
         &larr; กลับหน้าหลัก
     </button>
     <div class="max-w-4xl mx-auto print-wrapper">
+        <!-- Print Header  -->
+        <div class="print-header print-only" style="display:none;">
+            รายงานการตรวจสอบเงินสด (Cash Control Audit Report)<br>
+            ฝ่ายตรวจสอบปฏิบัติการ (Operation Audit) / SPVi Public Company Limited
+        </div>
+ 
         <!-- Headers -->
         <header class="text-center mb-6 no-print">
             <h1 class="text-3xl font-bold text-gray-800">ระบบตรวจนับเงินสด</h1>
@@ -141,7 +231,7 @@
         </div>
 
         <!-- Header Information Section -->
-        <div class="bg-white p-6 rounded-xl shadow-lg mb-6 print-container">
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-6 print-container header-info">
             <h2 class="text-xl font-bold text-gray-700 border-b pb-3 mb-4">ข้อมูลการตรวจนับ</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -253,22 +343,28 @@
                             <input type="number" id="today-sales-system" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
                         </div>
                         
-                        <div class="border-t pt-3">
-                            <p class="text-sm font-medium text-gray-700">เงินที่นับได้ทั้งหมด (A)</p>
-                            <p id="total-assets-counted" class="summary-value text-blue-600">0.00</p>
-                            <p class="text-xs text-gray-500">(กองเงินสดย่อย+กองอื่นๆ)</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-700">ยอดเงินที่ควรมีทั้งหมด (B)</p>
-                            <p id="expected-balance" class="summary-value text-gray-800">0.00</p>
-                            <p class="text-xs text-gray-500">(ยอดตามระบบ - รอคืน - เอกสารจ่าย)</p>
+                        <div class="border-t pt-3 space-y-4 print:flex print:space-y-0 print:gap-8 print:items-start">
+                            <!-- เงินที่นับได้ทั้งหมด (A) -->
+                            <div class="print:w-1/3">
+                                <h3 class="text-sm font-medium text-gray-700">เงินที่นับได้ทั้งหมด (A)</h3>
+                                <p id="total-assets-counted" class="summary-value text-blue-600">0.00</p>
+                                <p class="text-xs text-gray-500">(กองเงินสดย่อย+กองอื่นๆ)</p>
+                            </div>
+                            <!-- ยอดเงินที่ควรมีทั้งหมด (B) -->
+                            <div class="print:w-1/3">
+                                <h3 class="text-sm font-medium text-gray-700">ยอดเงินที่ควรมีทั้งหมด (B)</h3>
+                                <p id="expected-balance" class="summary-value text-gray-800">0.00</p>
+                                <p class="text-xs text-gray-500">(ยอดตามระบบ - รอคืน - เอกสารจ่าย)</p>
+                            </div>
+                        
+                            <!-- ยอดเงินที่ต่าง (A-B) -->
+                            <div class="border-t-2 border-gray-300 pt-4 print:w-1/3 print:border-0 print:pt-0 print:align-top">
+                                <p class="text-lg font-bold text-gray-700">ผลต่างรวม (A-B)</p>
+                                <p id="difference" class="text-2xl font-bold result-zero">0.00</p>
+                                <p id="difference-label" class="text-sm font-bold result-zero"></p>
+                            </div>
                         </div>
 
-                        <div class="border-t-2 border-gray-300 pt-4">
-                            <p class="text-lg font-bold text-gray-700">ผลต่างรวม (A-B)</p>
-                            <p id="difference" class="text-2xl font-bold result-zero">0.00</p>
-                            <p id="difference-label" class="text-sm font-bold result-zero"></p>
-                        </div>
                     </div>
                     <div class="mt-6 space-y-2 no-print">
                          <button id="export-csv-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">Export to CSV</button>
@@ -280,16 +376,27 @@
             </div>
         </div>
 
+        <!-- Legal Declaration (before Signature Section) -->
+        <div class="print-only certification text-center my-8"
+             style="font-size: 11pt; padding: 2rem;">
+            ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องตามที่ตรวจสอบและเป็นความจริงทุกประการ<br>
+            <span style="font-size:10pt; color:#444;">
+                (I hereby certify that the information in this report is accurate and true to the best of my knowledge.)
+            </span>
+        </div>
+
         <!-- Signature Section -->
-        <div class="max-w-5xl mx-auto mt-12 pt-8 border-t-2 border-dashed border-gray-400 print-only signature-section">
+        <div class="max-w-5xl mx-auto mt-12 pt-12 border-t-2 border-dashed border-gray-400 print-only signature-section">
             <div class="grid grid-cols-2 gap-8 text-center" style="font-size: 11pt;">
                 <div>
-                    <p class="mb-2">ลงชื่อ .................................................</p>
+                    <div style="height: 2.5rem;"></div> <!-- Add space before signature line -->
+                    <p class="mb-1">ลงชื่อ .................................................</p>
                     <p>(ผู้ตรวจสอบ / Auditor)</p>
                     <p class="mt-4">วันที่: ........ / ................ / ............</p>
                 </div>
                 <div>
-                    <p class="mb-2">ลงชื่อ .................................................</p>
+                    <div style="height: 2.5rem;"></div> <!-- Add space before signature line -->
+                    <p class="mb-1">ลงชื่อ .................................................</p>
                     <p>(ผู้รับการตรวจสอบ / Auditee)</p>
                     <p class="mt-4">วันที่: ........ / ................ / ............</p>
                 </div>
@@ -495,14 +602,15 @@
             const preparePrintAppendix = () => {
                 const appendixContainer = document.getElementById('print-appendix');
                 appendixContainer.innerHTML = '';
-                
+
+                let isFirstHeader = true;
                 const processAttachments = (prefix, title) => {
                     const attachedItems = Object.keys(attachments).filter(key => key.startsWith(prefix));
                     if (attachedItems.length > 0) {
                         const header = document.createElement('h2');
                         header.className = 'text-xl font-bold mb-4';
-                        if (appendixContainer.innerHTML !== '') {
-                            header.classList.add('mt-8');
+                        if (!isFirstHeader) {
+                            header.classList.add('appendix-pagebreak'); // Only add page break before 2nd+ header
                         }
                         header.textContent = title;
                         appendixContainer.appendChild(header);
@@ -521,9 +629,10 @@
                             `;
                             appendixContainer.appendChild(appendixItem);
                         });
+                        isFirstHeader = false;
                     }
                 };
-                
+
                 processAttachments('voucher-list', 'ภาคผนวก: หลักฐานเอกสารจ่ายรอเบิก');
                 processAttachments('reimbursement-list', 'ภาคผนวก: หลักฐานรายการรอโอนเงินคืน');
             };
