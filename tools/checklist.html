@@ -31,15 +31,53 @@
         }
 
         @media print {
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            html, body {
+                background: #fff !important;
+                color: #222 !important;
+                font-family: 'TH SarabunPSK', 'TH Sarabun New', 'Sarabun', 'Times New Roman', Times, serif !important;
+                font-size: 11pt !important;
+                line-height: 1.6 !important;
+            }
             .no-print { display: none !important; }
-            .print-container { box-shadow: none !important; border: 1px solid #e5e7eb; page-break-inside: avoid; }
-            .audit-item { page-break-inside: avoid; }
+            .print-container {
+                box-shadow: none !important;
+                border: 1.5px solid #222 !important;
+                border-radius: 0.5rem !important;
+                page-break-inside: avoid-page !important;
+                background: #fff !important;
+                padding: 1.2rem 1.5rem !important;
+            }
+            .page-break {
+                page-break-before: always !important;
+            }
+            .audit-item {
+                page-break-inside: avoid;
+                border-color: #bbb !important;
+            }
             .notes-input { border: 1px solid #d1d5db !important; }
-            .print-only { display: block; }
+            .print-only { display: block !important; }
             .signature-section {
                 break-inside: avoid-page !important;
                 page-break-inside: avoid !important;
+                border-top: 2px dashed #222 !important;
+                margin-top: 2.5rem !important;
+                padding-top: 2rem !important;
+                font-size: 11pt !important;
+            }
+            .certification {
+                border: 1.5px solid #222 !important;
+                border-radius: 0.5rem !important;
+                background: #f7f7f7 !important;
+                color: #222 !important;
+                font-size: 11pt !important;
+                margin: 2rem 0 1.5rem 0 !important;
+                padding: 1.2rem 1rem !important;
+                text-align: center;
+            }
+            header, footer {
+                border-bottom: 2px solid #222 !important;
+                margin-bottom: 1.5rem !important;
+                padding-bottom: 0.5rem !important;
             }
         }
     </style>
@@ -133,6 +171,14 @@
             </button>
         </footer>
 
+        <!-- Legal Declaration (before Signature Section, print only) -->
+        <div class="print-only certification page-break" style="display:none;">
+            ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องตามที่ตรวจสอบและเป็นความจริงทุกประการ<br>
+            <span style="font-size:10pt; color:#444;">
+                (I hereby certify that the information in this report is accurate and true to the best of my knowledge.)
+            </span>
+        </div>
+
         <div class="max-w-5xl mx-auto mt-12 pt-8 border-t-2 border-dashed border-gray-400 print-only signature-section">
             <div class="grid grid-cols-2 gap-8 text-center" style="font-size: 11pt;">
                 <div>
@@ -191,8 +237,10 @@
                 return `<div id="item-${sectionKey}-${itemIndex}" class="audit-item bg-white p-4 rounded-lg shadow-sm border border-slate-200 transition-all"><p class="text-slate-800 font-medium">${item.text}</p><div class="mt-3 flex flex-wrap gap-x-6 gap-y-2 items-center"><div class="flex items-center"><input type="radio" id="pass-${sectionKey}-${itemIndex}" name="status-${sectionKey}-${itemIndex}" value="pass" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"><label for="pass-${sectionKey}-${itemIndex}" class="ml-2 text-sm text-gray-700">ผ่าน</label></div><div class="flex items-center"><input type="radio" id="fail-${sectionKey}-${itemIndex}" name="status-${sectionKey}-${itemIndex}" value="fail" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300"><label for="fail-${sectionKey}-${itemIndex}" class="ml-2 text-sm text-gray-700">ไม่ผ่าน</label></div><div class="flex items-center"><input type="radio" id="na-${sectionKey}-${itemIndex}" name="status-${sectionKey}-${itemIndex}" value="na" class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300"><label for="na-${sectionKey}-${itemIndex}" class="ml-2 text-sm text-gray-700">ไม่เกี่ยวข้อง</label></div></div><div class="mt-3"><textarea id="notes-${sectionKey}-${itemIndex}" placeholder="หมายเหตุและข้อเสนอแนะจากผู้ตรวจสอบ..." class="notes-input w-full p-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></textarea></div></div>`; 
             };
             const createSectionHTML = (title, items, sectionKey) => { 
+                // Add page break before "การปฏิบัติงาน (Operation)" in print
+                const pageBreakClass = title.includes("การปฏิบัติงาน") ? "page-break" : "";
                 const itemsHTML = items.map((item, index) => createItemHTML(item, sectionKey, index)).join(''); 
-                return `<section class="print-container"><h2 class="text-2xl font-bold text-slate-700 mb-4">${title}</h2><div class="space-y-4">${itemsHTML}</div></section>`; 
+                return `<section class="print-container ${pageBreakClass}"><h2 class="text-2xl font-bold text-slate-700 mb-4">${title}</h2><div class="space-y-4">${itemsHTML}</div></section>`; 
             };
 
             const addAuditorRow = (auditor = { name: '', position: '' }) => {
