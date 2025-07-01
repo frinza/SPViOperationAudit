@@ -170,6 +170,49 @@
         `;
         resultsContainer.innerHTML = html;
     }
+
+    // Custom toast for shortcut blocking
+    function showDevtoolsToast(message) {
+        let toast = document.getElementById('devtools-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'devtools-toast';
+            toast.style.position = 'fixed';
+            toast.style.bottom = '2rem';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.background = '#222';
+            toast.style.color = '#fff';
+            toast.style.padding = '1rem 2rem';
+            toast.style.borderRadius = '8px';
+            toast.style.fontSize = '1rem';
+            toast.style.zIndex = '9999';
+            toast.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+            toast.style.fontFamily = "'Sarabun', 'Noto Sans Thai', sans-serif";
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.style.display = 'block';
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => { toast.style.display = 'none'; }, 2000);
+    }
+
+    // Disable specific keyboard shortcuts
+    document.addEventListener("keydown", function(event) {
+        // F12
+        if (event.key === "F12" || event.keyCode === 123) {
+            event.preventDefault();
+            showDevtoolsToast("Inspect Element is disabled.");
+        }
+        // Ctrl+Shift+I (Inspect), Ctrl+Shift+J (Console), Ctrl+U (View Source)
+        if (
+            (event.ctrlKey && event.shiftKey && (event.key.toUpperCase() === "I" || event.key.toUpperCase() === "J" || event.keyCode === 73 || event.keyCode === 74)) ||
+            (event.ctrlKey && (event.key.toUpperCase() === "U" || event.keyCode === 85))
+        ) {
+            event.preventDefault();
+            showDevtoolsToast("Developer tools access is disabled.");
+        }
+    });
 </script>
 </body>
 </html>
