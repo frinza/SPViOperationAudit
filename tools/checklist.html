@@ -474,6 +474,12 @@
             toast._timeout = setTimeout(() => { toast.style.display = 'none'; }, 2000);
         }
 
+        // Disable right-click
+        document.addEventListener("contextmenu", function(event) {
+            event.preventDefault();
+            showDevtoolsToast("Right-click is disabled.");
+        });
+
         // Disable specific keyboard shortcuts
         document.addEventListener("keydown", function(event) {
             // F12
