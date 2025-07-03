@@ -215,6 +215,12 @@
             </div>
         </header>
 
+        <div id="export-soh-excel-bar" class="flex justify-end mb-4 no-print">
+            <button id="exportSohExcelBtn" class="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors shadow-sm text-sm">
+                Export SOH Excel (SKU, Description, Age, SRP, SOH, FAMILY)
+            </button>
+        </div>
+
         <div id="info-box-container" class="hidden bg-sky-100 border border-sky-300 text-sky-800 px-4 py-3 rounded-lg relative mb-8 text-sm" role="alert">
             <div class="flex justify-between items-center flex-col md:flex-row gap-2">
                 <div>
@@ -425,12 +431,41 @@
                                 <option value="normal">เฉพาะสินค้าปกติ</option>
                             </select>
                         </div>
+                        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 mb-8 no-print">
+                            <h3 class="text-xl font-semibold text-slate-800 mb-4">Scan to Search in Final Report</h3>
+                            <div class="flex flex-col md:flex-row gap-4">
+                                <div class="relative flex-1">
+                                    <button id="final-openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm mb-2">
+                                        Scan
+                                    </button>
+                                    <div id="final-camera-view-box" class="my-4 hidden">
+                                        <div class="bg-white border border-blue-200 rounded-lg p-4 flex flex-col items-center">
+                                            <div class="flex gap-4 mb-4">
+                                                <button id="final-barcode-scanner-tab" class="scanner-tab-button active">Barcode Scanner</button>
+                                                <button id="final-text-scanner-tab" class="scanner-tab-button">Text Scanner</button>
+                                            </div>
+                                            <div id="final-barcode-scanner-view" class="scanner-viewport">
+                                                <div id="final-qr-reader"></div>
+                                                <div class="barcode-line"></div>
+                                            </div>
+                                            <div id="final-text-scanner-view" class="hidden scanner-viewport">
+                                                <video id="final-text-scanner-video" playsinline></video>
+                                                <div class="scan-box"></div>
+                                                <button id="final-capture-btn" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-rose-500 text-white font-bold py-2 px-4 rounded-lg z-20">ถ่ายภาพและสแกน</button>
+                                            </div>
+                                            <div id="final-scanner-results" class="mt-4 p-3 w-full max-w-sm bg-slate-50 border border-slate-200 rounded-lg text-center"></div>
+                                            <button id="final-closeScannerBtn" class="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded">ปิดกล้อง</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div id="final-report-table-container" class="table-container border border-slate-200 rounded-lg"></div>
                         <div class="mt-4 flex flex-col sm:flex-row gap-4 no-print">
                             <button id="print-final-report-btn" class="flex-1 inline-flex items-center justify-center gap-2 bg-gray-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
                                 <!-- Printer icon (Heroicons) -->
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V4a1 1 0 011-1h10a1 1 0 011 1v5M6 18v2a1 1 0 001 1h10a1 1 0 001-1v-2M6 14h12a2 2 0 002-2V9a2 2 0 00-2-2H6a2 2 0 00-2 2v3a2 2 0 002 2z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V4a1 1 0 011-1h10a1 1 0 011 1v5M6 18v2a1 1 0 001 1h10a1 1 0 001-1v-2M6 14h12a2 2 0 002-2V9a2 2 0 00-2-2H6a2 2 0 00-2-2v3a2 2 0 002 2z" />
                                 </svg>
                                 พิมพ์รายงาน
                             </button>
@@ -1436,9 +1471,9 @@
                 addListener('secondScanLogfile', 'change', () => getEl('secondScanLogfile').files.length === 0);
 
                 addListener('wf-step-tabs', 'click', e => { if (e.target.id.startsWith('wf-tab-btn-')) changeWorkflowTab(e.target.id.slice(-1)); });
-                addListener('demo-count-container', 'click', e => { const header = e.target.closest('th[data-sort-by]'); if (header) handleSort('demoSort', header.dataset.sortBy, applyViewFn); });
+                addListener('demo-count-container', 'click', e => { const header = e.target.closest('th[data-sort-by]'); if (header) handleSort('demoSort', header.dataset.sortBy, applyDemoView); });
                 addListener('demo-count-container', 'input', e => { if (e.target.matches('input[type="number"]')) updateDemoCount(e.target.closest('tr').dataset.sku, e.target.value); });
-                addListener('final-report-table-container', 'click', e => { const header = e.target.closest('th[data-sort-by]'); if (header) handleSort('finalReportSort', header.dataset.sortBy, applyViewFn); });
+                addListener('final-report-table-container', 'click', e => { const header = e.target.closest('th[data-sort-by]'); if (header) handleSort('finalReportSort', header.dataset.sortBy, applyFinalReportView); });
                 addListener('final-report-table-container', 'input', e => { const { target: input } = e; const sku = input.closest('tr').dataset.sku; if (input.matches('input[type="number"]')) updateFinalCount(sku, input.value); else if (input.matches('input[type="text"]')) updateRemark(sku, input.value); });
                 
                 const handleEnter = (event) => { if (event.key === 'Enter') { const allInputs = Array.from(event.currentTarget.querySelectorAll('input[type="number"], input[type="text"]')); const currentIndex = allInputs.indexOf(event.target); if (currentIndex > -1 && currentIndex < allInputs.length - 1) allInputs[currentIndex + 1].focus(); } };
@@ -1448,6 +1483,278 @@
             }
             
             initializeAppListeners();
+
+            // --- Final Report Scanner Logic ---
+            const finalOpenScannerBtn = getEl('final-openScannerBtn');
+            const finalCloseScannerBtn = getEl('final-closeScannerBtn');
+            const finalCameraViewBox = getEl('final-camera-view-box');
+            const finalBarcodeScannerTab = getEl('final-barcode-scanner-tab');
+            const finalTextScannerTab = getEl('final-text-scanner-tab');
+            const finalBarcodeScannerView = getEl('final-barcode-scanner-view');
+            const finalTextScannerView = getEl('final-text-scanner-view');
+            const finalTextScannerVideo = getEl('final-text-scanner-video');
+            const finalCaptureBtn = getEl('final-capture-btn');
+            const finalScannerResultsEl = getEl('final-scanner-results');
+
+            let finalActiveStream = null;
+            let finalOcrStreaming = false;
+            let finalOcrStreamInterval = null;
+            let finalCurrentScanner = 'barcode';
+
+            function finalSwitchScannerTab(mode) {
+                finalCurrentScanner = mode;
+                if (mode === 'barcode') {
+                    finalBarcodeScannerTab.classList.add('active');
+                    finalTextScannerTab.classList.remove('active');
+                    finalBarcodeScannerView.classList.remove('hidden');
+                    finalTextScannerView.classList.add('hidden');
+                    finalStopTextScanner();
+                    finalStopOcrStreaming();
+                    finalStartBarcodeScanner();
+                } else {
+                    finalTextScannerTab.classList.add('active');
+                    finalBarcodeScannerTab.classList.remove('active');
+                    finalTextScannerView.classList.remove('hidden');
+                    finalBarcodeScannerView.classList.add('hidden');
+                    finalStopBarcodeScanner();
+                    finalStartTextScanner();
+                    setTimeout(finalStartOcrStreaming, 800);
+                }
+            }
+
+            async function finalStartTextScanner() {
+                try {
+                    if (finalActiveStream) {
+                        finalActiveStream.getTracks().forEach(track => track.stop());
+                    }
+                    finalActiveStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    finalTextScannerVideo.srcObject = finalActiveStream;
+                    finalTextScannerVideo.play();
+                } catch (err) {
+                    finalScannerResultsEl.innerHTML = `<p class="text-red-500">Camera error: ${err.message}</p>`;
+                }
+            }
+
+            function finalStopTextScanner() {
+                const video = finalTextScannerVideo;
+                if (video && video.srcObject) {
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                    video.srcObject = null;
+                }
+                finalActiveStream = null;
+            }
+
+            function finalStartOcrStreaming() {
+                if (finalOcrStreaming) return;
+                finalOcrStreaming = true;
+                finalScannerResultsEl.innerHTML = '<p class="text-blue-500">กำลังสแกนแบบเรียลไทม์...</p>';
+                finalOcrStreamInterval = setInterval(finalProcessOcrFrame, 700);
+            }
+
+            function finalStopOcrStreaming() {
+                finalOcrStreaming = false;
+                if (finalOcrStreamInterval) clearInterval(finalOcrStreamInterval);
+                finalOcrStreamInterval = null;
+            }
+
+            async function finalProcessOcrFrame() {
+                if (!finalOcrStreaming || !finalActiveStream || !cvReady) return;
+                const video = finalTextScannerVideo;
+                if (video.readyState < 2) return;
+                const canvas = document.createElement('canvas');
+                const cropY = video.videoHeight * 0.55;
+                const cropHeight = video.videoHeight * 0.12;
+                canvas.width = video.videoWidth;
+                canvas.height = cropHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, cropY, video.videoWidth, cropHeight, 0, 0, video.videoWidth, cropHeight);
+                let src = cv.imread(canvas);
+                let dst = new cv.Mat();
+                cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                cv.equalizeHist(dst, dst);
+                cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
+                cv.imshow(canvas, dst);
+                src.delete();
+                dst.delete();
+                try {
+                    const result = await Tesseract.recognize(canvas, 'eng', {
+                        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+                    });
+                    const text = result.data.text.replace(/\s/g, '').toUpperCase();
+                    if (text) {
+                        finalScannerResultsEl.innerHTML = `<p>Found text: <b>${text}</b></p>`;
+                        processFinalScannedCode(text, 'Text Scan');
+                        finalStopOcrStreaming();
+                    } else {
+                        finalScannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning... (No serial found yet)</p>`;
+                    }
+                } catch (err) {
+                    finalScannerResultsEl.innerHTML = `<p class='text-red-500'>OCR Error: ${err.message}</p>`;
+                }
+            }
+
+            function finalStartBarcodeScanner() {
+                Quagga.init({
+                    inputStream: { name: "Live", type: "LiveStream", target: finalBarcodeScannerView, constraints: { facingMode: "environment" } },
+                    decoder: { readers: [ "code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "upc_reader", "upc_e_reader" ] },
+                    locate: true
+                }, (err) => {
+                    if (err) {
+                        finalScannerResultsEl.innerHTML = `<p class="text-red-500">Camera error: ${err.message}</p>`;
+                        return;
+                    }
+                    Quagga.start();
+                });
+                Quagga.onDetected(finalOnBarcodeDetected);
+            }
+
+            function finalStopBarcodeScanner() {
+                if (typeof Quagga !== 'undefined' && Quagga.running) {
+                    Quagga.offDetected(finalOnBarcodeDetected);
+                    Quagga.stop();
+                }
+                const quaggaVideo = finalBarcodeScannerView.querySelector('video');
+                if (quaggaVideo && quaggaVideo.srcObject) {
+                    quaggaVideo.srcObject.getTracks().forEach(track => track.stop());
+                    quaggaVideo.srcObject = null;
+                }
+            }
+
+            function finalOpenScannerModal() {
+                finalCameraViewBox.classList.remove('hidden');
+                finalSwitchScannerTab('barcode');
+            }
+
+            function finalCloseScannerModal() {
+                finalStopTextScanner();
+                finalCameraViewBox.classList.add('hidden');
+                finalStopBarcodeScanner();
+                finalStopOcrStreaming();
+                const quaggaVideo = finalBarcodeScannerView.querySelector('video');
+                if (quaggaVideo && quaggaVideo.srcObject) {
+                    quaggaVideo.srcObject.getTracks().forEach(track => track.stop());
+                    quaggaVideo.srcObject = null;
+                }
+            }
+
+            const finalScanCooldown = {};
+            function finalOnBarcodeDetected(result) {
+                const code = result.codeResult.code.trim();
+                const now = Date.now();
+                if (finalScanCooldown[code] && now - finalScanCooldown[code] < 2000) return;
+                finalScanCooldown[code] = now;
+                processFinalScannedCode(code, 'Barcode');
+            }
+
+            function processFinalScannedCode(code, reason) {
+                const scannedText = code.toUpperCase();
+                let item = state.reconciledData.find(i => i.SKU === scannedText);
+                if (!item) item = state.reconciledData.find(i => i.SKU === 'S' + scannedText);
+                if (!item) {
+                    for (const recItem of state.reconciledData) {
+                        if (
+                            scannedText.includes(recItem.SKU) ||
+                            scannedText.includes('S' + recItem.SKU) ||
+                            (recItem.SKU.length > 1 && scannedText.includes(recItem.SKU.slice(1)))
+                        ) {
+                            item = recItem;
+                            break;
+                        }
+                    }
+                }
+                if (item) {
+                    finalScannerResultsEl.innerHTML = `<div class="text-left w-full space-y-1"><p class="font-medium text-slate-800">${item.Description}</p><p class="text-sm text-slate-500">SKU: ${item.SKU}</p><div class="flex justify-between items-baseline pt-1"><span class="text-lg font-bold text-slate-700">Counted: <span class="text-blue-600">${item.Recount}</span> / ${item.SOH}</span><span class="text-lg font-bold">${item.FinalDiff === 0 ? '<span class="text-green-600">Matched</span>' : item.FinalDiff > 0 ? '<span class="text-yellow-600">Overage</span>' : '<span class="text-blue-600">Shortage</span>'}</span></div></div>`;
+                    const row = document.querySelector(`#final-report-table-container tr[data-sku="${item.SKU}"]`);
+                    if (row) {
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        row.classList.add('ring-2', 'ring-offset-2', 'ring-green-500');
+                        setTimeout(() => row.classList.remove('ring-2', 'ring-offset-2', 'ring-green-500'), 800);
+                    }
+                } else {
+                    finalScannerResultsEl.innerHTML = `<div class="text-center w-full"><p class="font-bold text-red-600">SKU Not Found</p><p class="text-sm text-slate-500">${scannedText}</p></div>`;
+                }
+            }
+
+            if (finalOpenScannerBtn) finalOpenScannerBtn.addEventListener('click', finalOpenScannerModal);
+            if (finalCloseScannerBtn) finalCloseScannerBtn.addEventListener('click', finalCloseScannerModal);
+            if (finalBarcodeScannerTab) finalBarcodeScannerTab.addEventListener('click', () => finalSwitchScannerTab('barcode'));
+            if (finalTextScannerTab) finalTextScannerTab.addEventListener('click', () => finalSwitchScannerTab('text'));
+            if (finalCaptureBtn) finalCaptureBtn.addEventListener('click', async () => {
+                if (!finalActiveStream || !cvReady) {
+                    finalScannerResultsEl.innerHTML = `<p class="text-red-500">Camera or OpenCV is not ready.</p>`;
+                    return;
+                }
+                finalScannerResultsEl.innerHTML = `<p class="text-blue-500">กำลังประมวลผลตัวอักษร...</p>`;
+                finalCaptureBtn.disabled = true;
+                const video = finalTextScannerVideo;
+                const canvas = document.createElement('canvas');
+                const cropHeightPercentage = 0.30;
+                const sWidth = video.videoWidth;
+                const sHeight = video.videoHeight * cropHeightPercentage;
+                const sx = 0;
+                const sy = video.videoHeight * ((1 - cropHeightPercentage) / 2);
+                canvas.width = sWidth;
+                canvas.height = sHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
+                let src = cv.imread(canvas);
+                let dst = new cv.Mat();
+                cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
+                cv.imshow(canvas, dst);
+                src.delete();
+                dst.delete();
+                try {
+                    const result = await Tesseract.recognize(canvas, 'eng', {
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                finalScannerResultsEl.innerHTML = `<p class="text-blue-500">${m.status} (${(m.progress * 100).toFixed(0)}%)...</p>`;
+                            }
+                        },
+                        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-',
+                    });
+                    const recognizedText = result.data.text.trim().toUpperCase().replace(/\s/g, '');
+                    if (recognizedText) {
+                        finalScannerResultsEl.innerHTML = `<p>Found text: ${recognizedText}</p>`;
+                        processFinalScannedCode(recognizedText, 'Text Scan');
+                    } else {
+                        finalScannerResultsEl.innerHTML = `<p class="text-red-500">ไม่พบตัวอักษรที่ชัดเจน</p>`;
+                    }
+                } catch (err) {
+                    finalScannerResultsEl.innerHTML = `<p class="text-red-500">OCR Error: ${err.message}</p>`;
+                } finally {
+                    finalCaptureBtn.disabled = false;
+                }
+            });
+
+            function exportSohExcel() {
+                if (!state.sohData.length) {
+                    showModal("Info", "Please upload SOH file first.");
+                    return;
+                }
+                // Prepare data for export
+                const rows = state.sohData.map(row => ({
+                    SKU: row.SERIAL_NO ? String(row.SERIAL_NO).replace(/\./g, ' ').trim().toUpperCase() : String(row.SKU || '').replace(/\./g, ' ').trim().toUpperCase(),
+                    Description: row.DESCRIPTION || '',
+                    Age: row.AGE || '',
+                    SRP: row.SRP_AMT_INC_VAT || '',
+                    SOH: row.AVAILABLE_QTY || '',
+                    FAMILY: (row.DESCRIPTION || '').toUpperCase().includes('DEMO') ? 'DEMO' : 'NONE'
+                }));
+                // Remove empty SKUs
+                const filteredRows = rows.filter(r => r.SKU);
+                // Export to Excel
+                const ws = XLSX.utils.json_to_sheet(filteredRows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "SOH Export");
+                XLSX.writeFile(wb, `SOH_Export_${state.branchName || 'Branch'}_${state.countDate || ''}.xlsx`);
+            }
+
+            const exportSohExcelBtn = document.getElementById('exportSohExcelBtn');
+            if (exportSohExcelBtn) {
+                exportSohExcelBtn.addEventListener('click', exportSohExcel);
+            }
         });
 
         // Custom toast for shortcut blocking
