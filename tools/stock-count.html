@@ -1729,23 +1729,20 @@
             });
 
             function exportSohExcel() {
-                if (!state.sohData.length) {
-                    showModal("Info", "Please upload SOH file first.");
-                    return;
-                }
+                // Use the same processed data as the app (sohLookup)
+                const allItems = Object.values(state.sohLookup).filter(item => item.SOH > 0);
+                // Sort by SKU for consistency
+                allItems.sort((a, b) => a.SKU.localeCompare(b.SKU));
                 // Prepare data for export
-                const rows = state.sohData.map(row => ({
-                    SKU: row.SERIAL_NO ? String(row.SERIAL_NO).replace(/\./g, ' ').trim().toUpperCase() : String(row.SKU || '').replace(/\./g, ' ').trim().toUpperCase(),
-                    Description: row.DESCRIPTION || '',
-                    Age: row.AGE || '',
-                    SRP: row.SRP_AMT_INC_VAT || '',
-                    SOH: row.AVAILABLE_QTY || '',
-                    FAMILY: (row.DESCRIPTION || '').toUpperCase().includes('DEMO') ? 'DEMO' : 'NONE'
+                const rows = allItems.map(item => ({
+                    SKU: item.SKU,
+                    Description: item.Description,
+                    Age: item.Age || '',
+                    SRP: item.Price || '',
+                    SOH: item.SOH || '',
+                    FAMILY: item.isDemo ? 'DEMO' : 'NONE'
                 }));
-                // Remove empty SKUs
-                const filteredRows = rows.filter(r => r.SKU);
-                // Export to Excel
-                const ws = XLSX.utils.json_to_sheet(filteredRows);
+                const ws = XLSX.utils.json_to_sheet(rows);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "SOH Export");
                 XLSX.writeFile(wb, `SOH_Export_${state.branchName || 'Branch'}_${state.countDate || ''}.xlsx`);
