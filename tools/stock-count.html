@@ -71,14 +71,15 @@
         }
         .scan-box {
             position: absolute;
-            top: 35%;
-            left: 5%;
-            width: 90%;
-            height: 30%;
-            border-top: 2px solid rgba(239, 68, 68, 0.9);
-            border-bottom: 2px solid rgba(239, 68, 68, 0.9);
+            top: 45%;
+            left: 22.5%;
+            width: 55%;
+            height: 10%;
+            border: 2.5px dashed #148a02; /* green */
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
             pointer-events: none;
-            z-index: 10;
+            z-index: 20;
+            background: rgba(37,99,235,0.05);
         }
         .barcode-line {
              position: absolute;
@@ -1241,19 +1242,20 @@
                 if (!activeStream || !cvReady) {
                     scannerResultsEl.innerHTML = `<p class="text-red-500">Camera or OpenCV is not ready.</p>`;
                     return;
-                };
-                
+                }
                 scannerResultsEl.innerHTML = `<p class="text-blue-500">กำลังประมวลผลตัวอักษร...</p>`;
                 captureBtn.disabled = true;
 
                 const video = textScannerVideo;
                 const canvas = document.createElement('canvas');
 
-                const cropHeightPercentage = 0.30;
-                const sWidth = video.videoWidth;
+                // Crop a very narrow, focused region (centered)
+                const cropHeightPercentage = 0.10; // Even narrower band (10% of height)
+                const cropWidthPercentage = 0.55;  // Focus on center 55% of width
+                const sWidth = video.videoWidth * cropWidthPercentage;
                 const sHeight = video.videoHeight * cropHeightPercentage;
-                const sx = 0;
-                const sy = video.videoHeight * ((1 - cropHeightPercentage) / 2);
+                const sx = video.videoWidth * (1 - cropWidthPercentage) / 2;
+                const sy = video.videoHeight * 0.45; // Centered vertically
 
                 canvas.width = sWidth;
                 canvas.height = sHeight;
@@ -1261,34 +1263,49 @@
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
 
+                // OpenCV preprocessing: grayscale, contrast, denoise, adaptive threshold
                 let src = cv.imread(canvas);
-                let dst = new cv.Mat();
-                cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
-                cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
-                cv.imshow(canvas, dst);
+                let gray = new cv.Mat();
+                let denoised = new cv.Mat();
+                let thresh = new cv.Mat();
+
+                cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+                cv.equalizeHist(gray, gray); // Contrast
+                cv.GaussianBlur(gray, denoised, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT); // Denoise
+                cv.adaptiveThreshold(
+                    denoised, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 15, 8
+                );
+
+                cv.imshow(canvas, thresh);
+
                 src.delete();
-                dst.delete();
+                gray.delete();
+                denoised.delete();
+                thresh.delete();
 
                 try {
                     const result = await Tesseract.recognize(canvas, 'eng', {
                         logger: m => {
-                             if (m.status === 'recognizing text') {
+                            if (m.status === 'recognizing text') {
                                 scannerResultsEl.innerHTML = `<p class="text-blue-500">${m.status} (${(m.progress * 100).toFixed(0)}%)...</p>`;
-                             }
+                            }
                         },
                         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-',
                     });
-                    
-                    const recognizedText = result.data.text.trim().toUpperCase().replace(/\s/g, ''); // Remove all whitespace
-                    if(recognizedText){
-                         scannerResultsEl.innerHTML = `<p>Found text: ${recognizedText}</p>`;
-                         processScannedCode(recognizedText, 'Text Scan');
-                    } else {
-                         scannerResultsEl.innerHTML = `<p class="text-red-500">ไม่พบตัวอักษรที่ชัดเจน</p>`;
-                    }
 
+                    // Post-process: Remove spaces, filter by length/pattern
+                    let recognizedText = result.data.text.replace(/\s/g, '').toUpperCase();
+                    // Accept only if matches expected pattern (8+ alphanum, adjust as needed)
+                    const match = recognizedText.match(/[A-Z0-9\-]{8,}/);
+                    if (match) {
+                        recognizedText = match[0];
+                        scannerResultsEl.innerHTML = `<p>Found text: ${recognizedText}</p>`;
+                        processScannedCode(recognizedText, 'Text Scan');
+                    } else {
+                        scannerResultsEl.innerHTML = `<p class="text-red-500">ไม่พบตัวอักษรที่ชัดเจน</p>`;
+                    }
                 } catch (err) {
-                     scannerResultsEl.innerHTML = `<p class="text-red-500">OCR Error: ${err.message}</p>`;
+                    scannerResultsEl.innerHTML = `<p class="text-red-500">OCR Error: ${err.message}</p>`;
                 } finally {
                     captureBtn.disabled = false;
                 }
