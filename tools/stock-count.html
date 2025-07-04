@@ -71,10 +71,10 @@
         }
         .scan-box {
             position: absolute;
-            top: 45%;
-            left: 22.5%;
-            width: 55%;
-            height: 10%;
+            top: 55%;
+            left: 0;
+            width: 100%;
+            height: 12%;
             border: 2.5px dashed #148a02; /* green */
             box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
             pointer-events: none;
@@ -82,14 +82,13 @@
             background: rgba(37,99,235,0.05);
         }
         .barcode-line {
-             position: absolute;
-            top: 50%;
+            position: absolute;
+            top: 61%;
             left: 0;
             width: 100%;
             height: 2px;
             background: rgba(239, 68, 68, 0.7); /* red-500 */
-            transform: translateY(-50%);
-            z-index: 10;
+            z-index: 21;
             pointer-events: none;
         }
         /* Print Styles */
@@ -296,6 +295,8 @@
                                     <div class="scan-box"></div>
                                     <button id="capture-btn" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-rose-500 text-white font-bold py-2 px-4 rounded-lg z-20">ถ่ายภาพและสแกน</button>
                                 </div>
+                                <!-- DEMO scanner preview -->
+                                <canvas id="ocr-crop-preview" class="mt-2 border border-blue-300 rounded w-full max-w-xs mx-auto" style="background:#fff;display:block;"></canvas>
                                 <div id="scanner-results" class="mt-4 p-3 w-full max-w-sm bg-slate-50 border border-slate-200 rounded-lg text-center"></div>
                                 <button id="closeScannerBtn" class="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded">ปิดกล้อง</button>
                              </div>
@@ -454,6 +455,8 @@
                                                 <div class="scan-box"></div>
                                                 <button id="final-capture-btn" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-rose-500 text-white font-bold py-2 px-4 rounded-lg z-20">ถ่ายภาพและสแกน</button>
                                             </div>
+                                            <!-- FINAL scanner preview -->
+                                            <canvas id="final-ocr-crop-preview" class="mt-2 border border-blue-300 rounded w-full max-w-xs mx-auto" style="background:#fff;display:block;"></canvas>
                                             <div id="final-scanner-results" class="mt-4 p-3 w-full max-w-sm bg-slate-50 border border-slate-200 rounded-lg text-center"></div>
                                             <button id="final-closeScannerBtn" class="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded">ปิดกล้อง</button>
                                         </div>
@@ -1336,6 +1339,27 @@
                 canvas.height = cropHeight;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, cropY, video.videoWidth, cropHeight, 0, 0, video.videoWidth, cropHeight);
+
+                // Show cropped preview
+                const preview = document.getElementById('ocr-crop-preview');
+                if (preview) {
+                    preview.width = canvas.width;
+                    preview.height = canvas.height;
+                    preview.getContext('2d').drawImage(canvas, 0, 0);
+                }
+
+                // Lighting feedback
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                let total = 0;
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    total += (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
+                }
+                const avgBrightness = total / (imageData.data.length / 4);
+                if (avgBrightness < 60) {
+                    scannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพมืดเกินไป กรุณาเพิ่มแสงสว่าง</p>`;
+                    return;
+                }
+
                 let src = cv.imread(canvas);
                 let dst = new cv.Mat();
                 cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
@@ -1349,7 +1373,7 @@
                         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
                     });
                     const text = result.data.text.replace(/\s/g, '').toUpperCase();
-                    const match = text.match(/[A-Z0-9]{12}/);
+                    const match = text.match(/[A-Z0-9\-]{8,}/);
                     if (match) {
                         scannerResultsEl.innerHTML = `<p>Serial Number: <b>${match[0]}</b></p>`;
                         processScannedCode(match[0], 'Text Scan');
@@ -1586,6 +1610,27 @@
                 canvas.height = cropHeight;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, cropY, video.videoWidth, cropHeight, 0, 0, video.videoWidth, cropHeight);
+
+                // Show cropped preview
+                const preview = document.getElementById('final-ocr-crop-preview');
+                if (preview) {
+                    preview.width = canvas.width;
+                    preview.height = canvas.height;
+                    preview.getContext('2d').drawImage(canvas, 0, 0);
+                }
+
+                // Lighting feedback
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                let total = 0;
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    total += (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
+                }
+                const avgBrightness = total / (imageData.data.length / 4);
+                if (avgBrightness < 60) {
+                    finalScannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพมืดเกินไป กรุณาเพิ่มแสงสว่าง</p>`;
+                    return;
+                }
+
                 let src = cv.imread(canvas);
                 let dst = new cv.Mat();
                 cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
@@ -1599,10 +1644,11 @@
                         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
                     });
                     const text = result.data.text.replace(/\s/g, '').toUpperCase();
-                    if (text) {
-                        finalScannerResultsEl.innerHTML = `<p>Found text: <b>${text}</b></p>`;
-                        processFinalScannedCode(text, 'Text Scan');
-                        finalStopOcrStreaming();
+                    const match = text.match(/[A-Z0-9\-]{8,}/);
+                    if (match) {
+                        finalScannerResultsEl.innerHTML = `<p>Found text: <b>${match[0]}</b></p>`;
+                        processFinalScannedCode(match[0], 'Text Scan');
+                            finalStopOcrStreaming();
                     } else {
                         finalScannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning... (No serial found yet)</p>`;
                     }
@@ -1732,9 +1778,10 @@
                         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-',
                     });
                     const recognizedText = result.data.text.trim().toUpperCase().replace(/\s/g, '');
-                    if (recognizedText) {
-                        finalScannerResultsEl.innerHTML = `<p>Found text: ${recognizedText}</p>`;
-                        processFinalScannedCode(recognizedText, 'Text Scan');
+                    const match = recognizedText.match(/[A-Z0-9\-]{8,}/);
+                    if (match) {
+                        finalScannerResultsEl.innerHTML = `<p>Found text: ${match[0]}</p>`;
+                        processFinalScannedCode(match[0], 'Text Scan');
                     } else {
                         finalScannerResultsEl.innerHTML = `<p class="text-red-500">ไม่พบตัวอักษรที่ชัดเจน</p>`;
                     }
