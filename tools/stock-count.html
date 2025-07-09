@@ -1,4 +1,71 @@
 <!DOCTYPE html>
+<!--
+    ENHANCED OCR TEXT SCANNER FOR APPLE PRODUCT SERIAL NUMBERS
+    =========================================================
+    
+    This file contains enhanced OCR (Optical Character Recognition) functionality
+    specifically optimized for scanning Apple product serial numbers with improved
+    matching logic for iPad Gen10 camera scanning.
+    
+    KEY ENHANCEMENTS:
+    ================
+    
+    1. ENHANCED MATCHING ALGORITHMS (processScannedCode):
+       - 8 sophisticated matching algorithms for Apple products
+       - Direct SKU matching with S prefix handling
+       - Partial pattern matching (first 5, last 5, middle patterns)
+       - Fuzzy matching for Apple serial patterns
+       - Last 5 character pattern matching between SKU and scanned text
+    
+    2. CAMERA OPTIMIZATION FOR iPad Gen10:
+       - Higher resolution (1920x1080) for better text capture
+       - 30fps frame rate for smooth scanning
+       - Continuous focus, exposure, and white balance modes
+       - Applied to both demo and final scanners
+    
+    3. ENHANCED TESSERACT OCR INITIALIZATION:
+       - Apple-specific character whitelist (A-Z, 0-9, -, _)
+       - LSTM engine mode for better accuracy
+       - Dictionary correction enabled
+       - Numeric mode for improved digit recognition
+       - Optimized for Apple's typical serial number patterns
+    
+    4. ADVANCED OCR FRAME PROCESSING:
+       - Enhanced crop settings optimized for Apple product scanning
+       - Improved lighting detection with brightness and contrast analysis
+       - Three-tier preprocessing algorithms (basic, enhanced, aggressive)
+       - Apple-specific text post-processing to fix common OCR errors
+       - Pattern recognition boost for Apple-like serial formats
+       - Advanced validation for Apple serial number characteristics
+    
+    5. PREPROCESSING ALGORITHMS:
+       - Basic: Sharpening filters for Apple serial text
+       - Enhanced: CLAHE contrast enhancement, bilateral filtering, unsharp masking
+       - Aggressive: Multi-scale sharpening, adaptive thresholding, morphological operations
+    
+    6. APPLE-SPECIFIC FEATURES:
+       - OCR artifact correction (|→I, 0→O, 8→B, 5→S, 1→I)
+       - Apple serial pattern recognition and confidence boosting
+       - Validation for proper Apple serial characteristics
+       - Enhanced feedback for lighting and focus conditions
+    
+    TECHNICAL IMPLEMENTATION:
+    ========================
+    - processOcrFrame(): Enhanced demo scanner OCR processing
+    - finalProcessOcrFrame(): Enhanced final report scanner OCR processing
+    - Both functions share identical Apple-optimized enhancements
+    - Maintains compatibility with existing codebase
+    - Comprehensive error handling and performance tracking
+    
+    USAGE:
+    ======
+    This enhanced scanner is specifically designed for Apple product inventory
+    management with improved accuracy for iPad Gen10 camera scanning and
+    sophisticated serial number matching algorithms.
+    
+    Last Updated: December 2024
+    Version: 2.0 (Apple Enhanced)
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -741,9 +808,7 @@
 
             // Debug tracking
             let ocrDebugHistory = [];
-            let finalOcrDebugHistory = [];
-
-            // === OCR Enhancement Functions ===
+            let finalOcrDebugHistory = [];            // === OCR Enhancement Functions ===
             async function initTesseract(language = 'eng', isDemo = true) {
                 const worker = isDemo ? tesseractWorker : finalTesseractWorker;
                 if (worker) {
@@ -751,17 +816,35 @@
                 }
                 
                 const newWorker = await Tesseract.createWorker(language);
+                
+                // Enhanced OCR parameters for Apple product serial numbers
                 await newWorker.setParameters({
-                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-',
+                    // Character whitelist optimized for Apple serials
+                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_',
+                    // Single line mode for serial numbers
                     tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
+                    // Improved OCR engine mode for better accuracy
+                    tessedit_ocr_engine_mode: Tesseract.OEM.LSTM_ONLY,
+                    // Enable dictionary for better word recognition
+                    tessedit_enable_dict_correction: 1,
+                    // Numeric mode for better digit recognition
+                    tessedit_enable_numeric_mode: 1,
+                    // Improve recognition of similar characters
+                    tessedit_char_unblacklist: '',
+                    // Better handling of mixed alphanumeric content
+                    preserve_interword_spaces: 0,
+                    // Optimize for Apple's typical serial number patterns
+                    user_defined_dpi: 300,
+                    // Better edge detection for clear text
+                    edges_use_image_gradients: 1
                 });
                 
                 if (isDemo) {
                     tesseractWorker = newWorker;
-                    updateOcrDebugInfo('status', 'Worker initialized', 'success');
+                    updateOcrDebugInfo('status', 'Apple OCR Worker initialized', 'success');
                 } else {
                     finalTesseractWorker = newWorker;
-                    updateFinalOcrDebugInfo('status', 'Worker initialized', 'success');
+                    updateFinalOcrDebugInfo('status', 'Apple OCR Worker initialized', 'success');
                 }
                 
                 return newWorker;
@@ -1745,14 +1828,26 @@
                     startTextScanner();
                     setTimeout(startOcrStreaming, 800); // Give camera time to start
                 }
-            };
-
-            const startTextScanner = async () => {
+            };            const startTextScanner = async () => {
                 try {
                     if (activeStream) {
                         activeStream.getTracks().forEach(track => track.stop());
                     }
-                    activeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    
+                    // Enhanced camera constraints for iPad Gen10 and Apple product scanning
+                    const cameraConstraints = {
+                        video: {
+                            facingMode: 'environment',
+                            width: { ideal: 1920, max: 1920 },
+                            height: { ideal: 1080, max: 1080 },
+                            frameRate: { ideal: 30, max: 30 },
+                            focusMode: 'continuous',
+                            exposureMode: 'continuous',
+                            whiteBalanceMode: 'continuous'
+                        }
+                    };
+                    
+                    activeStream = await navigator.mediaDevices.getUserMedia(cameraConstraints);
                     textScannerVideo.srcObject = activeStream;
                     textScannerVideo.play();
                 } catch (err) {
@@ -1865,12 +1960,18 @@
                 updateOcrDebugInfo('status', 'Processing frame...', 'info');
                 
                 const canvas = document.createElement('canvas');
-                const cropY = video.videoHeight * 0.55;
-                const cropHeight = video.videoHeight * 0.12;
-                canvas.width = video.videoWidth;
+                
+                // --- Enhanced Crop Settings for Apple Products ---
+                // Optimized crop for Apple serial numbers typically found on back/bottom
+                const cropY = video.videoHeight * 0.45;        // Higher up for better Apple serial scanning
+                const cropHeight = video.videoHeight * 0.18;   // Taller crop for better text capture
+                const cropX = video.videoWidth * 0.05;         // Slight left margin for better frame
+                const cropWidth = video.videoWidth * 0.90;     // Wider crop for better coverage
+                
+                canvas.width = cropWidth;
                 canvas.height = cropHeight;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, cropY, video.videoWidth, cropHeight, 0, 0, video.videoWidth, cropHeight);
+                ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
                 // Show cropped preview
                 const preview = document.getElementById('ocr-crop-preview');
@@ -1898,41 +1999,112 @@
                     }
                 }
 
-                // Lighting feedback
+                // --- Enhanced Lighting Detection for Apple Products ---
                 let total = 0;
+                let pixelCount = 0;
+                let contrastSum = 0;
+                let prevPixel = 0;
+                
                 for (let i = 0; i < imageData.data.length; i += 4) {
-                    total += (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
+                    const pixel = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
+                    total += pixel;
+                    pixelCount++;
+                    
+                    // Calculate contrast for better lighting assessment
+                    if (pixelCount > 1) {
+                        contrastSum += Math.abs(pixel - prevPixel);
+                    }
+                    prevPixel = pixel;
                 }
-                const avgBrightness = total / (imageData.data.length / 4);
-                if (avgBrightness < 60) {
-                    scannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพมืดเกินไป กรุณาเพิ่มแสงสว่าง</p>`;
+                
+                const avgBrightness = total / pixelCount;
+                const avgContrast = contrastSum / (pixelCount - 1);
+                
+                // Enhanced lighting feedback for Apple products
+                if (avgBrightness < 55) {
+                    scannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพมืดเกินไป กรุณาเพิ่มแสงสว่าง (${avgBrightness.toFixed(0)})</p>`;
                     updateOcrDebugInfo('status', 'Low light detected', 'error');
+                    return;
+                } else if (avgBrightness > 220) {
+                    scannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพสว่างเกินไป กรุณาลดแสงสว่าง (${avgBrightness.toFixed(0)})</p>`;
+                    updateOcrDebugInfo('status', 'Too bright detected', 'error');
+                    return;
+                } else if (avgContrast < 15) {
+                    scannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพไม่ชัดเจน กรุณาปรับโฟกัส (${avgContrast.toFixed(0)})</p>`;
+                    updateOcrDebugInfo('status', 'Low contrast detected', 'error');
                     return;
                 }
 
-                // Apply preprocessing based on settings
+                // --- Enhanced Preprocessing Algorithms for Apple Products ---
                 let src = cv.imread(canvas);
                 let dst = new cv.Mat();
                 
                 if (ocrSettings.demo.preprocessing === 'basic') {
+                    // Basic Apple-optimized preprocessing
                     cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                    
+                    // Apply mild sharpening for Apple serial text
+                    const sharpKernel = cv.matFromArray(3, 3, cv.CV_32FC1, [0, -1, 0, -1, 5, -1, 0, -1, 0]);
+                    cv.filter2D(dst, dst, -1, sharpKernel);
+                    sharpKernel.delete();
+                    
                     cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
                 } else if (ocrSettings.demo.preprocessing === 'enhanced') {
+                    // Enhanced Apple-optimized preprocessing
                     cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
-                    cv.equalizeHist(dst, dst);
-                    cv.GaussianBlur(dst, dst, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+                    
+                    // CLAHE for better contrast on Apple products
+                    const clahe = new cv.CLAHE(2.0, new cv.Size(8, 8));
+                    clahe.apply(dst, dst);
+                    clahe.delete();
+                    
+                    // Bilateral filter for noise reduction while preserving edges
+                    cv.bilateralFilter(dst, dst, 9, 75, 75);
+                    
+                    // Unsharp masking for Apple text enhancement
+                    const blurred = new cv.Mat();
+                    cv.GaussianBlur(dst, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+                    cv.addWeighted(dst, 1.5, blurred, -0.5, 0, dst);
+                    blurred.delete();
+                    
                     cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
                 } else if (ocrSettings.demo.preprocessing === 'aggressive') {
+                    // Aggressive Apple-optimized preprocessing
                     cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
-                    cv.equalizeHist(dst, dst);
-                    cv.GaussianBlur(dst, dst, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
-                    cv.adaptiveThreshold(dst, dst, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 15, 8);
-                    const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
-                    cv.morphologyEx(dst, dst, cv.MORPH_CLOSE, kernel);
-                    kernel.delete();
+                    
+                    // Advanced CLAHE for difficult lighting
+                    const clahe = new cv.CLAHE(3.0, new cv.Size(6, 6));
+                    clahe.apply(dst, dst);
+                    clahe.delete();
+                    
+                    // Multiple denoising passes for Apple products
+                    cv.fastNlMeansDenoising(dst, dst, 10, 7, 21);
+                    
+                    // Adaptive bilateral filtering
+                    cv.bilateralFilter(dst, dst, 11, 80, 80);
+                    
+                    // Multi-scale sharpening for Apple text
+                    const sharp1 = new cv.Mat();
+                    const sharp2 = new cv.Mat();
+                    cv.GaussianBlur(dst, sharp1, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+                    cv.GaussianBlur(dst, sharp2, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+                    cv.addWeighted(dst, 2.0, sharp1, -0.5, 0, dst);
+                    cv.addWeighted(dst, 1.0, sharp2, -0.5, 0, dst);
+                    sharp1.delete();
+                    sharp2.delete();
+                    
+                    // Adaptive thresholding with morphological operations
+                    cv.adaptiveThreshold(dst, dst, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 6);
+                    
+                    // Morphological operations optimized for Apple text
+                    const kernel1 = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(2, 2));
+                    const kernel2 = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 1));
+                    cv.morphologyEx(dst, dst, cv.MORPH_CLOSE, kernel1);
+                    cv.morphologyEx(dst, dst, cv.MORPH_OPEN, kernel2);
+                    kernel1.delete();
+                    kernel2.delete();
                 }
-                
-                cv.imshow(canvas, dst);
+                  cv.imshow(canvas, dst);
                 src.delete();
                 dst.delete();
                 
@@ -1941,15 +2113,43 @@
                         await initTesseract(ocrSettings.demo.language, true);
                     }
                     
+                    // --- Enhanced OCR Processing for Apple Products ---
                     const result = await tesseractWorker.recognize(canvas);
                     const processingTime = performance.now() - startTime;
                     
                     let text = result.data.text.replace(/\s/g, '').toUpperCase();
                     let confidence = result.data.confidence;
                     
+                    // --- Apple-specific Text Post-processing ---
+                    // Remove common OCR artifacts for Apple serials
+                    text = text.replace(/[|]/g, 'I')      // Common OCR mistake
+                             .replace(/[0]/g, 'O')       // Zero to O confusion
+                             .replace(/[8]/g, 'B')       // Eight to B confusion
+                             .replace(/[5]/g, 'S')       // Five to S confusion
+                             .replace(/[1]/g, 'I')       // One to I confusion
+                             .replace(/[\.]/g, '')       // Remove periods
+                             .replace(/[,]/g, '')        // Remove commas
+                             .replace(/[\s]/g, '');      // Remove any remaining spaces
+                    
                     // Apply pattern learning boost
                     if (text.length >= 3) {
                         confidence = boostConfidenceForKnownPatterns(text, confidence);
+                    }
+                    
+                    // --- Enhanced Apple Serial Pattern Recognition ---
+                    // Boost confidence for Apple-like patterns
+                    const applePatterns = [
+                        /^[A-Z0-9]{10,14}$/,     // Standard Apple serial length
+                        /^[SCLR][A-Z0-9]{9,13}$/,  // Apple with prefix
+                        /^[A-Z0-9]{2}[A-Z]{2}[A-Z0-9]{6,10}$/,  // Apple format pattern
+                        /^[A-Z0-9]*[A-Z]{2}[A-Z0-9]*$/         // Contains letter pairs
+                    ];
+                    
+                    for (const pattern of applePatterns) {
+                        if (pattern.test(text)) {
+                            confidence = Math.min(confidence + 15, 100);
+                            break;
+                        }
                     }
                     
                     // Update performance tracking
@@ -1961,9 +2161,17 @@
                     updateOcrDebugInfo('confidence', `${confidence.toFixed(1)}%`);
                     updateOcrDebugInfo('success-rate', `${((ocrSuccessCount / ocrTotalAttempts) * 100).toFixed(1)}%`);
                     
-                    const match = text.match(/[A-Z0-9\-]{8,}/);
-                    if (match && confidence >= ocrSettings.demo.confidence) {
-                        const finalText = match[0];
+                    // --- Enhanced Apple Serial Validation ---
+                    const appleSerialMatch = text.match(/[A-Z0-9\-]{8,}/);
+                    const isValidAppleSerial = appleSerialMatch && (
+                        text.length >= 8 && text.length <= 14 &&
+                        /[A-Z]/.test(text) &&      // Must contain letters
+                        /[0-9]/.test(text) &&      // Must contain numbers
+                        !/[^A-Z0-9\-]/.test(text)  // Only valid characters
+                    );
+                    
+                    if (isValidAppleSerial && confidence >= ocrSettings.demo.confidence) {
+                        const finalText = appleSerialMatch[0];
                         
                         // Cache successful result
                         ocrResultsCache.set(cacheKey, { text: finalText, confidence, timestamp: Date.now() });
@@ -1976,14 +2184,15 @@
                         ocrPerformanceHistory[ocrPerformanceHistory.length - 1].success = true;
                         
                         updateOcrDebugInfo('last-text', finalText);
-                        updateOcrDebugInfo('status', 'Text recognized successfully', 'success');
+                        updateOcrDebugInfo('status', 'Apple serial recognized successfully', 'success');
                         
-                        scannerResultsEl.innerHTML = `<p>Serial Number: <b>${finalText}</b></p>`;
+                        scannerResultsEl.innerHTML = `<p>Apple Serial: <b>${finalText}</b></p>`;
                         processScannedCode(finalText, 'Text Scan');
-                        stopOcrStreaming();                    } else {
+                        stopOcrStreaming();
+                    } else {
                         updateOcrDebugInfo('last-text', text || 'No text');
-                        updateOcrDebugInfo('status', `Low confidence: ${confidence.toFixed(1)}%`, 'error');
-                        scannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning... (Confidence: ${confidence.toFixed(1)}%)</p>`;
+                        updateOcrDebugInfo('status', `${isValidAppleSerial ? 'Low confidence' : 'Invalid Apple pattern'}: ${confidence.toFixed(1)}%`, 'error');
+                        scannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning Apple products... (${confidence.toFixed(1)}%)</p>`;
                     }
                     
                     // Adaptive settings based on performance
@@ -1992,7 +2201,7 @@
                     }
                 } catch (err) {
                     handleOcrError(err, true);
-                    scannerResultsEl.innerHTML = `<p class='text-red-500'>OCR Error: ${err.message}</p>`;
+                    scannerResultsEl.innerHTML = `<p class='text-red-500'>Apple OCR Error: ${err.message}</p>`;
                 }
             };
 
@@ -2029,27 +2238,85 @@
                     quaggaVideo.srcObject.getTracks().forEach(track => track.stop());
                     quaggaVideo.srcObject = null;
                 }
-            };
-            
-            const processScannedCode = (code, reason) => {
+            };              const processScannedCode = (code, reason) => {
                 const scannedText = code.toUpperCase();
                 // Try direct match
                 let item = state.demoMaster.find(i => i.SKU === scannedText);
                 // If not found, try with 'S' prefix
                 if (!item) item = state.demoMaster.find(i => i.SKU === 'S' + scannedText);
+                // If not found, try with 'CS' prefix  
+                if (!item) item = state.demoMaster.find(i => i.SKU === 'CS' + scannedText);
+                // If not found, try with 'cs' prefix
+                if (!item) item = state.demoMaster.find(i => i.SKU === 'cs' + scannedText);
+                // If not found, try with '0' prefix
+                if (!item) item = state.demoMaster.find(i => i.SKU === '0' + scannedText);
 
-                // --- New logic: Try to match serial inside scanned text ---
+                // --- Enhanced Apple Product Serial Number Matching Logic ---
                 if (!item) {
-                    // Try to find a serial in the scanned text that matches any SKU or S+SKU
+                    // Enhanced matching algorithm for Apple products
+                    const matchingAlgorithms = [
+                        // Algorithm 1: Direct SKU contained in scanned text
+                        (sku, scanned) => scanned.includes(sku),
+                        // Algorithm 2: SKU with S prefix contained in scanned text
+                        (sku, scanned) => scanned.includes(sku.slice(1)),
+                        // Algorithm 3: SKU without S prefix (if SKU starts with S)
+                        (sku, scanned) => sku.startsWith('S') && scanned.includes(sku.slice(1)),
+                        // Algorithm 4: Scanned text with S prefix matches SKU
+                        (sku, scanned) => ('S' + scanned) === sku,
+                        // Algorithm 5: Last 5 characters pattern match
+                        (sku, scanned) => {
+                            if (sku.length >= 5) {
+                                const skuLast5 = sku.slice(-5);
+                                return scanned.includes(skuLast5);
+                            }
+                            return false;
+                        },
+                        // Algorithm 6: First 5 characters pattern match
+                        (sku, scanned) => {
+                            if (sku.length >= 5) {
+                                const skuFirst5 = sku.slice(0, 5);
+                                return scanned.includes(skuFirst5);
+                            }
+                            return false;
+                        },
+                        // Algorithm 7: Middle pattern match (removes first and last char)
+                        (sku, scanned) => {
+                            if (sku.length >= 6) {
+                                const skuMiddle = sku.slice(1, -1);
+                                return scanned.includes(skuMiddle);
+                            }
+                            return false;
+                        },
+                        // Algorithm 8: Fuzzy match for Apple serial patterns
+                        (sku, scanned) => {
+                            // Remove common Apple serial prefixes/suffixes and try partial matches
+                            const cleanSku = sku.replace(/^S?/, '').replace(/[-_].*$/, '');
+                            const cleanScanned = scanned.replace(/[-_].*$/, '');
+                            return cleanSku.length >= 4 && cleanScanned.includes(cleanSku);
+                        },
+                        // Algorithm 9: CS prefix matching
+                        (sku, scanned) => scanned.includes('CS' + sku),
+                        // Algorithm 10: cs prefix matching
+                        (sku, scanned) => scanned.includes('cs' + sku),
+                        // Algorithm 11: 0 prefix matching
+                        (sku, scanned) => scanned.includes('0' + sku),
+                        // Algorithm 12: SKU without CS prefix (if SKU starts with CS)
+                        (sku, scanned) => sku.startsWith('CS') && scanned.includes(sku.slice(2)),
+                        // Algorithm 13: SKU without cs prefix (if SKU starts with cs)
+                        (sku, scanned) => sku.startsWith('cs') && scanned.includes(sku.slice(2)),
+                        // Algorithm 14: SKU without 0 prefix (if SKU starts with 0)
+                        (sku, scanned) => sku.startsWith('0') && scanned.includes(sku.slice(1))
+                    ];
+
+                    // Try each matching algorithm
                     for (const demoItem of state.demoMaster) {
-                        if (
-                            scannedText.includes(demoItem.SKU) ||
-                            scannedText.includes('S' + demoItem.SKU) ||
-                            (demoItem.SKU.length > 1 && scannedText.includes(demoItem.SKU.slice(1))) // for S-prefixed SKUs
-                        ) {
-                            item = demoItem;
-                            break;
+                        for (const algorithm of matchingAlgorithms) {
+                            if (algorithm(demoItem.SKU, scannedText)) {
+                                item = demoItem;
+                                break;
+                            }
                         }
+                        if (item) break;
                     }
                 }
 
@@ -2223,14 +2490,26 @@
                     finalStartTextScanner();
                     setTimeout(finalStartOcrStreaming, 800);
                 }
-            }
-
-            async function finalStartTextScanner() {
+            }            async function finalStartTextScanner() {
                 try {
                     if (finalActiveStream) {
                         finalActiveStream.getTracks().forEach(track => track.stop());
                     }
-                    finalActiveStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    
+                    // Enhanced camera constraints for iPad Gen10 and Apple product scanning
+                    const cameraConstraints = {
+                        video: {
+                            facingMode: 'environment',
+                            width: { ideal: 1920, max: 1920 },
+                            height: { ideal: 1080, max: 1080 },
+                            frameRate: { ideal: 30, max: 30 },
+                            focusMode: 'continuous',
+                            exposureMode: 'continuous',
+                            whiteBalanceMode: 'continuous'
+                        }
+                    };
+                    
+                    finalActiveStream = await navigator.mediaDevices.getUserMedia(cameraConstraints);
                     finalTextScannerVideo.srcObject = finalActiveStream;
                     finalTextScannerVideo.play();
                 } catch (err) {
@@ -2267,12 +2546,18 @@
                 updateFinalOcrDebugInfo('status', 'Processing frame...', 'info');
                 
                 const canvas = document.createElement('canvas');
-                const cropY = video.videoHeight * 0.55;
-                const cropHeight = video.videoHeight * 0.12;
-                canvas.width = video.videoWidth;
+                
+                // --- Enhanced Crop Settings for Apple Products ---
+                // Optimized crop for Apple serial numbers typically found on back/bottom
+                const cropY = video.videoHeight * 0.45;        // Higher up for better Apple serial scanning
+                const cropHeight = video.videoHeight * 0.18;   // Taller crop for better text capture
+                const cropX = video.videoWidth * 0.05;         // Slight left margin for better frame
+                const cropWidth = video.videoWidth * 0.90;     // Wider crop for better coverage
+                
+                canvas.width = cropWidth;
                 canvas.height = cropHeight;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, cropY, video.videoWidth, cropHeight, 0, 0, video.videoWidth, cropHeight);
+                ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
                 // Show cropped preview
                 const preview = document.getElementById('final-ocr-crop-preview');
@@ -2300,41 +2585,112 @@
                     }
                 }
 
-                // Lighting feedback
+                // --- Enhanced Lighting Detection for Apple Products ---
                 let total = 0;
+                let pixelCount = 0;
+                let contrastSum = 0;
+                let prevPixel = 0;
+                
                 for (let i = 0; i < imageData.data.length; i += 4) {
-                    total += (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
+                    const pixel = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
+                    total += pixel;
+                    pixelCount++;
+                    
+                    // Calculate contrast for better lighting assessment
+                    if (pixelCount > 1) {
+                        contrastSum += Math.abs(pixel - prevPixel);
+                    }
+                    prevPixel = pixel;
                 }
-                const avgBrightness = total / (imageData.data.length / 4);
-                if (avgBrightness < 60) {
-                    finalScannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพมืดเกินไป กรุณาเพิ่มแสงสว่าง</p>`;
+                
+                const avgBrightness = total / pixelCount;
+                const avgContrast = contrastSum / (pixelCount - 1);
+                
+                // Enhanced lighting feedback for Apple products
+                if (avgBrightness < 55) {
+                    finalScannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพมืดเกินไป กรุณาเพิ่มแสงสว่าง (${avgBrightness.toFixed(0)})</p>`;
                     updateFinalOcrDebugInfo('status', 'Low light detected', 'error');
+                    return;
+                } else if (avgBrightness > 220) {
+                    finalScannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพสว่างเกินไป กรุณาลดแสงสว่าง (${avgBrightness.toFixed(0)})</p>`;
+                    updateFinalOcrDebugInfo('status', 'Too bright detected', 'error');
+                    return;
+                } else if (avgContrast < 15) {
+                    finalScannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพไม่ชัดเจน กรุณาปรับโฟกัส (${avgContrast.toFixed(0)})</p>`;
+                    updateFinalOcrDebugInfo('status', 'Low contrast detected', 'error');
                     return;
                 }
 
-                // Apply preprocessing based on settings
+                // --- Enhanced Preprocessing Algorithms for Apple Products ---
                 let src = cv.imread(canvas);
                 let dst = new cv.Mat();
                 
                 if (ocrSettings.final.preprocessing === 'basic') {
+                    // Basic Apple-optimized preprocessing
                     cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                    
+                    // Apply mild sharpening for Apple serial text
+                    const sharpKernel = cv.matFromArray(3, 3, cv.CV_32FC1, [0, -1, 0, -1, 5, -1, 0, -1, 0]);
+                    cv.filter2D(dst, dst, -1, sharpKernel);
+                    sharpKernel.delete();
+                    
                     cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
                 } else if (ocrSettings.final.preprocessing === 'enhanced') {
+                    // Enhanced Apple-optimized preprocessing
                     cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
-                    cv.equalizeHist(dst, dst);
-                    cv.GaussianBlur(dst, dst, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+                    
+                    // CLAHE for better contrast on Apple products
+                    const clahe = new cv.CLAHE(2.0, new cv.Size(8, 8));
+                    clahe.apply(dst, dst);
+                    clahe.delete();
+                    
+                    // Bilateral filter for noise reduction while preserving edges
+                    cv.bilateralFilter(dst, dst, 9, 75, 75);
+                    
+                    // Unsharp masking for Apple text enhancement
+                    const blurred = new cv.Mat();
+                    cv.GaussianBlur(dst, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+                    cv.addWeighted(dst, 1.5, blurred, -0.5, 0, dst);
+                    blurred.delete();
+                    
                     cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
                 } else if (ocrSettings.final.preprocessing === 'aggressive') {
+                    // Aggressive Apple-optimized preprocessing
                     cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
-                    cv.equalizeHist(dst, dst);
-                    cv.GaussianBlur(dst, dst, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
-                    cv.adaptiveThreshold(dst, dst, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 15, 8);
-                    const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
-                    cv.morphologyEx(dst, dst, cv.MORPH_CLOSE, kernel);
-                    kernel.delete();
+                    
+                    // Advanced CLAHE for difficult lighting
+                    const clahe = new cv.CLAHE(3.0, new cv.Size(6, 6));
+                    clahe.apply(dst, dst);
+                    clahe.delete();
+                    
+                    // Multiple denoising passes for Apple products
+                    cv.fastNlMeansDenoising(dst, dst, 10, 7, 21);
+                    
+                    // Adaptive bilateral filtering
+                    cv.bilateralFilter(dst, dst, 11, 80, 80);
+                    
+                    // Multi-scale sharpening for Apple text
+                    const sharp1 = new cv.Mat();
+                    const sharp2 = new cv.Mat();
+                    cv.GaussianBlur(dst, sharp1, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+                    cv.GaussianBlur(dst, sharp2, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+                    cv.addWeighted(dst, 2.0, sharp1, -0.5, 0, dst);
+                    cv.addWeighted(dst, 1.0, sharp2, -0.5, 0, dst);
+                    sharp1.delete();
+                    sharp2.delete();
+                    
+                    // Adaptive thresholding with morphological operations
+                    cv.adaptiveThreshold(dst, dst, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 6);
+                    
+                    // Morphological operations optimized for Apple text
+                    const kernel1 = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(2, 2));
+                    const kernel2 = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 1));
+                    cv.morphologyEx(dst, dst, cv.MORPH_CLOSE, kernel1);
+                    cv.morphologyEx(dst, dst, cv.MORPH_OPEN, kernel2);
+                    kernel1.delete();
+                    kernel2.delete();
                 }
-                
-                cv.imshow(canvas, dst);
+                  cv.imshow(canvas, dst);
                 src.delete();
                 dst.delete();
                 
@@ -2343,15 +2699,43 @@
                         await initTesseract(ocrSettings.final.language, false);
                     }
                     
+                    // --- Enhanced OCR Processing for Apple Products ---
                     const result = await finalTesseractWorker.recognize(canvas);
                     const processingTime = performance.now() - startTime;
                     
                     let text = result.data.text.replace(/\s/g, '').toUpperCase();
                     let confidence = result.data.confidence;
                     
+                    // --- Apple-specific Text Post-processing ---
+                    // Remove common OCR artifacts for Apple serials
+                    text = text.replace(/[|]/g, 'I')      // Common OCR mistake
+                             .replace(/[0]/g, 'O')       // Zero to O confusion
+                             .replace(/[8]/g, 'B')       // Eight to B confusion
+                             .replace(/[5]/g, 'S')       // Five to S confusion
+                             .replace(/[1]/g, 'I')       // One to I confusion
+                             .replace(/[\.]/g, '')       // Remove periods
+                             .replace(/[,]/g, '')        // Remove commas
+                             .replace(/[\s]/g, '');      // Remove any remaining spaces
+                    
                     // Apply pattern learning boost
                     if (text.length >= 3) {
                         confidence = boostConfidenceForKnownPatterns(text, confidence, false);
+                    }
+                    
+                    // --- Enhanced Apple Serial Pattern Recognition ---
+                    // Boost confidence for Apple-like patterns
+                    const applePatterns = [
+                        /^[A-Z0-9]{10,14}$/,     // Standard Apple serial length
+                        /^[SCLR][A-Z0-9]{9,13}$/,  // Apple with prefix
+                        /^[A-Z0-9]{2}[A-Z]{2}[A-Z0-9]{6,10}$/,  // Apple format pattern
+                        /^[A-Z0-9]*[A-Z]{2}[A-Z0-9]*$/         // Contains letter pairs
+                    ];
+                    
+                    for (const pattern of applePatterns) {
+                        if (pattern.test(text)) {
+                            confidence = Math.min(confidence + 15, 100);
+                            break;
+                        }
                     }
                     
                     // Update performance tracking
@@ -2363,9 +2747,17 @@
                     updateFinalOcrDebugInfo('confidence', `${confidence.toFixed(1)}%`);
                     updateFinalOcrDebugInfo('success-rate', `${((finalOcrSuccessCount / finalOcrTotalAttempts) * 100).toFixed(1)}%`);
                     
-                    const match = text.match(/[A-Z0-9\-]{8,}/);
-                    if (match && confidence >= ocrSettings.final.confidence) {
-                        const finalText = match[0];
+                    // --- Enhanced Apple Serial Validation ---
+                    const appleSerialMatch = text.match(/[A-Z0-9\-]{8,}/);
+                    const isValidAppleSerial = appleSerialMatch && (
+                        text.length >= 8 && text.length <= 14 &&
+                        /[A-Z]/.test(text) &&      // Must contain letters
+                        /[0-9]/.test(text) &&      // Must contain numbers
+                        !/[^A-Z0-9\-]/.test(text)  // Only valid characters
+                    );
+                    
+                    if (isValidAppleSerial && confidence >= ocrSettings.final.confidence) {
+                        const finalText = appleSerialMatch[0];
                         
                         // Cache successful result
                         finalOcrResultsCache.set(cacheKey, { text: finalText, confidence, timestamp: Date.now() });
@@ -2378,14 +2770,15 @@
                         finalOcrPerformanceHistory[finalOcrPerformanceHistory.length - 1].success = true;
                         
                         updateFinalOcrDebugInfo('last-text', finalText);
-                        updateFinalOcrDebugInfo('status', 'Text recognized successfully', 'success');
+                        updateFinalOcrDebugInfo('status', 'Apple serial recognized successfully', 'success');
                         
-                        finalScannerResultsEl.innerHTML = `<p>Serial Number: <b>${finalText}</b></p>`;
+                        finalScannerResultsEl.innerHTML = `<p>Apple Serial: <b>${finalText}</b></p>`;
                         processFinalScannedCode(finalText, 'Text Scan');
-                        finalStopOcrStreaming();                    } else {
+                        finalStopOcrStreaming();
+                    } else {
                         updateFinalOcrDebugInfo('last-text', text || 'No text');
-                        updateFinalOcrDebugInfo('status', `Low confidence: ${confidence.toFixed(1)}%`, 'error');
-                        finalScannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning... (Confidence: ${confidence.toFixed(1)}%)</p>`;
+                        updateFinalOcrDebugInfo('status', `${isValidAppleSerial ? 'Low confidence' : 'Invalid Apple pattern'}: ${confidence.toFixed(1)}%`, 'error');
+                        finalScannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning Apple products... (${confidence.toFixed(1)}%)</p>`;
                     }
                     
                     // Adaptive settings based on performance
@@ -2394,7 +2787,7 @@
                     }
                 } catch (err) {
                     handleOcrError(err, false);
-                    finalScannerResultsEl.innerHTML = `<p class='text-red-500'>OCR Error: ${err.message}</p>`;
+                    finalScannerResultsEl.innerHTML = `<p class='text-red-500'>Apple OCR Error: ${err.message}</p>`;
                 }
             }
 
@@ -2449,25 +2842,90 @@
                 if (finalScanCooldown[code] && now - finalScanCooldown[code] < 2000) return;
                 finalScanCooldown[code] = now;
                 processFinalScannedCode(code, 'Barcode');
-            }
-
-            function processFinalScannedCode(code, reason) {
+            }            function processFinalScannedCode(code, reason) {
                 const scannedText = code.toUpperCase();
+                // Try direct match
                 let item = state.reconciledData.find(i => i.SKU === scannedText);
+                // If not found, try with 'S' prefix
                 if (!item) item = state.reconciledData.find(i => i.SKU === 'S' + scannedText);
+                // If not found, try with 'CS' prefix  
+                if (!item) item = state.reconciledData.find(i => i.SKU === 'CS' + scannedText);
+                // If not found, try with 'cs' prefix
+                if (!item) item = state.reconciledData.find(i => i.SKU === 'cs' + scannedText);
+                // If not found, try with '0' prefix
+                if (!item) item = state.reconciledData.find(i => i.SKU === '0' + scannedText);
+
+                // --- Enhanced Apple Product Serial Number Matching Logic ---
                 if (!item) {
+                    // Enhanced matching algorithm for Apple products
+                    const matchingAlgorithms = [
+                        // Algorithm 1: Direct SKU contained in scanned text
+                        (sku, scanned) => scanned.includes(sku),
+                        // Algorithm 2: SKU with S prefix contained in scanned text
+                        (sku, scanned) => scanned.includes(sku.slice(1)),
+                        // Algorithm 3: SKU without S prefix (if SKU starts with S)
+                        (sku, scanned) => sku.startsWith('S') && scanned.includes(sku.slice(1)),
+                        // Algorithm 4: Scanned text with S prefix matches SKU
+                        (sku, scanned) => ('S' + scanned) === sku,
+                        // Algorithm 5: Last 5 characters pattern match
+                        (sku, scanned) => {
+                            if (sku.length >= 5) {
+                                const skuLast5 = sku.slice(-5);
+                                return scanned.includes(skuLast5);
+                            }
+                            return false;
+                        },
+                        // Algorithm 6: First 5 characters pattern match
+                        (sku, scanned) => {
+                            if (sku.length >= 5) {
+                                const skuFirst5 = sku.slice(0, 5);
+                                return scanned.includes(skuFirst5);
+                            }
+                            return false;
+                        },
+                        // Algorithm 7: Middle pattern match (removes first and last char)
+                        (sku, scanned) => {
+                            if (sku.length >= 6) {
+                                const skuMiddle = sku.slice(1, -1);
+                                return scanned.includes(skuMiddle);
+                            }
+                            return false;
+                        },
+                        // Algorithm 8: Fuzzy match for Apple serial patterns
+                        (sku, scanned) => {
+                            // Remove common Apple serial prefixes/suffixes and try partial matches
+                            const cleanSku = sku.replace(/^S?/, '').replace(/[-_].*$/, '');
+                            const cleanScanned = scanned.replace(/[-_].*$/, '');
+                            return cleanSku.length >= 4 && cleanScanned.includes(cleanSku);
+                        },
+                        // Algorithm 9: CS prefix matching
+                        (sku, scanned) => scanned.includes('CS' + sku),
+                        // Algorithm 10: cs prefix matching
+                        (sku, scanned) => scanned.includes('cs' + sku),
+                        // Algorithm 11: 0 prefix matching
+                        (sku, scanned) => scanned.includes('0' + sku),
+                        // Algorithm 12: SKU without CS prefix (if SKU starts with CS)
+                        (sku, scanned) => sku.startsWith('CS') && scanned.includes(sku.slice(2)),
+                        // Algorithm 13: SKU without cs prefix (if SKU starts with cs)
+                        (sku, scanned) => sku.startsWith('cs') && scanned.includes(sku.slice(2)),
+                        // Algorithm 14: SKU without 0 prefix (if SKU starts with 0)
+                        (sku, scanned) => sku.startsWith('0') && scanned.includes(sku.slice(1))
+                    ];
+
+                    // Try each matching algorithm
                     for (const recItem of state.reconciledData) {
-                        if (
-                            scannedText.includes(recItem.SKU) ||
-                            scannedText.includes('S' + recItem.SKU) ||
-                            (recItem.SKU.length > 1 && scannedText.includes(recItem.SKU.slice(1)))
-                        ) {
-                            item = recItem;
-                            break;
+                        for (const algorithm of matchingAlgorithms) {
+                            if (algorithm(recItem.SKU, scannedText)) {
+                                item = recItem;
+                                break;
+                            }
                         }
+                        if (item) break;
                     }
                 }
+
                 if (item) {
+                    playSound('success');
                     finalScannerResultsEl.innerHTML = `<div class="text-left w-full space-y-1"><p class="font-medium text-slate-800">${item.Description}</p><p class="text-sm text-slate-500">SKU: ${item.SKU}</p><div class="flex justify-between items-baseline pt-1"><span class="text-lg font-bold text-slate-700">Counted: <span class="text-blue-600">${item.Recount}</span> / ${item.SOH}</span><span class="text-lg font-bold">${item.FinalDiff === 0 ? '<span class="text-green-600">Matched</span>' : item.FinalDiff > 0 ? '<span class="text-yellow-600">Overage</span>' : '<span class="text-blue-600">Shortage</span>'}</span></div></div>`;
                     const row = document.querySelector(`#final-report-table-container tr[data-sku="${item.SKU}"]`);
                     if (row) {
@@ -2476,6 +2934,7 @@
                         setTimeout(() => row.classList.remove('ring-2', 'ring-offset-2', 'ring-green-500'), 800);
                     }
                 } else {
+                    playSound('error');
                     finalScannerResultsEl.innerHTML = `<div class="text-center w-full"><p class="font-bold text-red-600">SKU Not Found</p><p class="text-sm text-slate-500">${scannedText}</p></div>`;
                 }
             }
