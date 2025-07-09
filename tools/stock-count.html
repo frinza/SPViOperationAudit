@@ -295,9 +295,85 @@
                                     <div class="scan-box"></div>
                                     <button id="capture-btn" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-rose-500 text-white font-bold py-2 px-4 rounded-lg z-20">ถ่ายภาพและสแกน</button>
                                 </div>
-                                <!-- DEMO scanner preview -->
-                                <canvas id="ocr-crop-preview" class="mt-2 border border-blue-300 rounded w-full max-w-xs mx-auto" style="background:#fff;display:block;"></canvas>
+                                <!-- DEMO scanner preview -->                                <canvas id="ocr-crop-preview" class="mt-2 border border-blue-300 rounded w-full max-w-xs mx-auto" style="background:#fff;display:block;"></canvas>
                                 <div id="scanner-results" class="mt-4 p-3 w-full max-w-sm bg-slate-50 border border-slate-200 rounded-lg text-center"></div>
+                                
+                                <!-- Demo OCR Enhancement Controls -->
+                                <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg w-full max-w-sm">
+                                    <h4 class="text-sm font-semibold mb-2 text-gray-700">OCR Enhancement Controls</h4>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <label for="ocr-confidence-slider" class="text-xs text-gray-600">Confidence:</label>
+                                            <div class="flex items-center gap-2">
+                                                <input type="range" id="ocr-confidence-slider" min="30" max="90" value="60" class="w-16">
+                                                <span id="ocr-confidence-value" class="text-xs text-gray-600 w-8">60%</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <label for="ocr-speed-select" class="text-xs text-gray-600">Speed:</label>
+                                            <select id="ocr-speed-select" class="text-xs p-1 border border-gray-300 rounded">
+                                                <option value="300">Fast</option>
+                                                <option value="500">Normal</option>
+                                                <option value="700" selected>Slow</option>
+                                                <option value="1000">Very Slow</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <label for="ocr-language-select" class="text-xs text-gray-600">Language:</label>
+                                            <select id="ocr-language-select" class="text-xs p-1 border border-gray-300 rounded">
+                                                <option value="eng" selected>English</option>
+                                                <option value="tha">Thai</option>
+                                                <option value="eng+tha">English+Thai</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <label for="ocr-preprocessing-select" class="text-xs text-gray-600">Preprocessing:</label>
+                                            <select id="ocr-preprocessing-select" class="text-xs p-1 border border-gray-300 rounded">
+                                                <option value="basic">Basic</option>
+                                                <option value="enhanced" selected>Enhanced</option>
+                                                <option value="aggressive">Aggressive</option>
+                                            </select>
+                                        </div>
+                                        <button id="toggle-debug-btn" class="w-full bg-blue-500 text-white text-xs py-1 px-2 rounded hover:bg-blue-600">Toggle Debug</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Demo OCR Debug Panel -->
+                                <div id="ocr-debug-panel" class="hidden mt-2 p-3 bg-gray-100 border border-gray-300 rounded-lg w-full max-w-sm">
+                                    <h4 class="text-sm font-semibold mb-2 text-gray-700">OCR Debug Info</h4>
+                                    <div class="space-y-1 text-xs">
+                                        <div class="flex justify-between">
+                                            <span>Status:</span>
+                                            <span id="ocr-status" class="text-gray-600">Ready</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>Last Text:</span>
+                                            <span id="ocr-last-text" class="text-gray-600">None</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>Confidence:</span>
+                                            <span id="ocr-confidence" class="text-gray-600">0%</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>Process Time:</span>
+                                            <span id="ocr-process-time" class="text-gray-600">0ms</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>Success Rate:</span>
+                                            <span id="ocr-success-rate" class="text-gray-600">0%</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>Cache Hits:</span>
+                                            <span id="ocr-cache-hits" class="text-gray-600">0</span>
+                                        </div>
+                                        <div class="mt-2">
+                                            <div class="text-xs text-gray-500">History:</div>
+                                            <div id="ocr-history" class="bg-white border border-gray-200 rounded p-1 text-xs max-h-16 overflow-y-auto"></div>
+                                        </div>
+                                        <button onclick="resetOcrStats()" class="w-full bg-red-500 text-white text-xs py-1 px-2 rounded hover:bg-red-600 mt-2">Reset Stats</button>
+                                    </div>
+                                </div>
+                                
                                 <button id="closeScannerBtn" class="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded">ปิดกล้อง</button>
                              </div>
                          </div>
@@ -455,9 +531,85 @@
                                                 <div class="scan-box"></div>
                                                 <button id="final-capture-btn" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-rose-500 text-white font-bold py-2 px-4 rounded-lg z-20">ถ่ายภาพและสแกน</button>
                                             </div>
-                                            <!-- FINAL scanner preview -->
-                                            <canvas id="final-ocr-crop-preview" class="mt-2 border border-blue-300 rounded w-full max-w-xs mx-auto" style="background:#fff;display:block;"></canvas>
+                                            <!-- FINAL scanner preview -->                                            <canvas id="final-ocr-crop-preview" class="mt-2 border border-blue-300 rounded w-full max-w-xs mx-auto" style="background:#fff;display:block;"></canvas>
                                             <div id="final-scanner-results" class="mt-4 p-3 w-full max-w-sm bg-slate-50 border border-slate-200 rounded-lg text-center"></div>
+                                            
+                                            <!-- Final OCR Enhancement Controls -->
+                                            <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg w-full max-w-sm">
+                                                <h4 class="text-sm font-semibold mb-2 text-gray-700">OCR Enhancement Controls</h4>
+                                                <div class="space-y-3">
+                                                    <div class="flex items-center justify-between">
+                                                        <label for="final-ocr-confidence-slider" class="text-xs text-gray-600">Confidence:</label>
+                                                        <div class="flex items-center gap-2">
+                                                            <input type="range" id="final-ocr-confidence-slider" min="30" max="90" value="60" class="w-16">
+                                                            <span id="final-ocr-confidence-value" class="text-xs text-gray-600 w-8">60%</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex items-center justify-between">
+                                                        <label for="final-ocr-speed-select" class="text-xs text-gray-600">Speed:</label>
+                                                        <select id="final-ocr-speed-select" class="text-xs p-1 border border-gray-300 rounded">
+                                                            <option value="300">Fast</option>
+                                                            <option value="500">Normal</option>
+                                                            <option value="700" selected>Slow</option>
+                                                            <option value="1000">Very Slow</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="flex items-center justify-between">
+                                                        <label for="final-ocr-language-select" class="text-xs text-gray-600">Language:</label>
+                                                        <select id="final-ocr-language-select" class="text-xs p-1 border border-gray-300 rounded">
+                                                            <option value="eng" selected>English</option>
+                                                            <option value="tha">Thai</option>
+                                                            <option value="eng+tha">English+Thai</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="flex items-center justify-between">
+                                                        <label for="final-ocr-preprocessing-select" class="text-xs text-gray-600">Preprocessing:</label>
+                                                        <select id="final-ocr-preprocessing-select" class="text-xs p-1 border border-gray-300 rounded">
+                                                            <option value="basic">Basic</option>
+                                                            <option value="enhanced" selected>Enhanced</option>
+                                                            <option value="aggressive">Aggressive</option>
+                                                        </select>
+                                                    </div>
+                                                    <button id="final-toggle-debug-btn" class="w-full bg-blue-500 text-white text-xs py-1 px-2 rounded hover:bg-blue-600">Toggle Debug</button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Final OCR Debug Panel -->
+                                            <div id="final-ocr-debug-panel" class="hidden mt-2 p-3 bg-gray-100 border border-gray-300 rounded-lg w-full max-w-sm">
+                                                <h4 class="text-sm font-semibold mb-2 text-gray-700">OCR Debug Info</h4>
+                                                <div class="space-y-1 text-xs">
+                                                    <div class="flex justify-between">
+                                                        <span>Status:</span>
+                                                        <span id="final-ocr-status" class="text-gray-600">Ready</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span>Last Text:</span>
+                                                        <span id="final-ocr-last-text" class="text-gray-600">None</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span>Confidence:</span>
+                                                        <span id="final-ocr-confidence" class="text-gray-600">0%</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span>Process Time:</span>
+                                                        <span id="final-ocr-process-time" class="text-gray-600">0ms</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span>Success Rate:</span>
+                                                        <span id="final-ocr-success-rate" class="text-gray-600">0%</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span>Cache Hits:</span>
+                                                        <span id="final-ocr-cache-hits" class="text-gray-600">0</span>
+                                                    </div>
+                                                    <div class="mt-2">
+                                                        <div class="text-xs text-gray-500">History:</div>
+                                                        <div id="final-ocr-history" class="bg-white border border-gray-200 rounded p-1 text-xs max-h-16 overflow-y-auto"></div>
+                                                    </div>
+                                                    <button onclick="resetOcrStats()" class="w-full bg-red-500 text-white text-xs py-1 px-2 rounded hover:bg-red-600 mt-2">Reset Stats</button>
+                                                </div>
+                                            </div>
+                                            
                                             <button id="final-closeScannerBtn" class="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded">ปิดกล้อง</button>
                                         </div>
                                     </div>
@@ -544,13 +696,319 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const getEl = (id) => document.getElementById(id);
-            
-            let hasUnsavedChanges = false;
+              let hasUnsavedChanges = false;
             let state = getInitialState();
             let finalSummaryData = {};
             let activeStream = null;
             let ocrStreaming = false;
             let ocrStreamInterval = null;
+
+            // === OCR Enhancement Variables ===
+            let tesseractWorker = null;
+            let finalTesseractWorker = null;
+            let ocrSettings = {
+                demo: {
+                    confidence: 60,
+                    language: 'eng',
+                    preprocessing: 'enhanced',
+                    speed: 800
+                },
+                final: {
+                    confidence: 60,
+                    language: 'eng',
+                    preprocessing: 'enhanced',
+                    speed: 800
+                }
+            };
+
+            // Performance tracking
+            let ocrPerformanceHistory = [];
+            let finalOcrPerformanceHistory = [];
+            let ocrSuccessCount = 0;
+            let finalOcrSuccessCount = 0;
+            let ocrTotalAttempts = 0;
+            let finalOcrTotalAttempts = 0;
+
+            // OCR Results cache
+            let ocrResultsCache = new Map();
+            let finalOcrResultsCache = new Map();
+            let ocrCacheHits = 0;
+            let finalOcrCacheHits = 0;
+
+            // Pattern learning
+            let ocrPatternLearning = new Map();
+            let finalOcrPatternLearning = new Map();
+
+            // Debug tracking
+            let ocrDebugHistory = [];
+            let finalOcrDebugHistory = [];
+
+            // === OCR Enhancement Functions ===
+            async function initTesseract(language = 'eng', isDemo = true) {
+                const worker = isDemo ? tesseractWorker : finalTesseractWorker;
+                if (worker) {
+                    await worker.terminate();
+                }
+                
+                const newWorker = await Tesseract.createWorker(language);
+                await newWorker.setParameters({
+                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-',
+                    tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
+                });
+                
+                if (isDemo) {
+                    tesseractWorker = newWorker;
+                    updateOcrDebugInfo('status', 'Worker initialized', 'success');
+                } else {
+                    finalTesseractWorker = newWorker;
+                    updateFinalOcrDebugInfo('status', 'Worker initialized', 'success');
+                }
+                
+                return newWorker;
+            }
+
+            function generateCacheKey(imageData, settings) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 50;
+                canvas.height = 20;
+                const ctx = canvas.getContext('2d');
+                ctx.putImageData(imageData, 0, 0);
+                const hash = btoa(canvas.toDataURL()).slice(0, 16);
+                return `${hash}-${settings.language}-${settings.preprocessing}-${settings.confidence}`;
+            }            function learnSuccessPattern(text, confidence, processingTime, isDemo = true) {
+                const pattern = text.substring(0, 3); // First 3 characters as pattern
+                const patternMap = isDemo ? ocrPatternLearning : finalOcrPatternLearning;
+                
+                if (!patternMap.has(pattern)) {
+                    patternMap.set(pattern, { count: 0, avgConfidence: 0, avgTime: 0 });
+                }
+                const existing = patternMap.get(pattern);
+                existing.count++;
+                existing.avgConfidence = (existing.avgConfidence + confidence) / 2;
+                existing.avgTime = (existing.avgTime + processingTime) / 2;
+            }            function boostConfidenceForKnownPatterns(text, confidence, isDemo = true) {
+                const pattern = text.substring(0, 3);
+                const patternMap = isDemo ? ocrPatternLearning : finalOcrPatternLearning;
+                const learned = patternMap.get(pattern);
+                if (learned && learned.count > 2) {
+                    return Math.min(confidence + (learned.avgConfidence * 0.1), 100);
+                }
+                return confidence;
+            }
+
+            // Error recovery functions
+            function handleOcrError(error, isDemo = true) {
+                const errorMsg = error.message || 'Unknown OCR error';
+                console.error('OCR Error:', error);
+                
+                // Update debug info
+                if (isDemo) {
+                    updateOcrDebugInfo('status', `Error: ${errorMsg}`, 'error');
+                } else {
+                    updateFinalOcrDebugInfo('status', `Error: ${errorMsg}`, 'error');
+                }
+                
+                // Attempt recovery based on error type
+                if (errorMsg.includes('Worker')) {
+                    // Worker-related error - reinitialize
+                    setTimeout(() => {
+                        console.log('Attempting to reinitialize Tesseract worker');
+                        initTesseract(isDemo ? ocrSettings.demo.language : ocrSettings.final.language, isDemo);
+                    }, 1000);
+                } else if (errorMsg.includes('canvas') || errorMsg.includes('image')) {
+                    // Image processing error - skip frame
+                    console.log('Skipping frame due to image processing error');
+                } else if (errorMsg.includes('memory')) {
+                    // Memory issue - clear cache and restart
+                    cleanupOcrCache();
+                    setTimeout(() => {
+                        console.log('Attempting recovery after memory error');
+                        initTesseract(isDemo ? ocrSettings.demo.language : ocrSettings.final.language, isDemo);
+                    }, 2000);
+                }
+                
+                return false; // Indicate error was handled
+            }
+
+            function validateOcrResult(result, confidence, expectedPattern = /[A-Z0-9\-]{8,}/) {
+                if (!result || !result.data) return false;
+                
+                const text = result.data.text.replace(/\s/g, '').toUpperCase();
+                const hasValidPattern = expectedPattern.test(text);
+                const hasValidConfidence = confidence >= 30; // Minimum threshold
+                
+                return hasValidPattern && hasValidConfidence;
+            }
+
+            function adaptiveOcrSettings(performance, isDemo = true) {
+                const settings = isDemo ? ocrSettings.demo : ocrSettings.final;
+                const recentPerformance = (isDemo ? ocrPerformanceHistory : finalOcrPerformanceHistory).slice(-10);
+                
+                if (recentPerformance.length < 5) return; // Not enough data
+                
+                const avgConfidence = recentPerformance.reduce((sum, p) => sum + p.confidence, 0) / recentPerformance.length;
+                const successRate = recentPerformance.filter(p => p.success).length / recentPerformance.length;
+                
+                // Adapt preprocessing based on performance
+                if (successRate < 0.3 && avgConfidence < 70) {
+                    // Poor performance - increase preprocessing
+                    if (settings.preprocessing === 'basic') {
+                        settings.preprocessing = 'enhanced';
+                        console.log(`Adaptive OCR: Upgrading to enhanced preprocessing (${isDemo ? 'demo' : 'final'})`);
+                    } else if (settings.preprocessing === 'enhanced') {
+                        settings.preprocessing = 'aggressive';
+                        console.log(`Adaptive OCR: Upgrading to aggressive preprocessing (${isDemo ? 'demo' : 'final'})`);
+                    }
+                } else if (successRate > 0.8 && avgConfidence > 85) {
+                    // Great performance - reduce preprocessing for speed
+                    if (settings.preprocessing === 'aggressive') {
+                        settings.preprocessing = 'enhanced';
+                        console.log(`Adaptive OCR: Downgrading to enhanced preprocessing (${isDemo ? 'demo' : 'final'})`);
+                    } else if (settings.preprocessing === 'enhanced') {
+                        settings.preprocessing = 'basic';
+                        console.log(`Adaptive OCR: Downgrading to basic preprocessing (${isDemo ? 'demo' : 'final'})`);
+                    }
+                }
+                
+                // Update UI if needed
+                const selectElement = document.getElementById(isDemo ? 'ocr-preprocessing-select' : 'final-ocr-preprocessing-select');
+                if (selectElement && selectElement.value !== settings.preprocessing) {
+                    selectElement.value = settings.preprocessing;
+                }
+            }
+
+            function updateOcrDebugInfo(type, value, status = 'info') {
+                const elements = {
+                    'last-text': 'ocr-last-text',
+                    'confidence': 'ocr-confidence',
+                    'process-time': 'ocr-process-time',
+                    'status': 'ocr-status',
+                    'cache-hits': 'ocr-cache-hits',
+                    'success-rate': 'ocr-success-rate'
+                };
+                
+                const element = document.getElementById(elements[type]);
+                if (element) {
+                    element.textContent = value;
+                    element.className = `font-mono text-${status === 'success' ? 'green' : status === 'error' ? 'red' : 'blue'}-600`;
+                }
+                
+                if (type === 'status' && status === 'success') {
+                    ocrDebugHistory.push(`${new Date().toLocaleTimeString()}: ${value}`);
+                    updateOcrHistory();
+                }
+            }
+
+            function updateFinalOcrDebugInfo(type, value, status = 'info') {
+                const elements = {
+                    'last-text': 'final-ocr-last-text',
+                    'confidence': 'final-ocr-confidence',
+                    'process-time': 'final-ocr-process-time',
+                    'status': 'final-ocr-status',
+                    'cache-hits': 'final-ocr-cache-hits',
+                    'success-rate': 'final-ocr-success-rate'
+                };
+                
+                const element = document.getElementById(elements[type]);
+                if (element) {
+                    element.textContent = value;
+                    element.className = `font-mono text-${status === 'success' ? 'green' : status === 'error' ? 'red' : 'blue'}-600`;
+                }
+                
+                if (type === 'status' && status === 'success') {
+                    finalOcrDebugHistory.push(`${new Date().toLocaleTimeString()}: ${value}`);
+                    updateFinalOcrHistory();
+                }
+            }
+
+            function updateOcrHistory() {
+                const historyEl = document.getElementById('ocr-history');
+                if (historyEl) {
+                    historyEl.innerHTML = ocrDebugHistory.slice(-10).join('<br>');
+                    historyEl.scrollTop = historyEl.scrollHeight;
+                }
+            }
+
+            function updateFinalOcrHistory() {
+                const historyEl = document.getElementById('final-ocr-history');
+                if (historyEl) {
+                    historyEl.innerHTML = finalOcrDebugHistory.slice(-10).join('<br>');
+                    historyEl.scrollTop = historyEl.scrollHeight;
+                }            }
+
+            // Cache management functions
+            function cleanupOcrCache() {
+                const now = Date.now();
+                const maxAge = 5 * 60 * 1000; // 5 minutes
+                
+                // Clean demo cache
+                for (const [key, value] of ocrResultsCache.entries()) {
+                    if (now - value.timestamp > maxAge) {
+                        ocrResultsCache.delete(key);
+                    }
+                }
+                
+                // Clean final cache
+                for (const [key, value] of finalOcrResultsCache.entries()) {
+                    if (now - value.timestamp > maxAge) {
+                        finalOcrResultsCache.delete(key);
+                    }
+                }
+                
+                // Limit cache size
+                const maxCacheSize = 100;
+                if (ocrResultsCache.size > maxCacheSize) {
+                    const entries = Array.from(ocrResultsCache.entries());
+                    entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+                    const toDelete = entries.slice(0, entries.length - maxCacheSize);
+                    toDelete.forEach(([key]) => ocrResultsCache.delete(key));
+                }
+                
+                if (finalOcrResultsCache.size > maxCacheSize) {
+                    const entries = Array.from(finalOcrResultsCache.entries());
+                    entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+                    const toDelete = entries.slice(0, entries.length - maxCacheSize);
+                    toDelete.forEach(([key]) => finalOcrResultsCache.delete(key));
+                }
+            }
+
+            function resetOcrStats() {
+                ocrSuccessCount = 0;
+                ocrTotalAttempts = 0;
+                ocrCacheHits = 0;
+                ocrPerformanceHistory.length = 0;
+                ocrDebugHistory.length = 0;
+                ocrResultsCache.clear();
+                ocrPatternLearning.clear();
+                
+                finalOcrSuccessCount = 0;
+                finalOcrTotalAttempts = 0;
+                finalOcrCacheHits = 0;
+                finalOcrPerformanceHistory.length = 0;
+                finalOcrDebugHistory.length = 0;
+                finalOcrResultsCache.clear();
+                finalOcrPatternLearning.clear();
+                
+                // Update debug displays
+                updateOcrDebugInfo('success-rate', '0%');
+                updateOcrDebugInfo('cache-hits', '0');
+                updateOcrDebugInfo('last-text', 'None');
+                updateOcrDebugInfo('confidence', '0%');
+                updateOcrDebugInfo('process-time', '0ms');
+                updateOcrDebugInfo('status', 'Reset', 'info');
+                updateOcrHistory();
+                
+                updateFinalOcrDebugInfo('success-rate', '0%');
+                updateFinalOcrDebugInfo('cache-hits', '0');
+                updateFinalOcrDebugInfo('last-text', 'None');
+                updateFinalOcrDebugInfo('confidence', '0%');
+                updateFinalOcrDebugInfo('process-time', '0ms');
+                updateFinalOcrDebugInfo('status', 'Reset', 'info');
+                updateFinalOcrHistory();
+            }
+
+            // Auto-cleanup cache every 2 minutes
+            setInterval(cleanupOcrCache, 2 * 60 * 1000);
 
             function getInitialState() {
                 return {
@@ -1325,14 +1783,16 @@
                 ocrStreaming = false;
                 if (ocrStreamInterval) clearInterval(ocrStreamInterval);
                 ocrStreamInterval = null;
-            };
-
-            const processOcrFrame = async () => {
+            };            const processOcrFrame = async () => {
                 if (!ocrStreaming || !activeStream || !cvReady) return;
                 const video = textScannerVideo;
                 if (video.readyState < 2) return;
+                
+                const startTime = performance.now();
+                ocrTotalAttempts++;
+                updateOcrDebugInfo('status', 'Processing frame...', 'info');
+                
                 const canvas = document.createElement('canvas');
-                // Crop to lower half, adjust as needed
                 const cropY = video.videoHeight * 0.55;
                 const cropHeight = video.videoHeight * 0.12;
                 canvas.width = video.videoWidth;
@@ -1348,8 +1808,25 @@
                     preview.getContext('2d').drawImage(canvas, 0, 0);
                 }
 
-                // Lighting feedback
+                // Check cache first
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const cacheKey = generateCacheKey(imageData, ocrSettings.demo);
+                if (ocrResultsCache.has(cacheKey)) {
+                    ocrCacheHits++;
+                    const cachedResult = ocrResultsCache.get(cacheKey);
+                    updateOcrDebugInfo('cache-hits', ocrCacheHits.toString());
+                    updateOcrDebugInfo('last-text', cachedResult.text);
+                    updateOcrDebugInfo('confidence', `${cachedResult.confidence.toFixed(1)}%`);
+                    
+                    if (cachedResult.text && cachedResult.text.match(/[A-Z0-9\-]{8,}/)) {
+                        scannerResultsEl.innerHTML = `<p>Serial Number: <b>${cachedResult.text}</b> (cached)</p>`;
+                        processScannedCode(cachedResult.text, 'Text Scan');
+                        stopOcrStreaming();
+                        return;
+                    }
+                }
+
+                // Lighting feedback
                 let total = 0;
                 for (let i = 0; i < imageData.data.length; i += 4) {
                     total += (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
@@ -1357,31 +1834,92 @@
                 const avgBrightness = total / (imageData.data.length / 4);
                 if (avgBrightness < 60) {
                     scannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพมืดเกินไป กรุณาเพิ่มแสงสว่าง</p>`;
+                    updateOcrDebugInfo('status', 'Low light detected', 'error');
                     return;
                 }
 
+                // Apply preprocessing based on settings
                 let src = cv.imread(canvas);
                 let dst = new cv.Mat();
-                cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
-                cv.equalizeHist(dst, dst);
-                cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
+                
+                if (ocrSettings.demo.preprocessing === 'basic') {
+                    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                    cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
+                } else if (ocrSettings.demo.preprocessing === 'enhanced') {
+                    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                    cv.equalizeHist(dst, dst);
+                    cv.GaussianBlur(dst, dst, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+                    cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
+                } else if (ocrSettings.demo.preprocessing === 'aggressive') {
+                    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                    cv.equalizeHist(dst, dst);
+                    cv.GaussianBlur(dst, dst, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+                    cv.adaptiveThreshold(dst, dst, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 15, 8);
+                    const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+                    cv.morphologyEx(dst, dst, cv.MORPH_CLOSE, kernel);
+                    kernel.delete();
+                }
+                
                 cv.imshow(canvas, dst);
                 src.delete();
                 dst.delete();
+                
                 try {
-                    const result = await Tesseract.recognize(canvas, 'eng', {
-                        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-                    });
-                    const text = result.data.text.replace(/\s/g, '').toUpperCase();
+                    if (!tesseractWorker) {
+                        await initTesseract(ocrSettings.demo.language, true);
+                    }
+                    
+                    const result = await tesseractWorker.recognize(canvas);
+                    const processingTime = performance.now() - startTime;
+                    
+                    let text = result.data.text.replace(/\s/g, '').toUpperCase();
+                    let confidence = result.data.confidence;
+                    
+                    // Apply pattern learning boost
+                    if (text.length >= 3) {
+                        confidence = boostConfidenceForKnownPatterns(text, confidence);
+                    }
+                    
+                    // Update performance tracking
+                    ocrPerformanceHistory.push({ time: processingTime, confidence, success: false });
+                    if (ocrPerformanceHistory.length > 50) ocrPerformanceHistory.shift();
+                    
+                    // Update debug info
+                    updateOcrDebugInfo('process-time', `${processingTime.toFixed(0)}ms`);
+                    updateOcrDebugInfo('confidence', `${confidence.toFixed(1)}%`);
+                    updateOcrDebugInfo('success-rate', `${((ocrSuccessCount / ocrTotalAttempts) * 100).toFixed(1)}%`);
+                    
                     const match = text.match(/[A-Z0-9\-]{8,}/);
-                    if (match) {
-                        scannerResultsEl.innerHTML = `<p>Serial Number: <b>${match[0]}</b></p>`;
-                        processScannedCode(match[0], 'Text Scan');
-                        stopOcrStreaming(); // Stop after successful scan
-                    } else {
-                        scannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning... (No serial found yet)</p>`;
+                    if (match && confidence >= ocrSettings.demo.confidence) {
+                        const finalText = match[0];
+                        
+                        // Cache successful result
+                        ocrResultsCache.set(cacheKey, { text: finalText, confidence, timestamp: Date.now() });
+                        
+                        // Learn successful pattern
+                        learnSuccessPattern(finalText, confidence, processingTime);
+                        
+                        // Update success tracking
+                        ocrSuccessCount++;
+                        ocrPerformanceHistory[ocrPerformanceHistory.length - 1].success = true;
+                        
+                        updateOcrDebugInfo('last-text', finalText);
+                        updateOcrDebugInfo('status', 'Text recognized successfully', 'success');
+                        
+                        scannerResultsEl.innerHTML = `<p>Serial Number: <b>${finalText}</b></p>`;
+                        processScannedCode(finalText, 'Text Scan');
+                        stopOcrStreaming();                    } else {
+                        updateOcrDebugInfo('last-text', text || 'No text');
+                        updateOcrDebugInfo('status', `Low confidence: ${confidence.toFixed(1)}%`, 'error');
+                        scannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning... (Confidence: ${confidence.toFixed(1)}%)</p>`;
+                    }
+                    
+                    // Adaptive settings based on performance
+                    if (ocrPerformanceHistory.length > 0 && ocrPerformanceHistory.length % 10 === 0) {
+                        adaptiveOcrSettings(ocrPerformanceHistory, true);
                     }
                 } catch (err) {
+                    handleOcrError(err, true);
                     scannerResultsEl.innerHTML = `<p class='text-red-500'>OCR Error: ${err.message}</p>`;
                 }
             };
@@ -1516,10 +2054,62 @@
                 addListener('demo-count-container', 'input', e => { if (e.target.matches('input[type="number"]')) updateDemoCount(e.target.closest('tr').dataset.sku, e.target.value); });
                 addListener('final-report-table-container', 'click', e => { const header = e.target.closest('th[data-sort-by]'); if (header) handleSort('finalReportSort', header.dataset.sortBy, applyFinalReportView); });
                 addListener('final-report-table-container', 'input', e => { const { target: input } = e; const sku = input.closest('tr').dataset.sku; if (input.matches('input[type="number"]')) updateFinalCount(sku, input.value); else if (input.matches('input[type="text"]')) updateRemark(sku, input.value); });
-                
-                const handleEnter = (event) => { if (event.key === 'Enter') { const allInputs = Array.from(event.currentTarget.querySelectorAll('input[type="number"], input[type="text"]')); const currentIndex = allInputs.indexOf(event.target); if (currentIndex > -1 && currentIndex < allInputs.length - 1) allInputs[currentIndex + 1].focus(); } };
+                  const handleEnter = (event) => { if (event.key === 'Enter') { const allInputs = Array.from(event.currentTarget.querySelectorAll('input[type="number"], input[type="text"]')); const currentIndex = allInputs.indexOf(event.target); if (currentIndex > -1 && currentIndex < allInputs.length - 1) allInputs[currentIndex + 1].focus(); } };
                 addListener('demo-count-container', 'keydown', handleEnter);
                 addListener('final-report-table-container', 'keydown', handleEnter);
+
+                // === OCR Enhancement Event Listeners ===
+                // Demo scanner OCR controls
+                addListener('ocr-confidence-slider', 'input', (e) => {
+                    ocrSettings.demo.confidence = parseInt(e.target.value);
+                    document.getElementById('ocr-confidence-value').textContent = e.target.value + '%';
+                });
+                addListener('ocr-speed-select', 'change', (e) => {
+                    ocrSettings.demo.speed = parseInt(e.target.value);
+                    if (ocrStreamInterval) {
+                        clearInterval(ocrStreamInterval);
+                        ocrStreamInterval = setInterval(processOcrFrame, ocrSettings.demo.speed);
+                    }
+                });
+                addListener('ocr-language-select', 'change', async (e) => {
+                    ocrSettings.demo.language = e.target.value;
+                    if (tesseractWorker) {
+                        await initTesseract(ocrSettings.demo.language, true);
+                    }
+                });
+                addListener('ocr-preprocessing-select', 'change', (e) => {
+                    ocrSettings.demo.preprocessing = e.target.value;
+                });
+                addListener('toggle-debug-btn', 'click', () => {
+                    const panel = document.getElementById('ocr-debug-panel');
+                    panel.classList.toggle('hidden');
+                });
+
+                // Final scanner OCR controls
+                addListener('final-ocr-confidence-slider', 'input', (e) => {
+                    ocrSettings.final.confidence = parseInt(e.target.value);
+                    document.getElementById('final-ocr-confidence-value').textContent = e.target.value + '%';
+                });                addListener('final-ocr-speed-select', 'change', (e) => {
+                    ocrSettings.final.speed = parseInt(e.target.value);
+                    if (finalOcrStreaming) {
+                        clearInterval(finalOcrStreamInterval);
+                        finalOcrStreamInterval = setInterval(finalProcessOcrFrame, ocrSettings.final.speed);
+                    }
+                });
+                addListener('final-ocr-language-select', 'change', async (e) => {
+                    ocrSettings.final.language = e.target.value;
+                    if (finalTesseractWorker) {
+                        await initTesseract(ocrSettings.final.language, false);
+                    }
+                });
+                addListener('final-ocr-preprocessing-select', 'change', (e) => {
+                    ocrSettings.final.preprocessing = e.target.value;
+                });
+                addListener('final-toggle-debug-btn', 'click', () => {
+                    const panel = document.getElementById('final-ocr-debug-panel');
+                    panel.classList.toggle('hidden');
+                });
+
                 window.addEventListener('beforeunload', (e) => { if (hasUnsavedChanges) e.preventDefault(); });
             }
             
@@ -1584,25 +2174,26 @@
                     video.srcObject = null;
                 }
                 finalActiveStream = null;
-            }
-
-            function finalStartOcrStreaming() {
+            }            function finalStartOcrStreaming() {
                 if (finalOcrStreaming) return;
                 finalOcrStreaming = true;
                 finalScannerResultsEl.innerHTML = '<p class="text-blue-500">กำลังสแกนแบบเรียลไทม์...</p>';
-                finalOcrStreamInterval = setInterval(finalProcessOcrFrame, 700);
+                finalOcrStreamInterval = setInterval(finalProcessOcrFrame, ocrSettings.final.speed);
             }
 
             function finalStopOcrStreaming() {
                 finalOcrStreaming = false;
                 if (finalOcrStreamInterval) clearInterval(finalOcrStreamInterval);
                 finalOcrStreamInterval = null;
-            }
-
-            async function finalProcessOcrFrame() {
+            }            async function finalProcessOcrFrame() {
                 if (!finalOcrStreaming || !finalActiveStream || !cvReady) return;
                 const video = finalTextScannerVideo;
                 if (video.readyState < 2) return;
+                
+                const startTime = performance.now();
+                finalOcrTotalAttempts++;
+                updateFinalOcrDebugInfo('status', 'Processing frame...', 'info');
+                
                 const canvas = document.createElement('canvas');
                 const cropY = video.videoHeight * 0.55;
                 const cropHeight = video.videoHeight * 0.12;
@@ -1619,8 +2210,25 @@
                     preview.getContext('2d').drawImage(canvas, 0, 0);
                 }
 
-                // Lighting feedback
+                // Check cache first
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const cacheKey = generateCacheKey(imageData, ocrSettings.final);
+                if (finalOcrResultsCache.has(cacheKey)) {
+                    finalOcrCacheHits++;
+                    const cachedResult = finalOcrResultsCache.get(cacheKey);
+                    updateFinalOcrDebugInfo('cache-hits', finalOcrCacheHits.toString());
+                    updateFinalOcrDebugInfo('last-text', cachedResult.text);
+                    updateFinalOcrDebugInfo('confidence', `${cachedResult.confidence.toFixed(1)}%`);
+                    
+                    if (cachedResult.text && cachedResult.text.match(/[A-Z0-9\-]{8,}/)) {
+                        finalScannerResultsEl.innerHTML = `<p>Serial Number: <b>${cachedResult.text}</b> (cached)</p>`;
+                        processFinalScannedCode(cachedResult.text, 'Text Scan');
+                        finalStopOcrStreaming();
+                        return;
+                    }
+                }
+
+                // Lighting feedback
                 let total = 0;
                 for (let i = 0; i < imageData.data.length; i += 4) {
                     total += (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
@@ -1628,31 +2236,92 @@
                 const avgBrightness = total / (imageData.data.length / 4);
                 if (avgBrightness < 60) {
                     finalScannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพมืดเกินไป กรุณาเพิ่มแสงสว่าง</p>`;
+                    updateFinalOcrDebugInfo('status', 'Low light detected', 'error');
                     return;
                 }
 
+                // Apply preprocessing based on settings
                 let src = cv.imread(canvas);
                 let dst = new cv.Mat();
-                cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
-                cv.equalizeHist(dst, dst);
-                cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
+                
+                if (ocrSettings.final.preprocessing === 'basic') {
+                    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                    cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
+                } else if (ocrSettings.final.preprocessing === 'enhanced') {
+                    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                    cv.equalizeHist(dst, dst);
+                    cv.GaussianBlur(dst, dst, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+                    cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
+                } else if (ocrSettings.final.preprocessing === 'aggressive') {
+                    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                    cv.equalizeHist(dst, dst);
+                    cv.GaussianBlur(dst, dst, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+                    cv.adaptiveThreshold(dst, dst, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 15, 8);
+                    const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+                    cv.morphologyEx(dst, dst, cv.MORPH_CLOSE, kernel);
+                    kernel.delete();
+                }
+                
                 cv.imshow(canvas, dst);
                 src.delete();
                 dst.delete();
+                
                 try {
-                    const result = await Tesseract.recognize(canvas, 'eng', {
-                        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-                    });
-                    const text = result.data.text.replace(/\s/g, '').toUpperCase();
+                    if (!finalTesseractWorker) {
+                        await initTesseract(ocrSettings.final.language, false);
+                    }
+                    
+                    const result = await finalTesseractWorker.recognize(canvas);
+                    const processingTime = performance.now() - startTime;
+                    
+                    let text = result.data.text.replace(/\s/g, '').toUpperCase();
+                    let confidence = result.data.confidence;
+                    
+                    // Apply pattern learning boost
+                    if (text.length >= 3) {
+                        confidence = boostConfidenceForKnownPatterns(text, confidence, false);
+                    }
+                    
+                    // Update performance tracking
+                    finalOcrPerformanceHistory.push({ time: processingTime, confidence, success: false });
+                    if (finalOcrPerformanceHistory.length > 50) finalOcrPerformanceHistory.shift();
+                    
+                    // Update debug info
+                    updateFinalOcrDebugInfo('process-time', `${processingTime.toFixed(0)}ms`);
+                    updateFinalOcrDebugInfo('confidence', `${confidence.toFixed(1)}%`);
+                    updateFinalOcrDebugInfo('success-rate', `${((finalOcrSuccessCount / finalOcrTotalAttempts) * 100).toFixed(1)}%`);
+                    
                     const match = text.match(/[A-Z0-9\-]{8,}/);
-                    if (match) {
-                        finalScannerResultsEl.innerHTML = `<p>Found text: <b>${match[0]}</b></p>`;
-                        processFinalScannedCode(match[0], 'Text Scan');
-                            finalStopOcrStreaming();
-                    } else {
-                        finalScannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning... (No serial found yet)</p>`;
+                    if (match && confidence >= ocrSettings.final.confidence) {
+                        const finalText = match[0];
+                        
+                        // Cache successful result
+                        finalOcrResultsCache.set(cacheKey, { text: finalText, confidence, timestamp: Date.now() });
+                        
+                        // Learn successful pattern
+                        learnSuccessPattern(finalText, confidence, processingTime, false);
+                        
+                        // Update success tracking
+                        finalOcrSuccessCount++;
+                        finalOcrPerformanceHistory[finalOcrPerformanceHistory.length - 1].success = true;
+                        
+                        updateFinalOcrDebugInfo('last-text', finalText);
+                        updateFinalOcrDebugInfo('status', 'Text recognized successfully', 'success');
+                        
+                        finalScannerResultsEl.innerHTML = `<p>Serial Number: <b>${finalText}</b></p>`;
+                        processFinalScannedCode(finalText, 'Text Scan');
+                        finalStopOcrStreaming();                    } else {
+                        updateFinalOcrDebugInfo('last-text', text || 'No text');
+                        updateFinalOcrDebugInfo('status', `Low confidence: ${confidence.toFixed(1)}%`, 'error');
+                        finalScannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning... (Confidence: ${confidence.toFixed(1)}%)</p>`;
+                    }
+                    
+                    // Adaptive settings based on performance
+                    if (finalOcrPerformanceHistory.length > 0 && finalOcrPerformanceHistory.length % 10 === 0) {
+                        adaptiveOcrSettings(finalOcrPerformanceHistory, false);
                     }
                 } catch (err) {
+                    handleOcrError(err, false);
                     finalScannerResultsEl.innerHTML = `<p class='text-red-500'>OCR Error: ${err.message}</p>`;
                 }
             }
