@@ -1392,7 +1392,15 @@
                         const entry = netDiffMap.get(sku);
                         if (entry) { entry.Scan1 = data.qty; entry.Reason1 = data.reason; }
                     }
-                    state.netDiffData = Array.from(netDiffMap.values()).map(item => ({ ...item, Diff1: item.Scan1 - item.SOH, Recount: item.Scan1, FinalDiff: item.Scan1 - item.SOH, ReasonFinal: item.Reason1, Remark: '' }));
+                    state.netDiffData = Array.from(netDiffMap.values()).map(item => ({ 
+                        ...item, 
+                        Counted1: item.Scan1,
+                        Diff1: item.Scan1 - item.SOH, 
+                        Recount: item.Scan1, 
+                        FinalDiff: item.Scan1 - item.SOH, 
+                        ReasonFinal: item.Reason1, 
+                        Remark: '' 
+                    }));
                     renderFirstCountSummary();
                     getEl('step2-results').classList.remove('hidden');
                     getEl('finalizeFromFirstCount').disabled = false;
@@ -1480,14 +1488,45 @@
             async function processSecondCount() {
                 showLoader('Processing Recount...');
                 try {
-                    const logFiles = getEl('secondScanLogfile').files; if (!logFiles.length) throw new Error("Please upload Logfile(s) for the recount.");
-                    const recountCounts = await (async function(files){ const p = Array.from(files).map(f => new Promise((res, rej) => { Papa.parse(f, { skipEmptyLines: true, complete: r => { const d = r.data.map(row => { if(!row || row.length < 3 || !row[2]) return null; const sku = String(row[2]).trim(); const qty = parseInt(String(row[4] ?? 1).replace(/,/g,''), 10); return {sku, qty: isNaN(qty) ? 1: qty};}).filter(Boolean); res(d); }, error: rej}); })); return Promise.all(p).then(r => r.flat()); })(logFiles);
-                    state.reconciledData = state.netDiffData.map(item => {
-                        const newItem = {...item};
-                        if (!newItem.isDemo && newItem.Diff1 !== 0) {
-                            if (recountCounts[newItem.SKU] !== undefined) { newItem.Recount = recountCounts[newItem.SKU].qty; newItem.ReasonFinal = 'Recount'; }
-                            else { newItem.Recount = 0; newItem.ReasonFinal = 'Not Found on Recount'; }
+                    const logFiles = getEl('secondScanLogfile').files; if (!logFiles.length) throw new Error("Please upload Logfile(s) for the recount.");                    const recountData = await (async function(files){ const p = Array.from(files).map(f => new Promise((res, rej) => { Papa.parse(f, { skipEmptyLines: true, complete: r => { const d = r.data.map(row => { if(!row || row.length < 3 || !row[2]) return null; const sku = String(row[2]).trim(); const qty = parseInt(String(row[4] ?? 1).replace(/,/g,''), 10); return {sku, qty: isNaN(qty) ? 1: qty};}).filter(Boolean); res(d); }, error: rej}); })); return Promise.all(p).then(r => r.flat()); })(logFiles);
+                    
+                    // Convert recount data array to SKU-keyed object for easier lookup
+                    const recountCounts = {};
+                    recountData.forEach(item => {
+                        if (recountCounts[item.sku]) {
+                            recountCounts[item.sku] += item.qty; // Sum if same SKU appears multiple times
+                        } else {
+                            recountCounts[item.sku] = item.qty;
                         }
+                    });                    state.reconciledData = state.netDiffData.map(item => {
+                        const newItem = {...item};
+                        
+                        // Initialize Recount and ReasonFinal for all items
+                        if (!newItem.isDemo && newItem.Diff1 !== 0) {
+                            // Items that need recounting
+                            if (recountCounts[newItem.SKU] !== undefined) { 
+                                newItem.Recount = recountCounts[newItem.SKU]; 
+                                newItem.ReasonFinal = 'Recount'; 
+                            } else { 
+                                newItem.Recount = 0; 
+                                newItem.ReasonFinal = 'Not Found on Recount'; 
+                            }
+                        } else if (newItem.isDemo) {
+                            // Demo items: get current count from demo panel
+                            const demoCount = state.demoCounts[newItem.SKU];
+                            if (demoCount && typeof demoCount.qty === 'number') {
+                                newItem.Recount = demoCount.qty;
+                                newItem.ReasonFinal = demoCount.reason || 'Manual';
+                            } else {
+                                newItem.Recount = 0;
+                                newItem.ReasonFinal = 'Not Counted';
+                            }
+                        } else {
+                            // Items that don't need recounting (items with no difference)
+                            newItem.Recount = newItem.Counted1 || 0;
+                            newItem.ReasonFinal = 'No Recount Needed';
+                        }
+                        
                         newItem.FinalDiff = newItem.Recount - newItem.SOH;
                         return newItem;
                     });
