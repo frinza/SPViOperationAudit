@@ -1445,12 +1445,45 @@
                 getEl('final-report-container').scrollIntoView({ behavior: 'smooth' });
                 setUnsavedChanges(true);
             }
-            
-            function generateRecountMasterFile() {
-                const itemsToRecount = state.netDiffData.filter(item => item.Diff1 !== 0 && !item.isDemo);
-                if (!itemsToRecount.length) return showModal("Info", "No non-DEMO items require a recount.");
-                const rowsForCsv = itemsToRecount.map(item => [item.SKU, item.Description, item.Price, item.Age, item.SOH]);
-                downloadFile(Papa.unparse(rowsForCsv, { header: false }), 'Master_Recount.csv');
+              function generateRecountMasterFile() {
+                // Include items that need recounting:
+                // 1. Items with discrepancies (Diff1 !== 0)
+                // 2. Items that were never counted (Scan1 === 0 && !Reason1)
+                // 3. Exclude DEMO items (!isDemo)
+                const itemsToRecount = state.netDiffData.filter(item => 
+                    !item.isDemo && (item.Diff1 !== 0 || (item.Scan1 === 0 && !item.Reason1))
+                );
+                
+                if (!itemsToRecount.length) {
+                    return showModal("Info", "No non-DEMO items require a recount.");
+                }
+                
+                // Show preview of what will be included
+                const discrepancyCount = itemsToRecount.filter(item => item.Diff1 !== 0).length;
+                const uncountedCount = itemsToRecount.filter(item => item.Scan1 === 0 && !item.Reason1).length;
+                const totalSOH = itemsToRecount.reduce((sum, item) => sum + item.SOH, 0);
+                
+                const previewMessage = `
+                    <div class="text-left">
+                        <p class="mb-2"><strong>Items to be included in recount:</strong></p>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>Items with discrepancies: <span class="font-medium text-blue-600">${discrepancyCount}</span></li>
+                            <li>Items not counted: <span class="font-medium text-red-600">${uncountedCount}</span></li>
+                            <li><strong>Total items: <span class="text-green-600">${itemsToRecount.length}</span></strong></li>
+                            <li><strong>Total SOH: <span class="text-purple-600">${formatNumber(totalSOH)}</span></strong></li>
+                        </ul>
+                    </div>
+                `;
+                  showModal("Generate Recount Master File", previewMessage, {
+                    onConfirm: () => {
+                        const rowsForCsv = itemsToRecount.map(item => [item.SKU, item.Description, item.Price, item.Age, item.SOH]);
+                        downloadFile(Papa.unparse(rowsForCsv, { header: false }), 'Master_Recount.csv');
+                        showModal("Success", `Recount master file generated with ${itemsToRecount.length} items.`);
+                    },
+                    onCancel: () => {},
+                    confirmText: "Generate File",
+                    cancelText: "Cancel"
+                });
             }
 
             async function handleLatestSohUpload(e) {
