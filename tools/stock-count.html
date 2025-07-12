@@ -3487,12 +3487,48 @@ def analyze_image_quality(image_data_base64):
                 scanCooldown[code] = now;
                 processScannedCode(code, 'Barcode');
             };
-            
-            function initializeAppListeners() {
+              function initializeAppListeners() {
                 function addListener(id, event, handler) {
                     const el = getEl(id);
                     if (el) {
                         el.addEventListener(event, handler);
+                    }
+                }
+
+                // Export SOH Excel functionality
+                function exportSohExcel() {
+                    try {
+                        // Use the same processed data as the app (sohLookup)
+                        const allItems = Object.values(state.sohLookup).filter(item => item.SOH > 0);
+                        
+                        if (allItems.length === 0) {
+                            showToast('No SOH data available to export', 'warning');
+                            return;
+                        }
+
+                        // Sort by SKU for consistency
+                        allItems.sort((a, b) => a.SKU.localeCompare(b.SKU));
+                        
+                        // Prepare data for export
+                        const rows = allItems.map(item => ({
+                            SKU: item.SKU,
+                            Description: item.Description,
+                            Age: item.Age || '',
+                            SRP: item.Price || '',
+                            SOH: item.SOH || '',
+                            FAMILY: item.isDemo ? 'DEMO' : 'NONE'
+                        }));
+                        
+                        const ws = XLSX.utils.json_to_sheet(rows);
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, "SOH Export");
+                        const filename = `SOH_Export_${state.branchName || 'Branch'}_${state.countDate || new Date().toISOString().split('T')[0]}.xlsx`;
+                        XLSX.writeFile(wb, filename);
+                        
+                        showToast(`Successfully exported ${allItems.length} items to ${filename}`, 'success');
+                    } catch (error) {
+                        console.error('Export SOH Excel error:', error);
+                        showToast('Failed to export SOH Excel file', 'error');
                     }
                 }
                 
@@ -3508,10 +3544,13 @@ def analyze_image_quality(image_data_base64):
                 addListener('exportCsvButton', 'click', exportFinalReport);
                 addListener('exportJsonButton', 'click', exportStockCountToJSON);
                 addListener('refreshChartsButton', 'click', renderFinalReportCharts);
-                addListener('exportDemoCsvButton', 'click', exportDemoTable);                addListener('openScannerBtn', 'click', openScannerModal);
+                addListener('exportDemoCsvButton', 'click', exportDemoTable);
+                addListener('exportSohExcelBtn', 'click', exportSohExcel);
+                addListener('openScannerBtn', 'click', openScannerModal);
                 addListener('final-openScannerBtn', 'click', finalOpenScannerModal);
                 // closeScannerBtn removed - handled by floating scanner
-                addListener('print-final-report-btn', 'click', () => window.print());// Scanner tab switching removed - handled by floating scanner
+                addListener('print-final-report-btn', 'click', () => window.print());
+                // Scanner tab switching removed - handled by floating scanner
                 // Capture button removed - handled by floating scanner
 
                 addListener('demoSearchInput', 'keyup', applyDemoView);
@@ -4136,31 +4175,6 @@ def analyze_image_quality(image_data_base64):
                     finalCaptureBtn.disabled = false;
                 }
             });
-
-            function exportSohExcel() {
-                // Use the same processed data as the app (sohLookup)
-                const allItems = Object.values(state.sohLookup).filter(item => item.SOH > 0);
-                // Sort by SKU for consistency
-                allItems.sort((a, b) => a.SKU.localeCompare(b.SKU));
-                // Prepare data for export
-                const rows = allItems.map(item => ({
-                    SKU: item.SKU,
-                    Description: item.Description,
-                    Age: item.Age || '',
-                    SRP: item.Price || '',
-                    SOH: item.SOH || '',
-                    FAMILY: item.isDemo ? 'DEMO' : 'NONE'
-                }));
-                const ws = XLSX.utils.json_to_sheet(rows);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "SOH Export");
-                XLSX.writeFile(wb, `SOH_Export_${state.branchName || 'Branch'}_${state.countDate || ''}.xlsx`);
-            }
-
-            const exportSohExcelBtn = document.getElementById('exportSohExcelBtn');
-            if (exportSohExcelBtn) {
-                exportSohExcelBtn.addEventListener('click', exportSohExcel);
-            }
         });
 
         // Custom toast for shortcut blocking
