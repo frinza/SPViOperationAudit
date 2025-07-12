@@ -42,42 +42,57 @@
        - Basic: Sharpening filters for Apple serial text
        - Enhanced: CLAHE contrast enhancement, bilateral filtering, unsharp masking
        - Aggressive: Multi-scale sharpening, adaptive thresholding, morphological operations
-    
-    6. APPLE-SPECIFIC FEATURES:
+      6. APPLE-SPECIFIC FEATURES:
        - OCR artifact correction (|→I, 0→O, 8→B, 5→S, 1→I)
        - Apple serial pattern recognition and confidence boosting
        - Validation for proper Apple serial characteristics
        - Enhanced feedback for lighting and focus conditions
     
+    7. FLOATING SCANNER INTEGRATION (v3.0):
+       - Universal floating scanner component replacing old static modals
+       - Pyodide integration for enhanced Python-based image processing
+       - Context-aware scanning (demo vs final report modes)
+       - Draggable floating interface with real-time debug panel
+       - Unified barcode and text/OCR scanning capabilities
+       - All existing matching algorithms preserved and integrated
+    
     TECHNICAL IMPLEMENTATION:
     ========================
-    - processOcrFrame(): Enhanced demo scanner OCR processing
-    - finalProcessOcrFrame(): Enhanced final report scanner OCR processing
-    - Both functions share identical Apple-optimized enhancements
+    - processFloatingOcrFrame(): Enhanced floating scanner OCR processing
+    - processScannedCode(): Universal SKU matching with 14 algorithms
+    - openFloatingScanner(): Context-aware scanner initialization
+    - Python-based image preprocessing with OpenCV and NumPy
     - Maintains compatibility with existing codebase
     - Comprehensive error handling and performance tracking
-    
-    USAGE:
+      USAGE:
     ======
-    This enhanced scanner is specifically designed for Apple product inventory
-    management with improved accuracy for iPad Gen10 camera scanning and
-    sophisticated serial number matching algorithms.
+    This enhanced scanner now features a universal floating interface that works
+    across both demo and final report modes. The scanner automatically adapts
+    to the current context and provides real-time OCR processing with Python-based
+    image enhancement via Pyodide integration.
+    
+    Scanner Features:
+    - Click "Scan" button to open floating scanner
+    - Drag the scanner header to reposition
+    - Switch between Barcode and Text/OCR tabs
+    - Real-time processing with debug information
+    - Context-aware SKU matching (demo vs final report)
     
     Last Updated: December 2024
-    Version: 2.0 (Apple Enhanced)
+    Version: 3.0 (Floating Scanner with Pyodide Integration)
 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ตรวจนับสินค้าสาขา</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://unpkg.com/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
-    <!-- OCR Libraries -->
+    <!-- OCR Libraries with Pyodide -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
 
@@ -95,19 +110,24 @@
         .tab-button.active {
             border-color: #3b82f6; /* blue-500 */
             color: #3b82f6;
-        }
-        .scanner-tab-button {
+        }        .scanner-tab-button {
              padding: 8px 16px;
              border-radius: 8px;
              cursor: pointer;
              background-color: #e5e7eb;
              color: #374151;
              transition: all 0.2s;
+             user-select: none;
+        }
+        .scanner-tab-button:hover {
+             background-color: #d1d5db;
+             transform: translateY(-1px);
         }
         .scanner-tab-button.active {
              background-color: #3b82f6;
              color: white;
              font-weight: 600;
+             box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
         }
         .table-container { max-height: 60vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #a0aec0 #e2e8f0; }
         .table-container::-webkit-scrollbar { width: 6px; }
@@ -116,8 +136,7 @@
         th { position: sticky; top: 0; background-color: #f1f5f9; z-index: 10; cursor: pointer; user-select: none; }
         th .sort-indicator { display: inline-block; margin-left: 5px; opacity: 0.5; font-size: 0.9em; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); z-index: 999; display: flex; justify-content: center; align-items: center; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); z-index: 999; display: flex; justify-content: center; align-items: center; }
         #save-status { transition: opacity 0.5s ease-in-out; }
         .status-dot {
             width: 10px;
@@ -125,12 +144,128 @@
             border-radius: 50%;
             display: inline-block;
             margin-right: 8px;
+        }          /* Floating Scanner Styles - Optimized for Compact View */        .floating-scanner {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 350px;
+            max-width: 90vw;
+            max-height: 80vh;
+            z-index: 1000;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            border: 2px solid #3b82f6;
+            transform: translateY(-100vh);
+            transition: transform 0.3s ease-in-out, visibility 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            visibility: hidden;
+            opacity: 0;
+            display: none;
         }
+        
+        .floating-scanner.active {
+            transform: translateY(0);
+            visibility: visible;
+            opacity: 1;
+            display: block;
+        }
+        
+        .floating-scanner-header {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+        
+        .floating-scanner-content {
+            padding: 12px;
+            max-height: calc(80vh - 60px);
+            overflow-y: auto;
+        }        .floating-debug-panel {
+            position: fixed;
+            top: 20px;
+            right: 380px;
+            width: 280px;
+            max-width: 70vw;
+            max-height: 70vh;
+            z-index: 999;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out, height 0.3s ease-in-out, visibility 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            visibility: hidden;
+            opacity: 0;
+            display: none;
+        }
+          .floating-debug-panel.active {
+            transform: translateX(0);
+            visibility: visible;
+            opacity: 1;
+            display: block;
+        }
+        
+        .floating-debug-panel.minimized {
+            width: 180px;
+            height: auto;
+            max-height: 40px;
+        }
+        
+        .floating-debug-panel.minimized .floating-debug-content {
+            display: none;
+        }
+          @media (max-width: 768px) {
+            .floating-debug-panel {
+                top: 60px;
+                right: 20px;
+                left: 20px;
+                width: auto;
+                max-width: none;
+            }
+            
+            .floating-scanner {
+                width: 95vw;
+                top: 10px;
+                right: 2.5vw;
+                left: 2.5vw;
+            }
+        }
+        
+        .floating-debug-panel.active {
+            transform: translateX(0);
+        }
+          .floating-debug-header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            padding: 8px 12px;
+            border-radius: 7px 7px 0 0;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+          .floating-debug-content {
+            padding: 8px;
+            max-height: calc(70vh - 40px);
+            overflow-y: auto;
+        }
+        
         .scanner-viewport {
             position: relative;
-            width: 100%; max-width: 350px; aspect-ratio: 16/9; 
+            width: 100%; 
+            max-width: 320px; 
+            aspect-ratio: 16/9; 
             background-color: #000;
             overflow: hidden;
+            margin: 0 auto;
         }
         .scanner-viewport video, .scanner-viewport canvas {
             width: 100%;
@@ -347,110 +482,118 @@
                              </select>
                          </div>
                          <div id="demo-count-container" class="table-container border rounded-lg"></div>
-                         <div id="camera-view-box" class="my-4 hidden">
-                             <div class="bg-white border border-blue-200 rounded-lg p-4 flex flex-col items-center">
-                                <div class="flex gap-4 mb-4">
-                                    <button id="barcode-scanner-tab" class="scanner-tab-button active">Barcode Scanner</button>
-                                    <button id="text-scanner-tab" class="scanner-tab-button">Text Scanner</button>
-                                </div>
-                                <div id="barcode-scanner-view" class="scanner-viewport">
-                                     <div id="qr-reader"></div>
-                                     <div class="barcode-line"></div>
-                                </div>
-                                <div id="text-scanner-view" class="hidden scanner-viewport">
-                                    <video id="text-scanner-video" playsinline></video>
-                                    <div class="scan-box"></div>
-                                    <button id="capture-btn" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-rose-500 text-white font-bold py-2 px-4 rounded-lg z-20">ถ่ายภาพและสแกน</button>
-                                </div>
-                                <!-- DEMO scanner preview -->                                <canvas id="ocr-crop-preview" class="mt-2 border border-blue-300 rounded w-full max-w-xs mx-auto" style="background:#fff;display:block;"></canvas>
-                                <div id="scanner-results" class="mt-4 p-3 w-full max-w-sm bg-slate-50 border border-slate-200 rounded-lg text-center"></div>
-                                
-                                <!-- Demo OCR Enhancement Controls -->
-                                <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg w-full max-w-sm">
-                                    <h4 class="text-sm font-semibold mb-2 text-gray-700">OCR Enhancement Controls</h4>
-                                    <div class="space-y-3">
-                                        <div class="flex items-center justify-between">
-                                            <label for="ocr-confidence-slider" class="text-xs text-gray-600">Confidence:</label>
-                                            <div class="flex items-center gap-2">
-                                                <input type="range" id="ocr-confidence-slider" min="30" max="90" value="60" class="w-16">
-                                                <span id="ocr-confidence-value" class="text-xs text-gray-600 w-8">60%</span>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <label for="ocr-speed-select" class="text-xs text-gray-600">Speed:</label>
-                                            <select id="ocr-speed-select" class="text-xs p-1 border border-gray-300 rounded">
-                                                <option value="300">Fast</option>
-                                                <option value="500">Normal</option>
-                                                <option value="700" selected>Slow</option>
-                                                <option value="1000">Very Slow</option>
-                                            </select>
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <label for="ocr-language-select" class="text-xs text-gray-600">Language:</label>
-                                            <select id="ocr-language-select" class="text-xs p-1 border border-gray-300 rounded">
-                                                <option value="eng" selected>English</option>
-                                                <option value="tha">Thai</option>
-                                                <option value="eng+tha">English+Thai</option>
-                                            </select>
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <label for="ocr-preprocessing-select" class="text-xs text-gray-600">Preprocessing:</label>
-                                            <select id="ocr-preprocessing-select" class="text-xs p-1 border border-gray-300 rounded">
-                                                <option value="basic">Basic</option>
-                                                <option value="enhanced" selected>Enhanced</option>
-                                                <option value="aggressive">Aggressive</option>
-                                            </select>
-                                        </div>
-                                        <button id="toggle-debug-btn" class="w-full bg-blue-500 text-white text-xs py-1 px-2 rounded hover:bg-blue-600">Toggle Debug</button>
-                                    </div>
-                                </div>
-                                
-                                <!-- Demo OCR Debug Panel -->
-                                <div id="ocr-debug-panel" class="hidden mt-2 p-3 bg-gray-100 border border-gray-300 rounded-lg w-full max-w-sm">
-                                    <h4 class="text-sm font-semibold mb-2 text-gray-700">OCR Debug Info</h4>
-                                    <div class="space-y-1 text-xs">
-                                        <div class="flex justify-between">
-                                            <span>Status:</span>
-                                            <span id="ocr-status" class="text-gray-600">Ready</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Last Text:</span>
-                                            <span id="ocr-last-text" class="text-gray-600">None</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Confidence:</span>
-                                            <span id="ocr-confidence" class="text-gray-600">0%</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Process Time:</span>
-                                            <span id="ocr-process-time" class="text-gray-600">0ms</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Success Rate:</span>
-                                            <span id="ocr-success-rate" class="text-gray-600">0%</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Cache Hits:</span>
-                                            <span id="ocr-cache-hits" class="text-gray-600">0</span>
-                                        </div>
-                                        <div class="mt-2">
-                                            <div class="text-xs text-gray-500">History:</div>
-                                            <div id="ocr-history" class="bg-white border border-gray-200 rounded p-1 text-xs max-h-16 overflow-y-auto"></div>
-                                        </div>
-                                        <button onclick="resetOcrStats()" class="w-full bg-red-500 text-white text-xs py-1 px-2 rounded hover:bg-red-600 mt-2">Reset Stats</button>
-                                    </div>
-                                </div>
-                                
-                                <button id="closeScannerBtn" class="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded">ปิดกล้อง</button>
-                             </div>
-                         </div>
                          <button id="exportDemoCsvButton" class="bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm text-sm mt-2">
                              Export DEMO Table as CSV
-                         </button>
-                         <button id="openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm mt-2">
+                         </button>                         <button id="openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm mt-2">
                              Scan
                          </button>
                      </div>
+                </div>
+                
+                <!-- Floating Scanner Component -->
+                <div id="floating-scanner" class="floating-scanner">
+                    <div class="floating-scanner-header" id="scanner-header">
+                        <h3 class="font-semibold">Universal Scanner</h3>
+                        <div class="flex items-center gap-2">
+                            <button id="toggle-floating-debug" class="bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-xs">Debug</button>
+                            <button id="close-floating-scanner" class="bg-white/20 hover:bg-white/30 px-2 py-1 rounded">✕</button>
+                        </div>
+                    </div>                    <div class="floating-scanner-content">
+                        <div class="flex gap-1 mb-3">
+                            <button id="floating-barcode-tab" class="scanner-tab-button active flex-1 text-sm">Barcode</button>
+                            <button id="floating-text-tab" class="scanner-tab-button flex-1 text-sm">Text/OCR</button>
+                        </div>
+                        
+                        <!-- Barcode Scanner View -->
+                        <div id="floating-barcode-view" class="scanner-viewport">
+                            <div id="floating-qr-reader"></div>
+                            <div class="barcode-line"></div>
+                        </div>
+                          <!-- Text Scanner View -->
+                        <div id="floating-text-view" class="hidden scanner-viewport">
+                            <video id="floating-text-video" playsinline></video>
+                            <div class="scan-box"></div>
+                        </div>
+                        
+                        <!-- Scanner Results -->
+                        <div id="floating-scanner-results" class="mt-3 p-2 bg-slate-50 border border-slate-200 rounded text-center min-h-[50px] text-sm"></div>
+                        
+                        <!-- OCR Preview Canvas -->
+                        <canvas id="floating-ocr-preview" class="mt-2 border border-blue-300 rounded w-full max-w-xs mx-auto hidden" style="background:#fff;"></canvas>
+                          <!-- OCR Controls - Compact (Only visible in Text/OCR mode) -->
+                        <div id="floating-ocr-controls" class="mt-3 p-2 bg-gray-50 border border-gray-200 rounded hidden">
+                            <h4 class="text-xs font-semibold mb-2 text-gray-700">OCR Settings</h4>
+                            <div class="space-y-1">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-xs text-gray-600">Confidence:</label>
+                                    <div class="flex items-center gap-1">
+                                        <input type="range" id="floating-confidence-slider" min="30" max="90" value="60" class="w-14">
+                                        <span id="floating-confidence-value" class="text-xs text-gray-600 w-8">60%</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="text-xs text-gray-600">Processing:</label>
+                                    <select id="floating-preprocessing-select" class="text-xs p-1 border border-gray-300 rounded">
+                                        <option value="basic">Basic</option>
+                                        <option value="enhanced" selected>Enhanced</option>
+                                        <option value="aggressive">Aggressive</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>                  <!-- Floating Debug Panel -->
+                <div id="floating-debug-panel" class="floating-debug-panel">
+                    <div class="floating-debug-header" id="debug-panel-header">
+                        <span class="font-semibold text-xs">OCR Debug</span>
+                        <div class="flex items-center gap-1">
+                            <button id="minimize-floating-debug" class="text-gray-400 hover:text-white text-xs px-1" title="Minimize">−</button>
+                            <button id="close-floating-debug" class="text-gray-400 hover:text-white text-sm">✕</button>
+                        </div>
+                    </div>
+                    <div class="floating-debug-content">
+                        <div class="space-y-1 text-xs">
+                            <div class="flex justify-between">
+                                <span>Status:</span>
+                                <span id="floating-ocr-status" class="text-blue-400">Idle</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Last Text:</span>
+                                <span id="floating-ocr-last-text" class="text-green-400 truncate max-w-[120px]">None</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Confidence:</span>
+                                <span id="floating-ocr-confidence" class="text-yellow-400">0%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Process Time:</span>
+                                <span id="floating-ocr-process-time" class="text-purple-400">0ms</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Cache Hits:</span>
+                                <span id="floating-ocr-cache-hits" class="text-cyan-400">0</span>
+                            </div>                            <div class="flex justify-between">
+                                <span>Success Rate:</span>
+                                <span id="floating-ocr-success-rate" class="text-emerald-400">0%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Match Score:</span>
+                                <span id="floating-match-score" class="text-orange-400">N/A</span>
+                            </div>
+                            <div class="mt-2 border-t border-slate-600 pt-2">
+                                <div class="text-xs text-slate-400 mb-1">Scan History:</div>
+                                <div id="floating-scan-history" class="text-xs text-slate-300 max-h-20 overflow-y-auto font-mono">No scans yet</div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-gray-600">
+                            <div class="text-xs text-gray-400 mb-1">History:</div>
+                            <div id="floating-ocr-history" class="bg-gray-800 border border-gray-600 rounded p-1 text-xs max-h-16 overflow-y-auto"></div>
+                        </div>
+                    </div>
+                </div>
+                        </div>
+                        <button onclick="resetOcrStats()" class="w-full bg-red-600 hover:bg-red-700 text-white text-xs py-1 px-2 rounded mt-2">Reset Stats</button>
+                    </div>
                 </div>
                 <div id="main-panel-workflow" class="hidden">
                      <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
@@ -581,105 +724,7 @@
                             <div class="flex flex-col md:flex-row gap-4">
                                 <div class="relative flex-1">
                                     <button id="final-openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm mb-2">
-                                        Scan
-                                    </button>
-                                    <div id="final-camera-view-box" class="my-4 hidden">
-                                        <div class="bg-white border border-blue-200 rounded-lg p-4 flex flex-col items-center">
-                                            <div class="flex gap-4 mb-4">
-                                                <button id="final-barcode-scanner-tab" class="scanner-tab-button active">Barcode Scanner</button>
-                                                <button id="final-text-scanner-tab" class="scanner-tab-button">Text Scanner</button>
-                                            </div>
-                                            <div id="final-barcode-scanner-view" class="scanner-viewport">
-                                                <div id="final-qr-reader"></div>
-                                                <div class="barcode-line"></div>
-                                            </div>
-                                            <div id="final-text-scanner-view" class="hidden scanner-viewport">
-                                                <video id="final-text-scanner-video" playsinline></video>
-                                                <div class="scan-box"></div>
-                                                <button id="final-capture-btn" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-rose-500 text-white font-bold py-2 px-4 rounded-lg z-20">ถ่ายภาพและสแกน</button>
-                                            </div>
-                                            <!-- FINAL scanner preview -->                                            <canvas id="final-ocr-crop-preview" class="mt-2 border border-blue-300 rounded w-full max-w-xs mx-auto" style="background:#fff;display:block;"></canvas>
-                                            <div id="final-scanner-results" class="mt-4 p-3 w-full max-w-sm bg-slate-50 border border-slate-200 rounded-lg text-center"></div>
-                                            
-                                            <!-- Final OCR Enhancement Controls -->
-                                            <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg w-full max-w-sm">
-                                                <h4 class="text-sm font-semibold mb-2 text-gray-700">OCR Enhancement Controls</h4>
-                                                <div class="space-y-3">
-                                                    <div class="flex items-center justify-between">
-                                                        <label for="final-ocr-confidence-slider" class="text-xs text-gray-600">Confidence:</label>
-                                                        <div class="flex items-center gap-2">
-                                                            <input type="range" id="final-ocr-confidence-slider" min="30" max="90" value="60" class="w-16">
-                                                            <span id="final-ocr-confidence-value" class="text-xs text-gray-600 w-8">60%</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="flex items-center justify-between">
-                                                        <label for="final-ocr-speed-select" class="text-xs text-gray-600">Speed:</label>
-                                                        <select id="final-ocr-speed-select" class="text-xs p-1 border border-gray-300 rounded">
-                                                            <option value="300">Fast</option>
-                                                            <option value="500">Normal</option>
-                                                            <option value="700" selected>Slow</option>
-                                                            <option value="1000">Very Slow</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="flex items-center justify-between">
-                                                        <label for="final-ocr-language-select" class="text-xs text-gray-600">Language:</label>
-                                                        <select id="final-ocr-language-select" class="text-xs p-1 border border-gray-300 rounded">
-                                                            <option value="eng" selected>English</option>
-                                                            <option value="tha">Thai</option>
-                                                            <option value="eng+tha">English+Thai</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="flex items-center justify-between">
-                                                        <label for="final-ocr-preprocessing-select" class="text-xs text-gray-600">Preprocessing:</label>
-                                                        <select id="final-ocr-preprocessing-select" class="text-xs p-1 border border-gray-300 rounded">
-                                                            <option value="basic">Basic</option>
-                                                            <option value="enhanced" selected>Enhanced</option>
-                                                            <option value="aggressive">Aggressive</option>
-                                                        </select>
-                                                    </div>
-                                                    <button id="final-toggle-debug-btn" class="w-full bg-blue-500 text-white text-xs py-1 px-2 rounded hover:bg-blue-600">Toggle Debug</button>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Final OCR Debug Panel -->
-                                            <div id="final-ocr-debug-panel" class="hidden mt-2 p-3 bg-gray-100 border border-gray-300 rounded-lg w-full max-w-sm">
-                                                <h4 class="text-sm font-semibold mb-2 text-gray-700">OCR Debug Info</h4>
-                                                <div class="space-y-1 text-xs">
-                                                    <div class="flex justify-between">
-                                                        <span>Status:</span>
-                                                        <span id="final-ocr-status" class="text-gray-600">Ready</span>
-                                                    </div>
-                                                    <div class="flex justify-between">
-                                                        <span>Last Text:</span>
-                                                        <span id="final-ocr-last-text" class="text-gray-600">None</span>
-                                                    </div>
-                                                    <div class="flex justify-between">
-                                                        <span>Confidence:</span>
-                                                        <span id="final-ocr-confidence" class="text-gray-600">0%</span>
-                                                    </div>
-                                                    <div class="flex justify-between">
-                                                        <span>Process Time:</span>
-                                                        <span id="final-ocr-process-time" class="text-gray-600">0ms</span>
-                                                    </div>
-                                                    <div class="flex justify-between">
-                                                        <span>Success Rate:</span>
-                                                        <span id="final-ocr-success-rate" class="text-gray-600">0%</span>
-                                                    </div>
-                                                    <div class="flex justify-between">
-                                                        <span>Cache Hits:</span>
-                                                        <span id="final-ocr-cache-hits" class="text-gray-600">0</span>
-                                                    </div>
-                                                    <div class="mt-2">
-                                                        <div class="text-xs text-gray-500">History:</div>
-                                                        <div id="final-ocr-history" class="bg-white border border-gray-200 rounded p-1 text-xs max-h-16 overflow-y-auto"></div>
-                                                    </div>
-                                                    <button onclick="resetOcrStats()" class="w-full bg-red-500 text-white text-xs py-1 px-2 rounded hover:bg-red-600 mt-2">Reset Stats</button>
-                                                </div>
-                                            </div>
-                                            
-                                            <button id="final-closeScannerBtn" class="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded">ปิดกล้อง</button>
-                                        </div>
-                                    </div>
+                                        Scan                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -759,16 +804,1119 @@
                     scannerResultsEl.innerHTML = `<p class="text-green-600">OpenCV is ready. Scanner refreshed.</p>`;
                 }
             }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
+        }        document.addEventListener('DOMContentLoaded', () => {
             const getEl = (id) => document.getElementById(id);
-              let hasUnsavedChanges = false;
+            let hasUnsavedChanges = false;
             let state = getInitialState();
-            let finalSummaryData = {};
-            let activeStream = null;
-            let ocrStreaming = false;
-            let ocrStreamInterval = null;
+            let finalSummaryData = {};            // === Floating Scanner Variables ===
+            let floatingScanner = null;
+            let floatingStream = null;
+            let floatingOcrStreaming = false;
+            let floatingOcrStreamInterval = null;
+            let currentScannerMode = 'barcode';
+            let currentScannerContext = 'demo'; // 'demo' or 'final'
+            let pyodide = null;
+            let pyodideReady = false;
+            let lastScannedText = null; // Store latest scanned text
+            let scanHistory = []; // Store scan history
+            
+            // === Pyodide OCR Variables ===
+            let pyodideWorker = null;
+            let floatingOcrSettings = {
+                confidence: 60,
+                preprocessing: 'enhanced',
+                speed: 800
+            };
+
+            // === Initialize Pyodide for Enhanced OCR ===
+            async function initializePyodide() {
+                try {
+                    if (pyodideReady) return;
+                    
+                    updateFloatingDebugInfo('status', 'Initializing Pyodide...', 'info');
+                    pyodide = await loadPyodide();
+                    
+                    // Install required packages
+                    await pyodide.loadPackage(['opencv-python', 'numpy', 'pillow']);
+                    
+                    // Load enhanced OCR processing script
+                    await pyodide.runPython(`
+import cv2
+import numpy as np
+from PIL import Image
+import base64
+import io
+
+def process_image_enhanced(image_data_base64, preprocessing_mode='enhanced'):
+    """
+    Enhanced image processing using OpenCV and Python
+    Optimized for Apple product serial number recognition
+    """
+    try:
+        # Decode base64 image
+        image_data = base64.b64decode(image_data_base64.split(',')[1])
+        image = Image.open(io.BytesIO(image_data))
+        
+        # Convert to OpenCV format
+        img_array = np.array(image)
+        if len(img_array.shape) == 3:
+            img = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+        else:
+            img = img_array
+            
+        # Convert to grayscale
+        if len(img.shape) == 3:
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = img
+            
+        # Apply preprocessing based on mode
+        if preprocessing_mode == 'basic':
+            # Basic sharpening
+            kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+            processed = cv2.filter2D(gray, -1, kernel)
+            _, processed = cv2.threshold(processed, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            
+        elif preprocessing_mode == 'enhanced':
+            # Enhanced Apple-optimized processing
+            # CLAHE for better contrast
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+            processed = clahe.apply(gray)
+            
+            # Bilateral filter for noise reduction
+            processed = cv2.bilateralFilter(processed, 9, 75, 75)
+            
+            # Unsharp masking
+            blurred = cv2.GaussianBlur(processed, (3, 3), 0)
+            processed = cv2.addWeighted(processed, 1.5, blurred, -0.5, 0)
+            
+            # Adaptive thresholding
+            processed = cv2.adaptiveThreshold(processed, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+            
+        elif preprocessing_mode == 'aggressive':
+            # Aggressive preprocessing for difficult conditions
+            # Advanced CLAHE
+            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(6,6))
+            processed = clahe.apply(gray)
+            
+            # Multiple denoising passes
+            processed = cv2.fastNlMeansDenoising(processed, None, 10, 7, 21)
+            processed = cv2.bilateralFilter(processed, 11, 80, 80)
+            
+            # Multi-scale sharpening
+            sharp1 = cv2.GaussianBlur(processed, (3, 3), 0)
+            sharp2 = cv2.GaussianBlur(processed, (5, 5), 0)
+            processed = cv2.addWeighted(processed, 2.0, sharp1, -0.5, 0)
+            processed = cv2.addWeighted(processed, 1.0, sharp2, -0.5, 0)
+            
+            # Morphological operations
+            kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+            kernel2 = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 1))
+            processed = cv2.morphologyEx(processed, cv2.MORPH_CLOSE, kernel1)
+            processed = cv2.morphologyEx(processed, cv2.MORPH_OPEN, kernel2)
+            
+            # Final thresholding
+            processed = cv2.adaptiveThreshold(processed, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 6)
+        
+        # Convert back to PIL Image
+        processed_image = Image.fromarray(processed)
+        
+        # Convert to base64 for return
+        buffer = io.BytesIO()
+        processed_image.save(buffer, format='PNG')
+        processed_base64 = base64.b64encode(buffer.getvalue()).decode()
+        
+        return f"data:image/png;base64,{processed_base64}"
+        
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def analyze_image_quality(image_data_base64):
+    """
+    Analyze image quality for better OCR feedback
+    """
+    try:
+        # Decode base64 image
+        image_data = base64.b64decode(image_data_base64.split(',')[1])
+        image = Image.open(io.BytesIO(image_data))
+        img_array = np.array(image)
+        
+        if len(img_array.shape) == 3:
+            gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
+        else:
+            gray = img_array
+            
+        # Calculate metrics
+        brightness = np.mean(gray)
+        contrast = np.std(gray)
+        sharpness = cv2.Laplacian(gray, cv2.CV_64F).var()
+        
+        # Quality assessment
+        quality = {
+            'brightness': float(brightness),
+            'contrast': float(contrast),
+            'sharpness': float(sharpness),
+            'overall': 'good'
+        }
+        
+        if brightness < 50:
+            quality['overall'] = 'too_dark'
+        elif brightness > 200:
+            quality['overall'] = 'too_bright'
+        elif contrast < 30:
+            quality['overall'] = 'low_contrast'
+        elif sharpness < 100:
+            quality['overall'] = 'blurry'
+            
+        return quality
+        
+    except Exception as e:
+        return {'error': str(e)}
+                    `);
+                    
+                    pyodideReady = true;
+                    updateFloatingDebugInfo('status', 'Pyodide initialized successfully', 'success');
+                    
+                } catch (error) {
+                    console.error('Failed to initialize Pyodide:', error);
+                    updateFloatingDebugInfo('status', `Pyodide init failed: ${error.message}`, 'error');
+                }
+            }            // === Floating Scanner Functions ===
+            function initializeFloatingScanner() {
+                floatingScanner = document.getElementById('floating-scanner');
+                
+                // Make header draggable with enhanced responsiveness
+                const header = document.getElementById('scanner-header');
+                let isDragging = false;
+                let currentX = 0;
+                let currentY = 0;
+                let initialX = 0;
+                let initialY = 0;
+                let xOffset = 0;
+                let yOffset = 0;
+                
+                function dragStart(e) {
+                    // Only drag if clicking on the header itself, not buttons
+                    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                        return;
+                    }
+                    
+                    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                    
+                    initialX = clientX - xOffset;
+                    initialY = clientY - yOffset;
+                    isDragging = true;
+                    
+                    // Enhanced visual feedback
+                    floatingScanner.style.cursor = 'grabbing';
+                    floatingScanner.style.userSelect = 'none';
+                    floatingScanner.style.transition = 'none'; // Disable transition during drag
+                    header.style.transform = 'scale(0.98)'; // Subtle scale effect
+                }
+                  function drag(e) {
+                    if (isDragging) {
+                        e.preventDefault();
+                        
+                        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                        
+                        const newX = clientX - initialX;
+                        const newY = clientY - initialY;
+                        
+                        // Only update if position actually changed (performance optimization)
+                        if (Math.abs(newX - currentX) > 1 || Math.abs(newY - currentY) > 1) {
+                            currentX = newX;
+                            currentY = newY;
+                            
+                            xOffset = currentX;
+                            yOffset = currentY;
+                            
+                            // Constrain to viewport bounds
+                            const rect = floatingScanner.getBoundingClientRect();
+                            const maxX = window.innerWidth - rect.width;
+                            const maxY = window.innerHeight - rect.height;
+                            
+                            currentX = Math.max(0, Math.min(currentX, maxX));
+                            currentY = Math.max(0, Math.min(currentY, maxY));
+                            
+                            // Smooth transform with GPU acceleration
+                            requestAnimationFrame(() => {
+                                floatingScanner.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+                            });
+                        }
+                    }
+                }
+                
+                function dragEnd() {
+                    if (isDragging) {
+                        initialX = currentX;
+                        initialY = currentY;
+                        isDragging = false;
+                        
+                        // Restore visual feedback
+                        floatingScanner.style.cursor = '';
+                        floatingScanner.style.userSelect = '';
+                        floatingScanner.style.transition = 'transform 0.3s ease-in-out, visibility 0.3s ease-in-out, opacity 0.3s ease-in-out';
+                        header.style.transform = 'scale(1)';
+                    }
+                }
+                
+                // Enhanced event listeners for both mouse and touch
+                header.addEventListener('mousedown', dragStart);
+                header.addEventListener('touchstart', dragStart, { passive: false });
+                
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('touchmove', drag, { passive: false });
+                
+                document.addEventListener('mouseup', dragEnd);
+                document.addEventListener('touchend', dragEnd);
+                
+                // Initialize event listeners
+                setupFloatingTabSwitching();
+                setupFloatingControls();
+                setupFloatingDebugPanel();
+            }
+
+            function setupFloatingTabSwitching() {
+                const barcodeTab = document.getElementById('floating-barcode-tab');
+                const textTab = document.getElementById('floating-text-tab');
+                const barcodeView = document.getElementById('floating-barcode-view');
+                const textView = document.getElementById('floating-text-view');
+                
+                barcodeTab.addEventListener('click', () => switchFloatingTab('barcode'));
+                textTab.addEventListener('click', () => switchFloatingTab('text'));
+                  function switchFloatingTab(mode) {
+                    currentScannerMode = mode;
+                    const ocrControls = document.getElementById('floating-ocr-controls');
+                    const ocrPreview = document.getElementById('floating-ocr-preview');
+                    
+                    if (mode === 'barcode') {
+                        barcodeTab.classList.add('active');
+                        textTab.classList.remove('active');
+                        barcodeView.classList.remove('hidden');
+                        textView.classList.add('hidden');
+                        ocrControls.classList.add('hidden');
+                        ocrPreview.classList.add('hidden');
+                        
+                        stopFloatingTextScanner();
+                        stopFloatingOcrStreaming();
+                        startFloatingBarcodeScanner();
+                    } else {
+                        textTab.classList.add('active');
+                        barcodeTab.classList.remove('active');
+                        textView.classList.remove('hidden');
+                        barcodeView.classList.add('hidden');
+                        ocrControls.classList.remove('hidden');
+                        
+                        stopFloatingBarcodeScanner();
+                        startFloatingTextScanner();
+                        setTimeout(startFloatingOcrStreaming, 800);
+                    }
+                }
+            }
+
+            function setupFloatingControls() {
+                // Confidence slider
+                const confidenceSlider = document.getElementById('floating-confidence-slider');
+                const confidenceValue = document.getElementById('floating-confidence-value');
+                
+                confidenceSlider.addEventListener('input', (e) => {
+                    floatingOcrSettings.confidence = parseInt(e.target.value);
+                    confidenceValue.textContent = e.target.value + '%';
+                });
+                  // Preprocessing select
+                const preprocessingSelect = document.getElementById('floating-preprocessing-select');
+                preprocessingSelect.addEventListener('change', (e) => {
+                    floatingOcrSettings.preprocessing = e.target.value;
+                });
+                
+                // Close button
+                const closeBtn = document.getElementById('close-floating-scanner');
+                closeBtn.addEventListener('click', closeFloatingScanner);
+                
+                // Debug toggle
+                const debugToggle = document.getElementById('toggle-floating-debug');
+                debugToggle.addEventListener('click', toggleFloatingDebug);
+            }            function setupFloatingDebugPanel() {
+                const debugPanel = document.getElementById('floating-debug-panel');
+                const debugHeader = document.getElementById('debug-panel-header');
+                const closeDebugBtn = document.getElementById('close-floating-debug');
+                const minimizeDebugBtn = document.getElementById('minimize-floating-debug');
+                  // Close functionality
+                closeDebugBtn.addEventListener('click', () => {
+                    debugPanel.classList.remove('active');
+                    setTimeout(() => {
+                        if (!debugPanel.classList.contains('active')) {
+                            debugPanel.style.display = 'none';
+                            debugPanel.style.visibility = 'hidden';
+                            debugPanel.style.opacity = '0';
+                        }
+                    }, 350);
+                });
+                
+                // Minimize/maximize functionality
+                minimizeDebugBtn.addEventListener('click', () => {
+                    debugPanel.classList.toggle('minimized');
+                    minimizeDebugBtn.textContent = debugPanel.classList.contains('minimized') ? '+' : '−';
+                    minimizeDebugBtn.title = debugPanel.classList.contains('minimized') ? 'Maximize' : 'Minimize';
+                });
+                  // Make debug panel draggable with enhanced responsiveness
+                let isDraggingDebug = false;
+                let debugCurrentX = 0;
+                let debugCurrentY = 0;
+                let debugInitialX = 0;
+                let debugInitialY = 0;
+                let debugXOffset = 0;
+                let debugYOffset = 0;
+                
+                function debugDragStart(e) {
+                    // Only drag if clicking on the header itself, not buttons
+                    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                        return;
+                    }
+                    
+                    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                    
+                    debugInitialX = clientX - debugXOffset;
+                    debugInitialY = clientY - debugYOffset;
+                    isDraggingDebug = true;
+                    
+                    // Enhanced visual feedback
+                    debugPanel.style.cursor = 'grabbing';
+                    debugPanel.style.userSelect = 'none';
+                    debugPanel.style.transition = 'none'; // Disable transition during drag
+                    debugHeader.style.transform = 'scale(0.98)'; // Subtle scale effect
+                }
+                  function debugDrag(e) {
+                    if (isDraggingDebug) {
+                        e.preventDefault();
+                        
+                        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                        
+                        const newX = clientX - debugInitialX;
+                        const newY = clientY - debugInitialY;
+                        
+                        // Only update if position actually changed (performance optimization)
+                        if (Math.abs(newX - debugCurrentX) > 1 || Math.abs(newY - debugCurrentY) > 1) {
+                            debugCurrentX = newX;
+                            debugCurrentY = newY;
+                            
+                            debugXOffset = debugCurrentX;
+                            debugYOffset = debugCurrentY;
+                            
+                            // Constrain to viewport bounds
+                            const rect = debugPanel.getBoundingClientRect();
+                            const maxX = window.innerWidth - rect.width;
+                            const maxY = window.innerHeight - rect.height;
+                            
+                            debugCurrentX = Math.max(0, Math.min(debugCurrentX, maxX));
+                            debugCurrentY = Math.max(0, Math.min(debugCurrentY, maxY));
+                            
+                            // Smooth transform with GPU acceleration
+                            requestAnimationFrame(() => {
+                                debugPanel.style.transform = `translate3d(${debugCurrentX}px, ${debugCurrentY}px, 0)`;
+                            });
+                        }
+                    }
+                }
+                
+                function debugDragEnd() {
+                    if (isDraggingDebug) {
+                        debugInitialX = debugCurrentX;
+                        debugInitialY = debugCurrentY;
+                        isDraggingDebug = false;
+                        
+                        // Restore visual feedback
+                        debugPanel.style.cursor = '';
+                        debugPanel.style.userSelect = '';
+                        debugPanel.style.transition = 'transform 0.3s ease-in-out, width 0.3s ease-in-out, height 0.3s ease-in-out, visibility 0.3s ease-in-out, opacity 0.3s ease-in-out';
+                        debugHeader.style.transform = 'scale(1)';
+                    }
+                }
+                
+                // Enhanced event listeners for both mouse and touch
+                debugHeader.addEventListener('mousedown', debugDragStart);
+                debugHeader.addEventListener('touchstart', debugDragStart, { passive: false });
+                
+                document.addEventListener('mousemove', debugDrag);
+                document.addEventListener('touchmove', debugDrag, { passive: false });
+                
+                document.addEventListener('mouseup', debugDragEnd);
+                document.addEventListener('touchend', debugDragEnd);
+            }
+
+            async function startFloatingTextScanner() {
+                try {
+                    if (floatingStream) {
+                        floatingStream.getTracks().forEach(track => track.stop());
+                    }
+                    
+                    const constraints = {
+                        video: {
+                            facingMode: 'environment',
+                            width: { ideal: 1920, max: 1920 },
+                            height: { ideal: 1080, max: 1080 },
+                            frameRate: { ideal: 30, max: 30 }
+                        }
+                    };
+                    
+                    floatingStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    const video = document.getElementById('floating-text-video');
+                    video.srcObject = floatingStream;
+                    video.play();
+                    
+                    updateFloatingDebugInfo('status', 'Camera started', 'success');
+                } catch (err) {
+                    updateFloatingResults(`<p class="text-red-500">Camera error: ${err.message}</p>`);
+                    updateFloatingDebugInfo('status', `Camera error: ${err.message}`, 'error');
+                }
+            }
+
+            function stopFloatingTextScanner() {
+                const video = document.getElementById('floating-text-video');
+                if (video && video.srcObject) {
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                    video.srcObject = null;
+                }
+                floatingStream = null;
+            }
+
+            function startFloatingBarcodeScanner() {
+                const barcodeView = document.getElementById('floating-barcode-view');
+                
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: barcodeView,
+                        constraints: { facingMode: "environment" }
+                    },
+                    decoder: {
+                        readers: [
+                            "code_128_reader", "ean_reader", "ean_8_reader",
+                            "code_39_reader", "upc_reader", "upc_e_reader"
+                        ]
+                    },
+                    locate: true
+                }, (err) => {
+                    if (err) {
+                        updateFloatingResults(`<p class="text-red-500">Barcode scanner error: ${err.message}</p>`);
+                        return;
+                    }
+                    Quagga.start();
+                });
+                
+                Quagga.onDetected(onFloatingBarcodeDetected);
+            }
+
+            function stopFloatingBarcodeScanner() {
+                if (typeof Quagga !== 'undefined' && Quagga.running) {
+                    Quagga.offDetected(onFloatingBarcodeDetected);
+                    Quagga.stop();
+                }
+                
+                const quaggaVideo = document.querySelector('#floating-barcode-view video');
+                if (quaggaVideo && quaggaVideo.srcObject) {
+                    quaggaVideo.srcObject.getTracks().forEach(track => track.stop());
+                    quaggaVideo.srcObject = null;
+                }
+            }
+
+            function startFloatingOcrStreaming() {
+                if (floatingOcrStreaming) return;
+                floatingOcrStreaming = true;
+                updateFloatingResults('<p class="text-blue-500">กำลังสแกนแบบเรียลไทม์...</p>');
+                floatingOcrStreamInterval = setInterval(processFloatingOcrFrame, floatingOcrSettings.speed);
+            }
+
+            function stopFloatingOcrStreaming() {
+                floatingOcrStreaming = false;
+                if (floatingOcrStreamInterval) {
+                    clearInterval(floatingOcrStreamInterval);
+                    floatingOcrStreamInterval = null;
+                }
+            }
+
+            async function processFloatingOcrFrame() {
+                if (!floatingOcrStreaming || !floatingStream || !cvReady) return;
+                
+                const video = document.getElementById('floating-text-video');
+                if (video.readyState < 2) return;
+                
+                const startTime = performance.now();
+                updateFloatingDebugInfo('status', 'Processing frame...', 'info');
+                
+                const canvas = document.createElement('canvas');
+                
+                // Enhanced crop settings for Apple products
+                const cropY = video.videoHeight * 0.45;
+                const cropHeight = video.videoHeight * 0.18;
+                const cropX = video.videoWidth * 0.05;
+                const cropWidth = video.videoWidth * 0.90;
+                
+                canvas.width = cropWidth;
+                canvas.height = cropHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+                // Show preview
+                const preview = document.getElementById('floating-ocr-preview');
+                if (preview) {
+                    preview.classList.remove('hidden');
+                    preview.width = canvas.width;
+                    preview.height = canvas.height;
+                    preview.getContext('2d').drawImage(canvas, 0, 0);
+                }
+
+                try {
+                    let processedImageData;
+                    
+                    if (pyodideReady) {
+                        // Use Pyodide for enhanced processing
+                        const imageDataURL = canvas.toDataURL('image/png');
+                        
+                        // Analyze image quality first
+                        const quality = pyodide.runPython(`analyze_image_quality("""${imageDataURL}""")`);
+                        const qualityObj = quality.toJs();
+                        
+                        if (qualityObj.error) {
+                            throw new Error(qualityObj.error);
+                        }
+                        
+                        // Provide quality feedback
+                        updateFloatingDebugInfo('confidence', `Quality: ${qualityObj.overall}`, 'info');
+                        
+                        if (qualityObj.overall === 'too_dark') {
+                            updateFloatingResults(`<p class="text-yellow-600">ภาพมืดเกินไป กรุณาเพิ่มแสงสว่าง</p>`);
+                            return;
+                        } else if (qualityObj.overall === 'too_bright') {
+                            updateFloatingResults(`<p class="text-yellow-600">ภาพสว่างเกินไป กรุณาลดแสงสว่าง</p>`);
+                            return;
+                        } else if (qualityObj.overall === 'low_contrast') {
+                            updateFloatingResults(`<p class="text-yellow-600">ภาพไม่ชัดเจน กรุณาปรับโฟกัส</p>`);
+                            return;
+                        }
+                        
+                        // Process image with Pyodide
+                        processedImageData = pyodide.runPython(`process_image_enhanced("""${imageDataURL}""", "${floatingOcrSettings.preprocessing}")`);
+                        
+                        if (processedImageData.startsWith('Error:')) {
+                            throw new Error(processedImageData);
+                        }
+                        
+                        // Convert processed image back to canvas
+                        const img = new Image();
+                        img.onload = async () => {
+                            const processedCanvas = document.createElement('canvas');
+                            processedCanvas.width = img.width;
+                            processedCanvas.height = img.height;
+                            const processedCtx = processedCanvas.getContext('2d');
+                            processedCtx.drawImage(img, 0, 0);
+                            
+                            await performOCRRecognition(processedCanvas, startTime);
+                        };
+                        img.src = processedImageData;
+                        
+                    } else {
+                        // Fallback to OpenCV processing
+                        await performOpenCVProcessing(canvas, startTime);
+                    }
+                    
+                } catch (err) {
+                    updateFloatingResults(`<p class="text-red-500">Processing error: ${err.message}</p>`);
+                    updateFloatingDebugInfo('status', `Error: ${err.message}`, 'error');
+                }
+            }
+
+            async function performOpenCVProcessing(canvas, startTime) {
+                if (!cvReady) return;
+                
+                let src = cv.imread(canvas);
+                let dst = new cv.Mat();
+                
+                // Apply OpenCV preprocessing based on settings
+                if (floatingOcrSettings.preprocessing === 'basic') {
+                    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                    const sharpKernel = cv.matFromArray(3, 3, cv.CV_32FC1, [0, -1, 0, -1, 5, -1, 0, -1, 0]);
+                    cv.filter2D(dst, dst, -1, sharpKernel);
+                    sharpKernel.delete();
+                    cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
+                } else if (floatingOcrSettings.preprocessing === 'enhanced') {
+                    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+                    const clahe = new cv.CLAHE(2.0, new cv.Size(8, 8));
+                    clahe.apply(dst, dst);
+                    clahe.delete();
+                    cv.bilateralFilter(dst, dst, 9, 75, 75);
+                    const blurred = new cv.Mat();
+                    cv.GaussianBlur(dst, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+                    cv.addWeighted(dst, 1.5, blurred, -0.5, 0, dst);
+                    blurred.delete();
+                    cv.threshold(dst, dst, 0, 255, cv.THRESH_OTSU | cv.THRESH_BINARY_INV);
+                }
+                
+                cv.imshow(canvas, dst);
+                src.delete();
+                dst.delete();
+                
+                await performOCRRecognition(canvas, startTime);
+            }
+
+            async function performOCRRecognition(canvas, startTime) {
+                if (!tesseractWorker) {
+                    await initTesseract('eng', true);
+                }
+                
+                const result = await tesseractWorker.recognize(canvas);
+                const processingTime = performance.now() - startTime;
+                
+                let text = result.data.text.replace(/\s/g, '').toUpperCase();
+                let confidence = result.data.confidence;
+                
+                // Apple-specific text post-processing
+                text = text.replace(/[|]/g, 'I')
+                           .replace(/[0]/g, 'O')
+                           .replace(/[8]/g, 'B')
+                           .replace(/[5]/g, 'S')
+                           .replace(/[1]/g, 'I')
+                           .replace(/[\.]/g, '')
+                           .replace(/[,]/g, '')
+                           .replace(/[\s]/g, '');
+                
+                // Update debug info
+                updateFloatingDebugInfo('process-time', `${processingTime.toFixed(0)}ms`);
+                updateFloatingDebugInfo('confidence', `${confidence.toFixed(1)}%`);
+                updateFloatingDebugInfo('last-text', text || 'No text');
+                
+                // Enhanced Apple serial validation
+                const appleSerialMatch = text.match(/[A-Z0-9\-]{8,}/);
+                const isValidAppleSerial = appleSerialMatch && (
+                    text.length >= 8 && text.length <= 14 &&
+                    /[A-Z]/.test(text) &&
+                    /[0-9]/.test(text) &&
+                    !/[^A-Z0-9\-]/.test(text)
+                );
+                
+                if (isValidAppleSerial && confidence >= floatingOcrSettings.confidence) {
+                    const finalText = appleSerialMatch[0];
+                    updateFloatingDebugInfo('status', 'Apple serial recognized successfully', 'success');
+                    updateFloatingResults(`<p>Apple Serial: <b>${finalText}</b></p>`);
+                    processFloatingScannedCode(finalText, 'Text Scan');
+                    stopFloatingOcrStreaming();
+                } else {
+                    updateFloatingDebugInfo('status', `${isValidAppleSerial ? 'Low confidence' : 'Invalid pattern'}: ${confidence.toFixed(1)}%`, 'error');
+                    updateFloatingResults(`<p class='text-blue-500'>Scanning... (${confidence.toFixed(1)}%)</p>`);
+                }
+            }
+
+            async function captureAndRecognizeFloating() {
+                if (!floatingStream || !cvReady) {
+                    updateFloatingResults(`<p class="text-red-500">Camera or OpenCV not ready</p>`);
+                    return;
+                }
+                
+                updateFloatingResults(`<p class="text-blue-500">กำลังประมวลผลตัวอักษร...</p>`);
+                const captureBtn = document.getElementById('floating-capture-btn');
+                captureBtn.disabled = true;
+                
+                try {
+                    const video = document.getElementById('floating-text-video');
+                    const canvas = document.createElement('canvas');
+                    
+                    const cropHeightPercentage = 0.15;
+                    const cropWidthPercentage = 0.70;
+                    const sWidth = video.videoWidth * cropWidthPercentage;
+                    const sHeight = video.videoHeight * cropHeightPercentage;
+                    const sx = video.videoWidth * (1 - cropWidthPercentage) / 2;
+                    const sy = video.videoHeight * 0.45;
+                    
+                    canvas.width = sWidth;
+                    canvas.height = sHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
+                    
+                    await performOCRRecognition(canvas, performance.now());
+                    
+                } catch (err) {
+                    updateFloatingResults(`<p class="text-red-500">Capture error: ${err.message}</p>`);
+                } finally {
+                    captureBtn.disabled = false;
+                }
+            }            function processFloatingScannedCode(code, reason) {
+                const scannedText = code.toUpperCase();
+                
+                // Store latest scanned text and add to history
+                lastScannedText = scannedText;
+                scanHistory.unshift({ text: scannedText, timestamp: new Date().toLocaleTimeString(), reason });
+                if (scanHistory.length > 10) scanHistory.pop(); // Keep last 10 scans
+                
+                // Update debug panel with scan history
+                updateFloatingDebugInfo('scan-history', scanHistory.map(s => `${s.timestamp}: ${s.text} (${s.reason})`).join('\n'));
+                
+                let item = null;
+                
+                // Determine which dataset to search based on context
+                const searchData = currentScannerContext === 'demo' ? state.demoMaster : state.reconciledData;
+                
+                if (!searchData || searchData.length === 0) {
+                    playSound('error');
+                    updateFloatingResults(`<div class="text-center w-full"><p class="font-bold text-red-600">No data available</p><p class="text-sm text-slate-500">Scanned: ${scannedText}</p><p class="text-xs text-slate-400">Latest scan stored</p></div>`);
+                    return;
+                }
+                
+                // Enhanced matching algorithms with 14+ sophisticated techniques
+                const matchingAlgorithms = [
+                    // Algorithm 1: Direct SKU contained in scanned text
+                    (sku, scanned) => scanned.includes(sku),
+                    // Algorithm 2: SKU with S prefix contained in scanned text
+                    (sku, scanned) => scanned.includes(sku.slice(1)),
+                    // Algorithm 3: SKU without S prefix (if SKU starts with S)
+                    (sku, scanned) => sku.startsWith('S') && scanned.includes(sku.slice(1)),
+                    // Algorithm 4: Scanned text with S prefix matches SKU
+                    (sku, scanned) => ('S' + scanned) === sku,
+                    // Algorithm 5: Last 5 characters pattern match
+                    (sku, scanned) => {
+                        if (sku.length >= 5) {
+                            const skuLast5 = sku.slice(-5);
+                            return scanned.includes(skuLast5);
+                        }
+                        return false;
+                    },
+                    // Algorithm 6: First 5 characters pattern match
+                    (sku, scanned) => {
+                        if (sku.length >= 5) {
+                            const skuFirst5 = sku.slice(0, 5);
+                            return scanned.includes(skuFirst5);
+                        }
+                        return false;
+                    },
+                    // Algorithm 7: Middle pattern match (removes first and last char)
+                    (sku, scanned) => {
+                        if (sku.length >= 6) {
+                            const skuMiddle = sku.slice(1, -1);
+                            return scanned.includes(skuMiddle);
+                        }
+                        return false;
+                    },
+                    // Algorithm 8: Fuzzy match for Apple serial patterns
+                    (sku, scanned) => {
+                        const cleanSku = sku.replace(/^S?/, '').replace(/[-_].*$/, '');
+                        const cleanScanned = scanned.replace(/[-_].*$/, '');
+                        return cleanSku.length >= 4 && cleanScanned.includes(cleanSku);
+                    },
+                    // Algorithm 9: CS prefix matching
+                    (sku, scanned) => scanned.includes('CS' + sku),
+                    // Algorithm 10: cs prefix matching
+                    (sku, scanned) => scanned.includes('cs' + sku),
+                    // Algorithm 11: 0 prefix matching
+                    (sku, scanned) => scanned.includes('0' + sku),
+                    // Algorithm 12: SKU without CS prefix (if SKU starts with CS)
+                    (sku, scanned) => sku.startsWith('CS') && scanned.includes(sku.slice(2)),
+                    // Algorithm 13: SKU without cs prefix (if SKU starts with cs)
+                    (sku, scanned) => sku.startsWith('cs') && scanned.includes(sku.slice(2)),
+                    // Algorithm 14: SKU without 0 prefix (if SKU starts with 0)
+                    (sku, scanned) => sku.startsWith('0') && scanned.includes(sku.slice(1)),
+                    // Algorithm 15: Similarity calculation with 80% threshold
+                    (sku, scanned) => {
+                        const similarity = calculateSimilarity(sku, scanned);
+                        return similarity >= 0.8;
+                    },
+                    // Algorithm 16: Reverse fuzzy matching
+                    (sku, scanned) => {
+                        return sku.includes(scanned) && scanned.length >= 4;
+                    }
+                ];
+                
+                // Helper function for similarity calculation
+                function calculateSimilarity(str1, str2) {
+                    const longer = str1.length > str2.length ? str1 : str2;
+                    const shorter = str1.length > str2.length ? str2 : str1;
+                    const editDistance = getEditDistance(longer, shorter);
+                    return (longer.length - editDistance) / longer.length;
+                }
+                
+                function getEditDistance(str1, str2) {
+                    const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+                    for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+                    for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+                    for (let j = 1; j <= str2.length; j++) {
+                        for (let i = 1; i <= str1.length; i++) {
+                            if (str1[i - 1] === str2[j - 1]) {
+                                matrix[j][i] = matrix[j - 1][i - 1];
+                            } else {
+                                matrix[j][i] = Math.min(
+                                    matrix[j - 1][i - 1] + 1,
+                                    matrix[j][i - 1] + 1,
+                                    matrix[j - 1][i] + 1
+                                );
+                            }
+                        }
+                    }
+                    return matrix[str2.length][str1.length];
+                }
+                
+                // Try direct matches first
+                item = searchData.find(i => i.SKU === scannedText) ||
+                       searchData.find(i => i.SKU === 'S' + scannedText) ||
+                       searchData.find(i => i.SKU === 'CS' + scannedText) ||
+                       searchData.find(i => i.SKU === 'cs' + scannedText) ||
+                       searchData.find(i => i.SKU === '0' + scannedText);
+                
+                // If not found, try advanced matching with similarity scoring
+                if (!item) {
+                    let bestMatch = null;
+                    let bestScore = 0;
+                    
+                    for (const dataItem of searchData) {
+                        for (let i = 0; i < matchingAlgorithms.length; i++) {
+                            const algorithm = matchingAlgorithms[i];
+                            if (algorithm(dataItem.SKU, scannedText)) {
+                                // Score based on algorithm priority and similarity
+                                const baseScore = (matchingAlgorithms.length - i) / matchingAlgorithms.length;
+                                const similarity = calculateSimilarity(dataItem.SKU, scannedText);
+                                const score = baseScore * 0.7 + similarity * 0.3;
+                                
+                                if (score > bestScore) {
+                                    bestScore = score;
+                                    bestMatch = dataItem;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (bestMatch && bestScore > 0.5) {
+                        item = bestMatch;
+                        updateFloatingDebugInfo('match-score', `Best match: ${(bestScore * 100).toFixed(1)}%`);
+                    }
+                }
+                
+                if (item) {
+                    playSound('success');
+                    
+                    if (currentScannerContext === 'demo') {
+                        // Update demo count
+                        let currentCount = typeof item.counted === 'number' ? item.counted : 0;
+                        item.counted = currentCount + 1;
+                        state.demoCounts[item.SKU] = { qty: item.counted, reason: reason };
+                        applyDemoView();
+                        
+                        const diff = item.counted - item.SOH;
+                        let statusText = (diff === 0) ? 'Matched' : (diff > 0) ? 'Overage' : 'Shortage';
+                        let statusColor = (diff === 0) ? 'text-green-600' : (diff > 0) ? 'text-yellow-600' : 'text-blue-600';
+                        
+                        updateFloatingResults(`<div class="text-left w-full space-y-1"><p class="font-medium text-slate-800">${item.Description}</p><p class="text-sm text-slate-500">SKU: ${item.SKU}</p><div class="flex justify-between items-baseline pt-1"><span class="text-lg font-bold text-slate-700">Count: <span class="text-blue-600">${item.counted}</span> / ${item.SOH}</span><span class="text-lg font-bold ${statusColor}">${statusText}</span></div><p class="text-xs text-green-600 mt-1">✓ Match found for: ${scannedText}</p></div>`);
+                    } else {
+                        // Final report context - just highlight the found item
+                        updateFloatingResults(`<div class="text-left w-full space-y-1"><p class="font-medium text-slate-800">${item.Description}</p><p class="text-sm text-slate-500">SKU: ${item.SKU}</p><div class="flex justify-between items-baseline pt-1"><span class="text-lg font-bold text-slate-700">Counted: <span class="text-blue-600">${item.Recount}</span> / ${item.SOH}</span><span class="text-lg font-bold">${item.FinalDiff === 0 ? '<span class="text-green-600">Matched</span>' : item.FinalDiff > 0 ? '<span class="text-yellow-600">Overage</span>' : '<span class="text-blue-600">Shortage</span>'}</span></div><p class="text-xs text-green-600 mt-1">✓ Match found for: ${scannedText}</p></div>`);
+                    }
+                    
+                    // Scroll to item in table
+                    const tableContainer = currentScannerContext === 'demo' ? 
+                        document.getElementById('demo-count-container') : 
+                        document.getElementById('final-report-table-container');
+                        
+                    const row = tableContainer.querySelector(`tr[data-sku="${item.SKU}"]`);
+                    if (row) {
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        row.classList.add('ring-2', 'ring-offset-2', 'ring-green-500');
+                        setTimeout(() => row.classList.remove('ring-2', 'ring-offset-2', 'ring-green-500'), 800);
+                    }
+                } else {
+                    playSound('error');
+                    // Show scanned text even when no match found
+                    updateFloatingResults(`<div class="text-center w-full"><p class="font-bold text-red-600">SKU Not Found</p><p class="text-sm text-slate-700 font-medium">Scanned: ${scannedText}</p><p class="text-xs text-slate-400 mt-1">Latest scan stored • No matching SKU in ${currentScannerContext} data</p></div>`);
+                    updateFloatingDebugInfo('match-score', 'No match found');
+                }
+            }
+
+            const floatingScanCooldown = {};
+            function onFloatingBarcodeDetected(result) {
+                const code = result.codeResult.code.trim();
+                const now = Date.now();
+                if (floatingScanCooldown[code] && now - floatingScanCooldown[code] < 2000) return;
+                floatingScanCooldown[code] = now;
+                processFloatingScannedCode(code, 'Barcode');
+            }            function openFloatingScanner(context = 'demo') {
+                currentScannerContext = context;
+                currentScannerMode = 'barcode';
+                  // Reset scanner state
+                document.getElementById('floating-barcode-tab').classList.add('active');
+                document.getElementById('floating-text-tab').classList.remove('active');
+                document.getElementById('floating-barcode-view').classList.remove('hidden');
+                document.getElementById('floating-text-view').classList.add('hidden');
+                document.getElementById('floating-ocr-preview').classList.add('hidden');
+                document.getElementById('floating-ocr-controls').classList.add('hidden');
+                
+                // Ensure proper display and visibility
+                floatingScanner.style.display = 'block';
+                floatingScanner.style.visibility = 'visible';
+                floatingScanner.style.opacity = '1';
+                
+                // Show scanner with animation
+                floatingScanner.classList.add('active');
+                
+                // Start with barcode scanner
+                setTimeout(() => {
+                    startFloatingBarcodeScanner();
+                }, 300);
+                
+                // Initialize Pyodide if not already done
+                if (!pyodideReady) {
+                    initializePyodide();
+                }
+                
+                updateFloatingResults('<p class="text-blue-500">Scanner ready</p>');
+                updateFloatingDebugInfo('status', `Scanner opened (${context})`, 'info');
+            }function closeFloatingScanner() {
+                if (!floatingScanner) return;
+                
+                console.log('Closing floating scanner...');
+                
+                // Stop all scanner activities first
+                stopFloatingTextScanner();
+                stopFloatingBarcodeScanner();
+                stopFloatingOcrStreaming();
+                
+                // Clear all video streams
+                const video = document.getElementById('floating-text-video');
+                if (video && video.srcObject) {
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => {
+                        track.stop();
+                        console.log('Stopped video track:', track.label);
+                    });
+                    video.srcObject = null;
+                }
+                
+                // Force stop Quagga barcode scanner
+                if (typeof Quagga !== 'undefined' && Quagga.running) {
+                    try {
+                        Quagga.offDetected(onFloatingBarcodeDetected);
+                        Quagga.stop();
+                        console.log('Quagga barcode scanner stopped');
+                    } catch (err) {
+                        console.error('Error stopping Quagga:', err);
+                    }
+                }
+                
+                // Clear barcode scanner video
+                const barcodeView = document.getElementById('floating-barcode-view');
+                const quaggaVideo = barcodeView.querySelector('video');
+                if (quaggaVideo && quaggaVideo.srcObject) {
+                    const tracks = quaggaVideo.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                    quaggaVideo.srcObject = null;
+                }
+                
+                // Hide debug panel completely
+                const debugPanel = document.getElementById('floating-debug-panel');
+                debugPanel.classList.remove('active');
+                
+                // Reset any custom transform on both scanner and debug panel
+                floatingScanner.style.transform = '';
+                debugPanel.style.transform = '';
+                
+                // Ensure proper transition is enabled
+                floatingScanner.style.transition = 'transform 0.3s ease-in-out, visibility 0.3s ease-in-out, opacity 0.3s ease-in-out';
+                
+                // Hide scanner completely with proper CSS states
+                floatingScanner.classList.remove('active');
+                
+                // Force complete hiding after animation
+                setTimeout(() => {
+                    if (!floatingScanner.classList.contains('active')) {
+                        floatingScanner.style.display = 'none';
+                        floatingScanner.style.visibility = 'hidden';
+                        floatingScanner.style.opacity = '0';
+                        console.log('Scanner completely hidden');
+                    }
+                }, 350); // Wait for CSS transition to complete
+                
+                // Reset scanner state
+                updateFloatingDebugInfo('status', 'Scanner closed', 'info');
+                console.log('Scanner window hidden completely');
+                
+                // Reset tab states for next opening
+                setTimeout(() => {
+                    document.getElementById('floating-barcode-tab').classList.add('active');
+                    document.getElementById('floating-text-tab').classList.remove('active');
+                    document.getElementById('floating-barcode-view').classList.remove('hidden');
+                    document.getElementById('floating-text-view').classList.add('hidden');
+                    document.getElementById('floating-ocr-preview').classList.add('hidden');
+                    document.getElementById('floating-ocr-controls').classList.add('hidden');
+                    
+                    // Clear results when scanner is closed
+                    updateFloatingResults('<p class="text-gray-400">Click scan to start</p>');
+                    
+                    currentScannerMode = 'barcode';
+                    console.log('Scanner reset to initial state');
+                }, 400); // Wait for animation to complete
+            }            function toggleFloatingDebug() {
+                const debugPanel = document.getElementById('floating-debug-panel');
+                
+                if (debugPanel.classList.contains('active')) {
+                    // Hide debug panel
+                    debugPanel.classList.remove('active');
+                    setTimeout(() => {
+                        if (!debugPanel.classList.contains('active')) {
+                            debugPanel.style.display = 'none';
+                            debugPanel.style.visibility = 'hidden';
+                            debugPanel.style.opacity = '0';
+                        }
+                    }, 350);
+                } else {
+                    // Show debug panel
+                    debugPanel.style.display = 'block';
+                    debugPanel.style.visibility = 'visible';
+                    debugPanel.style.opacity = '1';
+                    debugPanel.classList.add('active');
+                }
+            }
+
+            function updateFloatingResults(html) {
+                const resultsEl = document.getElementById('floating-scanner-results');
+                if (resultsEl) {
+                    resultsEl.innerHTML = html;
+                }
+            }            function updateFloatingDebugInfo(type, value, status = 'info') {
+                const elements = {
+                    'last-text': 'floating-ocr-last-text',
+                    'confidence': 'floating-ocr-confidence',
+                    'process-time': 'floating-ocr-process-time',
+                    'status': 'floating-ocr-status',
+                    'cache-hits': 'floating-ocr-cache-hits',
+                    'success-rate': 'floating-ocr-success-rate',
+                    'match-score': 'floating-match-score',
+                    'scan-history': 'floating-scan-history'
+                };
+                
+                const element = document.getElementById(elements[type]);
+                if (element) {
+                    if (type === 'scan-history') {
+                        // Special handling for scan history - multiline display
+                        element.innerHTML = value.split('\n').slice(0, 5).join('<br>') || 'No scans yet';
+                        element.scrollTop = element.scrollHeight;
+                    } else {
+                        element.textContent = value;
+                        const colorClass = status === 'success' ? 'text-green-400' : 
+                                         status === 'error' ? 'text-red-400' : 
+                                         'text-blue-400';
+                        element.className = colorClass;
+                    }
+                }
+                
+                if (type === 'status' && status === 'success') {
+                    const historyEl = document.getElementById('floating-ocr-history');
+                    if (historyEl) {
+                        const newEntry = `${new Date().toLocaleTimeString()}: ${value}`;
+                        historyEl.innerHTML = (historyEl.innerHTML + '<br>' + newEntry).split('<br>').slice(-10).join('<br>');
+                        historyEl.scrollTop = historyEl.scrollHeight;
+                    }
+                }
+            }
 
             // === OCR Enhancement Variables ===
             let tesseractWorker = null;
@@ -1794,21 +2942,21 @@
                 if (type === 'success') { oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(600, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.05); } 
                 else { oscillator.type = 'square'; oscillator.frequency.setValueAtTime(200, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1); }
                 oscillator.start(audioCtx.currentTime); oscillator.stop(audioCtx.currentTime + 0.15);
-            }
-
-            let currentScanner = 'barcode';
+            }            let currentScanner = 'barcode'; // Legacy - kept for compatibility
             
-            const openScannerBtn = getEl('openScannerBtn');
-            const closeScannerBtn = getEl('closeScannerBtn');
-            const cameraViewBox = getEl('camera-view-box');
-            const barcodeScannerTab = getEl('barcode-scanner-tab');
-            const textScannerTab = getEl('text-scanner-tab');
-            const barcodeScannerView = getEl('barcode-scanner-view');
-            const textScannerView = getEl('text-scanner-view');
-            const textScannerVideo = getEl('text-scanner-video');
-            const captureBtn = getEl('capture-btn');
-            const scannerResultsEl = getEl('scanner-results');
-            
+            // Legacy scanner variables - replaced by floating scanner
+            // const openScannerBtn = getEl('openScannerBtn');
+            // const closeScannerBtn = getEl('closeScannerBtn');
+            // const cameraViewBox = getEl('camera-view-box');
+            // const barcodeScannerTab = getEl('barcode-scanner-tab');
+            // const textScannerTab = getEl('text-scanner-tab');
+            // const barcodeScannerView = getEl('barcode-scanner-view');
+            // const textScannerView = getEl('text-scanner-view');
+            // const textScannerVideo = getEl('text-scanner-video');
+            // const captureBtn = getEl('capture-btn');
+            // const scannerResultsEl = getEl('scanner-results');
+              // Legacy scanner tab switching - replaced by floating scanner
+            /*
             const switchScannerTab = (mode) => {
                 currentScanner = mode;
                 if (mode === 'barcode') {
@@ -1828,7 +2976,8 @@
                     startTextScanner();
                     setTimeout(startOcrStreaming, 800); // Give camera time to start
                 }
-            };            const startTextScanner = async () => {
+            };
+            */const startTextScanner = async () => {
                 try {
                     if (activeStream) {
                         activeStream.getTracks().forEach(track => track.stop());
@@ -2222,23 +3371,12 @@
                     quaggaVideo.srcObject = null;
                 }
             }
-            
-            const openScannerModal = () => {
-                cameraViewBox.classList.remove('hidden');
-                switchScannerTab('barcode');
-            };
-
-            const closeScannerModal = () => {
-                stopTextScanner(); // This will stop all video tracks and clear srcObject
-                cameraViewBox.classList.add('hidden');
-                stopBarcodeScanner();
-                stopOcrStreaming();
-                const quaggaVideo = document.querySelector('#qr-reader video');
-                if (quaggaVideo && quaggaVideo.srcObject) {
-                    quaggaVideo.srcObject.getTracks().forEach(track => track.stop());
-                    quaggaVideo.srcObject = null;
-                }
-            };              const processScannedCode = (code, reason) => {
+              const openScannerModal = () => {
+                openFloatingScanner('demo');
+            };            const closeScannerModal = () => {
+                // Legacy function - now handled by floating scanner
+                closeFloatingScanner();
+            };const processScannedCode = (code, reason) => {
                 const scannedText = code.toUpperCase();
                 // Try direct match
                 let item = state.demoMaster.find(i => i.SKU === scannedText);
@@ -2370,13 +3508,11 @@
                 addListener('exportCsvButton', 'click', exportFinalReport);
                 addListener('exportJsonButton', 'click', exportStockCountToJSON);
                 addListener('refreshChartsButton', 'click', renderFinalReportCharts);
-                addListener('exportDemoCsvButton', 'click', exportDemoTable);
-                addListener('openScannerBtn', 'click', openScannerModal);
-                addListener('closeScannerBtn', 'click', closeScannerModal);
-                addListener('print-final-report-btn', 'click', () => window.print());
-                addListener('barcode-scanner-tab', 'click', () => switchScannerTab('barcode'));
-                addListener('text-scanner-tab', 'click', () => switchScannerTab('text'));
-                addListener('capture-btn', 'click', captureAndRecognize);
+                addListener('exportDemoCsvButton', 'click', exportDemoTable);                addListener('openScannerBtn', 'click', openScannerModal);
+                addListener('final-openScannerBtn', 'click', finalOpenScannerModal);
+                // closeScannerBtn removed - handled by floating scanner
+                addListener('print-final-report-btn', 'click', () => window.print());// Scanner tab switching removed - handled by floating scanner
+                // Capture button removed - handled by floating scanner
 
                 addListener('demoSearchInput', 'keyup', applyDemoView);
                 addListener('demoFilterSelect', 'change', applyDemoView);
@@ -2452,9 +3588,31 @@
                 window.addEventListener('beforeunload', (e) => { if (hasUnsavedChanges) e.preventDefault(); });
             }
             
-            initializeAppListeners();
+            initializeAppListeners();            // === Initialize Floating Scanner ===
+            function setupFloatingScanner() {
+                floatingScanner = document.getElementById('floating-scanner');
+                if (floatingScanner) {
+                    // Call the actual initialization function
+                    initializeFloatingScanner();
+                    console.log('Floating scanner initialized successfully');
+                } else {
+                    console.error('Floating scanner element not found');
+                    // Retry after a short delay in case DOM is still loading
+                    setTimeout(() => {
+                        floatingScanner = document.getElementById('floating-scanner');
+                        if (floatingScanner) {
+                            initializeFloatingScanner();
+                            console.log('Floating scanner initialized successfully (delayed)');
+                        }
+                    }, 100);
+                }
+            }
+            
+            // Initialize floating scanner after DOM is ready
+            setupFloatingScanner();
 
-            // --- Final Report Scanner Logic ---
+            // --- Final Report Scanner Logic ---            // Legacy final scanner variables - replaced by floating scanner
+            /*
             const finalOpenScannerBtn = getEl('final-openScannerBtn');
             const finalCloseScannerBtn = getEl('final-closeScannerBtn');
             const finalCameraViewBox = getEl('final-camera-view-box');
@@ -2470,6 +3628,7 @@
             let finalOcrStreaming = false;
             let finalOcrStreamInterval = null;
             let finalCurrentScanner = 'barcode';
+            */
 
             function finalSwitchScannerTab(mode) {
                 finalCurrentScanner = mode;
@@ -2816,23 +3975,11 @@
                     quaggaVideo.srcObject.getTracks().forEach(track => track.stop());
                     quaggaVideo.srcObject = null;
                 }
-            }
-
-            function finalOpenScannerModal() {
-                finalCameraViewBox.classList.remove('hidden');
-                finalSwitchScannerTab('barcode');
-            }
-
-            function finalCloseScannerModal() {
-                finalStopTextScanner();
-                finalCameraViewBox.classList.add('hidden');
-                finalStopBarcodeScanner();
-                finalStopOcrStreaming();
-                const quaggaVideo = finalBarcodeScannerView.querySelector('video');
-                if (quaggaVideo && quaggaVideo.srcObject) {
-                    quaggaVideo.srcObject.getTracks().forEach(track => track.stop());
-                    quaggaVideo.srcObject = null;
-                }
+            }            function finalOpenScannerModal() {
+                openFloatingScanner('final');
+            }            function finalCloseScannerModal() {
+                // Legacy function - now handled by floating scanner
+                closeFloatingScanner();
             }
 
             const finalScanCooldown = {};
@@ -2936,13 +4083,11 @@
                 } else {
                     playSound('error');
                     finalScannerResultsEl.innerHTML = `<div class="text-center w-full"><p class="font-bold text-red-600">SKU Not Found</p><p class="text-sm text-slate-500">${scannedText}</p></div>`;
-                }
-            }
+                }            }
 
-            if (finalOpenScannerBtn) finalOpenScannerBtn.addEventListener('click', finalOpenScannerModal);
-            if (finalCloseScannerBtn) finalCloseScannerBtn.addEventListener('click', finalCloseScannerModal);
-            if (finalBarcodeScannerTab) finalBarcodeScannerTab.addEventListener('click', () => finalSwitchScannerTab('barcode'));
-            if (finalTextScannerTab) finalTextScannerTab.addEventListener('click', () => finalSwitchScannerTab('text'));
+            // Final scanner integration with floating scanner - cleaned up
+            // Event listener already added in initializeAppListeners()
+            // Final scanner close and tab switching removed - handled by floating scanner
             if (finalCaptureBtn) finalCaptureBtn.addEventListener('click', async () => {
                 if (!finalActiveStream || !cvReady) {
                     finalScannerResultsEl.innerHTML = `<p class="text-red-500">Camera or OpenCV is not ready.</p>`;
