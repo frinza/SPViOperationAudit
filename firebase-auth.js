@@ -35,10 +35,7 @@
             db = firebase.firestore();
             auth = firebase.auth();
             isFirebaseInitialized = true;
-            
-            console.log('Firebase initialized successfully');
         } catch (error) {
-            console.error('Firebase initialization failed:', error);
             throw error;
         }
     }
@@ -125,10 +122,8 @@
                 // Update document with the actual ID
                 await db.collection('users').doc(docRef.id).update({ id: docRef.id });
 
-                console.log('User registered successfully in Firestore');
                 return newUser;
             } catch (error) {
-                console.error('Error registering user:', error);
                 throw error;
             }
         },
@@ -137,48 +132,25 @@
             await initializeFirebase();
             
             try {
-                console.log('🔑 Attempting login for email:', email);
                 const hashedPassword = hashPassword(password);
-                console.log('🔒 Password hash:', hashedPassword);
                 
-                // Query Firestore for user
-                console.log('🔍 Querying Firestore for user...');
                 const snapshot = await db.collection('users')
                     .where('email', '==', email)
                     .where('password', '==', hashedPassword)
                     .limit(1)
                     .get();
 
-                console.log('📊 Query result - Empty:', snapshot.empty);
-                console.log('📊 Query result - Size:', snapshot.size);
-
                 if (snapshot.empty) {
-                    console.log('❌ No user found with matching email/password');
-                    
-                    // Let's also check if user exists with just email
+                    // Check if user exists with different password
                     const emailOnlySnapshot = await db.collection('users')
                         .where('email', '==', email)
                         .get();
-                    
-                    if (emailOnlySnapshot.empty) {
-                        console.log('❌ No user found with this email at all');
-                    } else {
-                        console.log('⚠️ User exists but password doesn\'t match');
-                        const userDoc = emailOnlySnapshot.docs[0];
-                        const userData = userDoc.data();
-                        console.log('Stored password hash:', userData.password);
-                        console.log('Login password hash:', hashedPassword);
-                    }
                     
                     return null;
                 }
 
                 const doc = snapshot.docs[0];
                 const user = { id: doc.id, ...doc.data() };
-                
-                console.log('✅ User found:', user.email);
-                console.log('User status:', user.status);
-                console.log('User role:', user.role);
 
                 // Update last login
                 await this.updateUser(user.id, { lastLogin: new Date().toISOString() });
@@ -186,7 +158,6 @@
 
                 return user;
             } catch (error) {
-                console.error('Error logging in user:', error);
                 throw error;
             }
         },
@@ -201,7 +172,6 @@
                 
                 return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             } catch (error) {
-                console.error('Error getting users:', error);
                 throw error;
             }
         },
@@ -222,7 +192,6 @@
                 const doc = snapshot.docs[0];
                 return { id: doc.id, ...doc.data() };
             } catch (error) {
-                console.error('Error getting user by email:', error);
                 throw error;
             }
         },
@@ -240,7 +209,6 @@
                 const doc = await db.collection('users').doc(userId).get();
                 return { id: doc.id, ...doc.data() };
             } catch (error) {
-                console.error('Error updating user:', error);
                 throw error;
             }
         },
@@ -252,7 +220,6 @@
                 await db.collection('users').doc(userId).delete();
                 return true;
             } catch (error) {
-                console.error('Error deleting user:', error);
                 throw error;
             }
         },
@@ -265,7 +232,6 @@
                 await this.updateUser(userId, { password: hashedPassword });
                 return true;
             } catch (error) {
-                console.error('Error updating password:', error);
                 throw error;
             }
         },
@@ -297,7 +263,6 @@
                 await this.updateUser(userId, { role, permissions });
                 return true;
             } catch (error) {
-                console.error('Error updating user role:', error);
                 throw error;
             }
         },
@@ -307,12 +272,9 @@
             
             try {
                 const adminEmail = 'admin@spvi.co.th';
-                console.log('Checking for existing admin user...');
                 const existingAdmin = await this.getUserByEmail(adminEmail);
                 
                 if (!existingAdmin) {
-                    console.log('Creating default admin user...');
-                    
                     const adminUser = {
                         name: 'System Administrator',
                         email: adminEmail,
@@ -335,35 +297,17 @@
 
                     // Register admin user
                     const createdAdmin = await this.registerUser(adminUser);
-                    console.log('✅ Default admin user created successfully:', createdAdmin.email);
-                    console.log('Admin ID:', createdAdmin.id);
-                    console.log('Admin Status:', createdAdmin.status);
-                    console.log('Admin Role:', createdAdmin.role);
                 } else {
-                    console.log('✅ Default admin user already exists');
-                    console.log('Admin ID:', existingAdmin.id);
-                    console.log('Admin Email:', existingAdmin.email);
-                    console.log('Admin Status:', existingAdmin.status);
-                    console.log('Admin Role:', existingAdmin.role);
-                    console.log('Admin Password Hash:', existingAdmin.password);
-                    
                     // Check if password is missing and fix it
                     if (!existingAdmin.password || existingAdmin.password === undefined) {
-                        console.log('⚠️ Admin password is missing! Fixing...');
                         const correctPasswordHash = hashPassword('admin123');
                         await this.updateUser(existingAdmin.id, { 
                             password: correctPasswordHash 
                         });
-                        console.log('✅ Admin password has been fixed');
-                        console.log('New password hash:', correctPasswordHash);
                     }
                 }
             } catch (error) {
-                console.error('Error initializing default admin:', error);
-                // Try to provide more specific error information
-                if (error.message.includes('permission')) {
-                    console.error('Firestore permission error. Please check your Firestore security rules.');
-                }
+                // Continue silently if Firebase initialization fails
             }
         },
 
@@ -386,10 +330,8 @@
                 
                 // Update with new password
                 await this.updateUserPassword(admin.id, newPassword);
-                console.log('Admin password updated successfully');
                 return true;
             } catch (error) {
-                console.error('Error changing admin password:', error);
                 throw error;
             }
         },
@@ -401,7 +343,6 @@
                 const adminEmail = 'admin@spvi.co.th';
                 return await this.getUserByEmail(adminEmail);
             } catch (error) {
-                console.error('Error getting admin user:', error);
                 throw error;
             }
         }
@@ -426,11 +367,28 @@
     }
 
     function redirectToLogin() {
-        if (!window.location.pathname.includes('login.html')) {
+        // Only redirect if we're NOT already on the login page (index.html)
+        const currentPage = window.location.pathname;
+        const currentUrl = window.location.href;
+        
+        // More accurate check for login page
+        const isOnLoginPage = currentPage.includes('index.html') || 
+                             currentPage.endsWith('/') || 
+                             currentPage === '/' ||
+                             currentUrl.includes('index.html');
+        
+        if (!isOnLoginPage) {
             // Determine if we're in a tools subdirectory
-            const isInTools = window.location.pathname.includes('/tools/');
-            const loginPath = isInTools ? '../login.html' : 'login.html';
-            window.location.href = loginPath;
+            const isInTools = currentPage.includes('/tools/');
+            const loginPath = isInTools ? '../index.html' : 'index.html';
+            
+            // Prevent multiple redirects by adding a flag
+            if (!window.redirectingToLogin) {
+                window.redirectingToLogin = true;
+                setTimeout(() => {
+                    window.location.href = loginPath;
+                }, 100);
+            }
         }
     }
 
@@ -477,7 +435,7 @@
         userInfoBar.innerHTML = `
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <div class="spvi-nav-links">
-                    <a href="${basePath}index.html" class="spvi-nav-link">หน้าหลัก</a>
+                    <a href="${basePath}dashboard.html" class="spvi-nav-link">หน้าหลัก</a>
                     <a href="${toolsPath}stock-count.html" class="spvi-nav-link">ตรวจนับสต็อก</a>
                     <a href="${toolsPath}cash-control.html" class="spvi-nav-link">ควบคุมเงินสด</a>
                     <a href="${toolsPath}checklist.html" class="spvi-nav-link">รายการตรวจสอบ</a>
@@ -526,9 +484,15 @@
 
     // Initialize authentication when DOM loads
     function init() {
-        // Skip auth check if we're on the login page
-        if (window.location.pathname.includes('login.html') || 
-            window.location.pathname.includes('user-management.html')) {
+        const currentPage = window.location.pathname;
+        
+        // Skip auth check if we're on the login page or user management
+        const isLoginPage = currentPage.includes('index.html') || 
+                           currentPage.endsWith('/') || 
+                           currentPage === '/';
+        const isUserManagement = currentPage.includes('user-management.html');
+        
+        if (isLoginPage || isUserManagement) {
             return;
         }
 
@@ -544,6 +508,7 @@
         setCurrentUser,
         clearCurrentUser,
         checkAuth,
+        checkAuthentication: checkAuth, // Alias for compatibility
         logout: function() {
             clearCurrentUser();
             redirectToLogin();
@@ -564,6 +529,9 @@
 
         // Initialize Firebase
         initializeFirebase,
+        
+        // UI functions
+        addUserInfo,
 
         // Firebase config management
         setFirebaseConfig: function(config) {
@@ -572,55 +540,6 @@
         
         getFirebaseConfig: function() {
             return { ...firebaseConfig };
-        },
-
-        // Debug functions
-        testPasswordHash: function(password) {
-            const hash = hashPassword(password);
-            console.log('Password:', password);
-            console.log('Hash:', hash);
-            return hash;
-        },
-
-        debugAdminLogin: async function() {
-            console.log('=== ADMIN LOGIN DEBUG ===');
-            try {
-                const admin = await FirebaseUserManager.getUserByEmail('admin@spvi.co.th');
-                if (admin) {
-                    console.log('✅ Admin user found in Firestore');
-                    console.log('Admin data:', admin);
-                    
-                    const testHash = hashPassword('admin123');
-                    console.log('Expected hash for "admin123":', testHash);
-                    console.log('Stored hash:', admin.password);
-                    console.log('Hashes match:', testHash === admin.password);
-                } else {
-                    console.log('❌ Admin user NOT found in Firestore');
-                }
-            } catch (error) {
-                console.error('Debug error:', error);
-            }
-            console.log('=== END DEBUG ===');
-        },
-
-        fixAdminPassword: async function() {
-            console.log('🔧 === FIXING ADMIN PASSWORD ===');
-            try {
-                const admin = await FirebaseUserManager.getUserByEmail('admin@spvi.co.th');
-                if (admin) {
-                    const correctHash = hashPassword('admin123');
-                    await FirebaseUserManager.updateUser(admin.id, { password: correctHash });
-                    console.log('✅ Admin password fixed successfully');
-                    console.log('New password hash:', correctHash);
-                    return true;
-                } else {
-                    console.log('❌ Admin user not found');
-                    return false;
-                }
-            } catch (error) {
-                console.error('❌ Error fixing admin password:', error);
-                return false;
-            }
         }
     };
 

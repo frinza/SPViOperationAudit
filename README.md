@@ -1,63 +1,61 @@
 # 🎯 SPVi Operations Audit Toolkit
 
-> A comprehensive suite of web-based applications for operational auditing and branch management with Firebase authentication and user management.
+> A comprehensive web-based application for operational auditing and branch management with Firebase authentication and user management.
 
 [![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange)](https://firebase.google.com/)
 [![Authentication](https://img.shields.io/badge/Auth-Firebase%20Auth-blue)](https://firebase.google.com/products/auth)
 [![Language](https://img.shields.io/badge/Language-Thai%20%2F%20English-green)](https://fonts.google.com/specimen/Sarabun)
 [![Mobile](https://img.shields.io/badge/Mobile-Responsive-brightgreen)](https://tailwindcss.com/)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-success)](https://github.com/)
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Features](#features)
-- [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [Firebase Setup](#firebase-setup)
-- [Authentication System](#authentication-system)
+- [Deployment](#deployment)
 - [Available Tools](#available-tools)
 - [User Management](#user-management)
 - [Security](#security)
-- [Maintenance](#maintenance)
-- [Development](#development)
 - [Troubleshooting](#troubleshooting)
 
 ## 🚀 Overview
 
-The SPVi Operations Audit Toolkit is a modern, responsive web application designed for operational teams to streamline audit processes, inventory management, and branch oversight. Built with Firebase for secure authentication and real-time data management.
+The SPVi Operations Audit Toolkit is a modern, responsive web application for operational teams to streamline audit processes, inventory management, and branch oversight. Built with Firebase for secure authentication and real-time data management.
 
 ### ✨ Key Features
 
 - 🔐 **Firebase Authentication** - Secure user registration and login
-- 👥 **User Management** - Admin approval workflow and role-based access
+- 👥 **User Management** - Admin approval workflow and role-based access  
 - 📱 **Mobile Responsive** - Works seamlessly on all devices
 - 🇹🇭 **Thai Language Support** - Optimized for Thai users with Sarabun font
 - 🛡️ **Security First** - Role-based permissions and secure data handling
-- 🎨 **Modern UI** - Clean, professional interface with Tailwind CSS
+- 🎨 **Modern UI** - Clean, professional interface
 - 📊 **7 Specialized Tools** - Comprehensive audit and management tools
+- ⚡ **Production Ready** - Optimized and deployment-ready
 
 ## 📁 Project Structure
 
 ```
 SPViOperationAudit/
-├── 📄 index.html                       # Main dashboard
-├── 📄 login.html                       # Authentication page
-├── 📄 user-management.html             # Admin user management
-├── 📄 firebase-auth.js                 # Core authentication system
+├── 📄 index.html                       # 🔑 Login page (ENTRY POINT)
+├── 📄 dashboard.html                   # 🏠 Main dashboard
+├── 📄 user-management.html             # 👥 Admin user management
+├── 📄 firebase-auth.js                 # 🔐 Core authentication system
 │
 ├── 📁 styles/
-│   └── 📄 spvi-main.css               # Centralized stylesheet
+│   └── 📄 spvi-main.css               # 🎨 Centralized stylesheet
 │
-├── 📁 tools/                          # Audit Tools
-│   ├── 📄 stock-count.html            # Inventory counting
-│   ├── 📄 cash-control.html           # Cash management
-│   ├── 📄 checklist.html              # Audit checklist
-│   ├── 📄 audit-calendar.html         # Calendar & scheduling
-│   ├── 📄 issue-tracker.html          # Issue management
-│   ├── 📄 report-comparison.html      # Report comparison
-│   └── 📄 risk-analyzer.html          # Risk analysis
+├── 📁 tools/                          # 🛠️ Audit Tools (7 total)
+│   ├── 📄 stock-count.html            # 📦 Inventory counting
+│   ├── 📄 cash-control.html           # 💰 Cash management
+│   ├── 📄 checklist.html              # ✅ Audit checklist
+│   ├── 📄 audit-calendar.html         # 📅 Calendar & scheduling
+│   ├── 📄 issue-tracker.html          # 🐛 Issue management
+│   ├── 📄 report-comparison.html      # 📊 Report comparison
+│   └── 📄 risk-analyzer.html          # ⚠️ Risk analysis
 │
-└── 📄 README.md                       # This file
+└── 📄 README.md                       # 📚 This guide
 ```
 
 ## 🚀 Getting Started
@@ -73,17 +71,9 @@ SPViOperationAudit/
 1. **Clone or Download** this repository
 2. **Set up Firebase** (see Firebase Setup section below)
 3. **Open `index.html`** in your web browser
-4. **Login with default admin account:**
-   - Email: `admin@spvi.co.th`
-   - Password: `admin123`
+4. **Login with admin account** (configured during setup)
 
-### First Time Setup
-
-1. Configure Firebase (required for authentication)
-2. Test admin login
-3. Register test users
-4. Configure user permissions
-5. Change default admin password
+> 📌 **Entry Point**: The application opens directly to the login page (`index.html`). After successful login, users are automatically redirected to the dashboard where they can access all audit tools.
 
 ## 🔥 Firebase Setup
 
@@ -129,8 +119,6 @@ const firebaseConfig = {
 
 In Firebase Console → Firestore Database → Rules, apply these rules:
 
-#### 🔒 Production Security Rules (Recommended)
-
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -160,29 +148,46 @@ service cloud.firestore {
 }
 ```
 
-#### 🧪 Development Rules (Testing Only)
+## 🚀 Deployment
 
+### Web Hosting Setup
+
+1. **Upload Files**: Upload entire project folder to your hosting service (GitHub Pages, Netlify, Vercel, etc.)
+2. **Set Index Page**: Ensure `index.html` is set as the default page (most hosts do this automatically)
+3. **Configure Firebase**: Update Firebase config in `firebase-auth.js` with your production values
+4. **Test**: Visit your website → Should show login page → Login → Access dashboard
+
+### Firebase Production Configuration
+
+Update these values in `firebase-auth.js`:
 ```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
+const firebaseConfig = {
+    apiKey: "your-actual-api-key",
+    authDomain: "your-project.firebaseapp.com", 
+    projectId: "your-project-id",
+    storageBucket: "your-project.appspot.com",
+    messagingSenderId: "your-sender-id",
+    appId: "your-app-id"
+};
 ```
 
-## 🔐 Authentication System
+### Security Checklist
+
+- [ ] Firebase config updated with production values
+- [ ] Firestore security rules applied
+- [ ] Default admin password changed
+- [ ] User permissions configured
+- [ ] HTTPS enabled on hosting platform
+
+## 🔐 User Management & Authentication
 
 ### Default Admin Account
 
 - **Email**: `admin@spvi.co.th`
-- **Password**: `admin123`
 - **Role**: Admin
 - **Status**: Approved
 
-⚠️ **Important**: Change the default password after setup!
+⚠️ **Important**: Set a secure password during initial setup!
 
 ### User Registration Flow
 
@@ -191,14 +196,13 @@ service cloud.firestore {
 3. **Approved User** → Can access tools
 4. **Role Assignment** → User or Admin privileges
 
-### Authentication Features
+### Admin Features
 
-- ✅ Secure password hashing
-- ✅ Role-based access control (User/Admin)
-- ✅ Status-based access (Pending/Approved/Rejected)
-- ✅ Session management with automatic logout
-- ✅ Password reset functionality
-- ✅ Multi-device login support
+- **📊 User Statistics** - Overview of user counts and status
+- **✅ User Approval** - Approve, reject, or delete pending users
+- **🔑 Password Management** - Reset passwords for any user
+- **👑 Role Assignment** - Promote users to admin or change roles
+- **🛡️ Permission Management** - Configure tool access per user
 
 ## 🛠️ Available Tools
 
@@ -278,7 +282,6 @@ Each user can be granted access to specific tools:
 - **🛡️ Role-Based Access** - User/Admin permissions
 - **✅ Status Verification** - Only approved users can access
 - **🔒 Session Management** - Secure login/logout
-- **🚫 Developer Tools Disabled** - F12, right-click, and keyboard shortcuts blocked
 - **📱 Cross-Device Security** - Consistent security across devices
 
 ### Production Security Checklist
@@ -288,119 +291,25 @@ Each user can be granted access to specific tools:
 - [ ] Review user permissions
 - [ ] Enable Firebase authentication
 - [ ] Set up backup procedures
-- [ ] Configure monitoring and alerts
-
-## 🔧 Maintenance
-
-### Regular Tasks
-
-1. **User Management**
-   - Review and approve pending users
-   - Remove inactive accounts
-   - Update user permissions as needed
-
-2. **Security**
-   - Monitor login activities
-   - Update passwords periodically
-   - Review access permissions
-
-3. **Data Management**
-   - Regular Firestore backups
-   - Clean up old data
-   - Monitor storage usage
-
-### Performance Optimization
-
-- **📱 Mobile Responsive** - Optimized for all devices
-- **⚡ Single CSS File** - Centralized styling for faster loading
-- **🚀 Font Optimization** - Single font load across all pages
-- **💾 Browser Caching** - Optimized for performance
-
-## 🧑‍💻 Development
-
-### Adding New Tools
-
-1. Create `tools/new-tool.html`
-2. Follow existing tool structure
-3. Include `firebase-auth.js` for authentication
-4. Link to `styles/spvi-main.css`
-5. Add tool card to `index.html`
-6. Update user permissions in `firebase-auth.js`
-
-### CSS Component Library
-
-The centralized `spvi-main.css` includes:
-
-- **Base Styles** - Typography, colors, spacing
-- **UI Components** - Buttons, forms, modals, cards
-- **Tool-Specific** - Specialized styling for each tool
-- **Responsive Design** - Mobile-first approach
-- **Print Styles** - Optimized for printing
-- **Animations** - Smooth transitions and effects
-
-### Code Structure
-
-```javascript
-// firebase-auth.js structure
-- Firebase Configuration
-- User Data Management
-- Authentication Functions
-- User Interface Components
-- Admin Management Features
-- Security and Validation
-```
 
 ## 🔧 Troubleshooting
 
 ### Common Issues
 
-#### Authentication Problems
-
-**"Firebase not initialized"**
+**Authentication Problems**
 - ✅ Check Firebase config values are not placeholders
 - ✅ Verify Firestore is enabled
 - ✅ Check browser console for detailed errors
 
-**"Permission denied"**
+**Permission denied errors**
 - ✅ Verify Firestore security rules are applied
 - ✅ Check user role and status
 - ✅ Ensure user is approved
-
-**"Default admin not created"**
-- ✅ Check browser console for creation message
-- ✅ Verify Firestore write permissions
-- ✅ Refresh page to trigger creation
-
-#### Tool Access Issues
 
 **User can't access tools**
 - ✅ Verify user status is "approved"
 - ✅ Check user permissions for specific tools
 - ✅ Ensure user is properly logged in
-
-**Navigation not working**
-- ✅ Check authentication status
-- ✅ Verify navigation bar is loaded
-- ✅ Check for JavaScript errors
-
-#### UI/Display Problems
-
-**Styling issues**
-- ✅ Verify `spvi-main.css` is loading
-- ✅ Check for CSS conflicts
-- ✅ Clear browser cache
-
-**Mobile display problems**
-- ✅ Check viewport meta tag
-- ✅ Test responsive breakpoints
-- ✅ Verify touch interactions
-
-### Debug Mode
-
-Open browser Developer Tools (F12) and check:
-- **Console** - JavaScript errors and messages
-- **Network** - File loading issues
-- **Application** - Local storage and session data
 
 ### Getting Help
 
@@ -408,109 +317,15 @@ For technical support:
 1. Check this README first
 2. Review browser console errors
 3. Verify Firebase configuration
-4. Test with development security rules
-5. Contact your system administrator
-
-## 📚 Additional Resources
-
-- [Firebase Documentation](https://firebase.google.com/docs)
-- [Firestore Security Rules](https://firebase.google.com/docs/firestore/security/get-started)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [Thai Web Typography](https://fonts.google.com/specimen/Sarabun)
+4. Contact your system administrator
 
 ---
 
 ## 📄 License & Support
 
-© 2025 SPVi/Operation Audit. All Rights Reserved.
+© 2025 SPVi Operations Audit. All Rights Reserved.
 
 **System Status**: ✅ Production Ready  
-**Last Updated**: July 2025  
 **Version**: 2.0  
 
 Built with ❤️ for operational excellence.
-
----
-
-## 📋 Appendix
-
-### Database Structure
-
-The Firestore database uses the following structure for user management:
-
-```javascript
-// Users Collection Structure
-{
-  id: "auto-generated-id",
-  name: "User Name",
-  email: "user@example.com", 
-  password: "hashed-password",
-  department: "Department Name",
-  position: "Position Title",
-  role: "user" | "admin",
-  status: "pending" | "approved" | "rejected",
-  createdAt: "ISO-date-string",
-  lastLogin: "ISO-date-string",
-  permissions: {
-    stockCount: true,
-    cashControl: true,
-    checklist: true,
-    riskAnalyzer: true,
-    auditCalendar: true,
-    reportComparison: true,
-    issueTracker: true,
-    userManagement: false // true for admins only
-  }
-}
-```
-
-### Project Cleanup Summary
-
-This project has been optimized and cleaned up:
-
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| **Total Files** | ~26 | 14 | **46% Reduction** |
-| **HTML Pages** | 12 | 10 | Removed 2 legacy pages |
-| **CSS Files** | Multiple inline | 1 centralized | **100% Consolidation** |
-| **JS Auth Files** | 2 conflicting | 1 unified | **50% Reduction** |
-| **Documentation** | 9 files | 1 comprehensive | **89% Consolidation** |
-
-### Alternative Firestore Rules
-
-For development and testing, you can use these more permissive rules:
-
-```javascript
-// Development Rules (Testing Only)
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
-```
-
-⚠️ **Warning**: Only use development rules for testing. Always apply production rules for live deployment.
-
-### Technical Architecture
-
-The SPVi Operations Audit Toolkit follows a modern architecture:
-
-- **Frontend**: Vanilla HTML5, CSS3, JavaScript ES6+
-- **Styling**: Centralized CSS with component-based design
-- **Authentication**: Firebase Authentication with custom user management
-- **Database**: Cloud Firestore for user data and permissions
-- **Typography**: Sarabun font optimized for Thai language
-- **Responsive**: Mobile-first design with Tailwind CSS utilities
-- **Security**: Role-based access control with status verification
-
-### Performance Optimizations
-
-- ⚡ Single CSS file cached across all pages
-- ⚡ Optimized font loading with preload hints
-- ⚡ Minimized HTTP requests
-- ⚡ Efficient Firebase SDK usage
-- ⚡ Responsive images and layouts
-- ⚡ Clean HTML structure for fast rendering

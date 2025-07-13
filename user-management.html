@@ -41,7 +41,7 @@
                         รีเฟรช
                     </button>
                     <a 
-                        href="index.html" 
+                        href="dashboard.html" 
                         class="bg-slate-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-slate-700 transition-colors flex items-center gap-2"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,7 +66,7 @@
                     </div>
                     <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                         <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
                     </div>
                 </div>
@@ -130,7 +130,7 @@
                     class="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-3.586l4.293-4.293A6 6 0 0119 9z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                     </svg>
                     เปลี่ยนรหัสผ่าน Admin
                 </button>
@@ -138,7 +138,7 @@
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    ข้อมูล Admin จัดเก็บอย่างปลอดภัยใน Firestore
+                    สำหรับผู้ดูแลเท่านั้น
                 </div>
             </div>
         </div>
@@ -396,17 +396,41 @@
 
         // Toast notification
         function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toast-container');
+            
+            // Remove any existing toasts
+            const existingToasts = toastContainer.querySelectorAll('.toast');
+            existingToasts.forEach(existingToast => {
+                existingToast.classList.remove('show');
+                setTimeout(() => {
+                    if (existingToast.parentNode) {
+                        existingToast.remove();
+                    }
+                }, 300);
+            });
+            
+            // Create new toast
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
             
-            document.getElementById('toast-container').appendChild(toast);
-            
-            setTimeout(() => toast.classList.add('show'), 100);
+            // Add new toast after a small delay to ensure previous ones are removed
             setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
+                toastContainer.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 100);
+            }, 350);
+            
+            // Auto-hide after 4 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.remove();
+                        }
+                    }, 300);
+                }
+            }, 4350);
         }
 
         // Check admin access
@@ -415,7 +439,7 @@
             if (!currentUser || currentUser.role !== 'admin' || currentUser.status !== 'approved') {
                 showToast('Access denied. Admin privileges required.', 'error');
                 setTimeout(() => {
-                    window.location.href = 'login.html';
+                    window.location.href = 'index.html';
                 }, 2000);
                 return false;
             }

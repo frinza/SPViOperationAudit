@@ -52,7 +52,7 @@
        - Universal floating scanner component replacing old static modals
        - Pyodide integration for enhanced Python-based image processing
        - Context-aware scanning (demo vs final report modes)
-       - Draggable floating interface with real-time debug panel
+       - Draggable floating interface with real-time feedback
        - Unified barcode and text/OCR scanning capabilities
        - All existing matching algorithms preserved and integrated
     
@@ -75,7 +75,7 @@
     - Click "Scan" button to open floating scanner
     - Drag the scanner header to reposition
     - Switch between Barcode and Text/OCR tabs
-    - Real-time processing with debug information
+    - Real-time processing with live feedback
     - Context-aware SKU matching (demo vs final report)
     
     Last Updated: December 2024
@@ -195,79 +195,7 @@
             padding: 12px;
             max-height: calc(80vh - 60px);
             overflow-y: auto;
-        }        .floating-debug-panel {
-            position: fixed;
-            top: 20px;
-            right: 380px;
-            width: 280px;
-            max-width: 70vw;
-            max-height: 70vh;
-            z-index: 999;
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 8px;
-            border: 1px solid #334155;
-            color: #e2e8f0;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            transform: translateX(100%);
-            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out, height 0.3s ease-in-out, visibility 0.3s ease-in-out, opacity 0.3s ease-in-out;
-            visibility: hidden;
-            opacity: 0;
-            display: none;
-        }
-          .floating-debug-panel.active {
-            transform: translateX(0);
-            visibility: visible;
-            opacity: 1;
-            display: block;
-        }
-        
-        .floating-debug-panel.minimized {
-            width: 180px;
-            height: auto;
-            max-height: 40px;
-        }
-        
-        .floating-debug-panel.minimized .floating-debug-content {
-            display: none;
-        }
-          @media (max-width: 768px) {
-            .floating-debug-panel {
-                top: 60px;
-                right: 20px;
-                left: 20px;
-                width: auto;
-                max-width: none;
-            }
-            
-            .floating-scanner {
-                width: 95vw;
-                top: 10px;
-                right: 2.5vw;
-                left: 2.5vw;
-            }
-        }
-        
-        .floating-debug-panel.active {
-            transform: translateX(0);
-        }
-          .floating-debug-header {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            padding: 8px 12px;
-            border-radius: 7px 7px 0 0;
-            border-bottom: 1px solid #334155;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: move;
-        }
-          .floating-debug-content {
-            padding: 8px;
-            max-height: calc(70vh - 40px);
-            overflow-y: auto;
-        }
-        
+        }        
         .scanner-viewport {
             position: relative;
             width: 100%; 
@@ -497,9 +425,7 @@
                 <!-- Floating Scanner Component -->
                 <div id="floating-scanner" class="floating-scanner">
                     <div class="floating-scanner-header" id="scanner-header">
-                        <h3 class="font-semibold">Universal Scanner</h3>
-                        <div class="flex items-center gap-2">
-                            <button id="toggle-floating-debug" class="bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-xs">Debug</button>
+                        <h3 class="font-semibold">Universal Scanner</h3>                        <div class="flex items-center gap-2">
                             <button id="close-floating-scanner" class="bg-white/20 hover:bg-white/30 px-2 py-1 rounded">✕</button>
                         </div>
                     </div>                    <div class="floating-scanner-content">
@@ -543,60 +469,9 @@
                                         <option value="aggressive">Aggressive</option>
                                     </select>
                                 </div>
-                            </div>
+                            </div>                        </div>
+                    </div>                </div>
                         </div>
-                    </div>
-                </div>                  <!-- Floating Debug Panel -->
-                <div id="floating-debug-panel" class="floating-debug-panel">
-                    <div class="floating-debug-header" id="debug-panel-header">
-                        <span class="font-semibold text-xs">OCR Debug</span>
-                        <div class="flex items-center gap-1">
-                            <button id="minimize-floating-debug" class="text-gray-400 hover:text-white text-xs px-1" title="Minimize">−</button>
-                            <button id="close-floating-debug" class="text-gray-400 hover:text-white text-sm">✕</button>
-                        </div>
-                    </div>
-                    <div class="floating-debug-content">
-                        <div class="space-y-1 text-xs">
-                            <div class="flex justify-between">
-                                <span>Status:</span>
-                                <span id="floating-ocr-status" class="text-blue-400">Idle</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>Last Text:</span>
-                                <span id="floating-ocr-last-text" class="text-green-400 truncate max-w-[120px]">None</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>Confidence:</span>
-                                <span id="floating-ocr-confidence" class="text-yellow-400">0%</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>Process Time:</span>
-                                <span id="floating-ocr-process-time" class="text-purple-400">0ms</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>Cache Hits:</span>
-                                <span id="floating-ocr-cache-hits" class="text-cyan-400">0</span>
-                            </div>                            <div class="flex justify-between">
-                                <span>Success Rate:</span>
-                                <span id="floating-ocr-success-rate" class="text-emerald-400">0%</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>Match Score:</span>
-                                <span id="floating-match-score" class="text-orange-400">N/A</span>
-                            </div>
-                            <div class="mt-2 border-t border-slate-600 pt-2">
-                                <div class="text-xs text-slate-400 mb-1">Scan History:</div>
-                                <div id="floating-scan-history" class="text-xs text-slate-300 max-h-20 overflow-y-auto font-mono">No scans yet</div>
-                            </div>
-                        </div>
-                        <div class="mt-3 pt-2 border-t border-gray-600">
-                            <div class="text-xs text-gray-400 mb-1">History:</div>
-                            <div id="floating-ocr-history" class="bg-gray-800 border border-gray-600 rounded p-1 text-xs max-h-16 overflow-y-auto"></div>
-                        </div>
-                    </div>
-                </div>
-                        </div>
-                        <button onclick="resetOcrStats()" class="w-full bg-red-600 hover:bg-red-700 text-white text-xs py-1 px-2 rounded mt-2">Reset Stats</button>
                     </div>
                 </div>
                 <div id="main-panel-workflow" class="hidden">
@@ -733,13 +608,12 @@
                             </div>
                         </div>
                         <div id="final-report-table-container" class="table-container border border-slate-200 rounded-lg"></div>
-                        <div class="mt-4 flex flex-col sm:flex-row gap-4 no-print">
-                            <button id="print-final-report-btn" class="flex-1 inline-flex items-center justify-center gap-2 bg-gray-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                        <div class="mt-4 flex flex-col sm:flex-row gap-4 no-print">                            <button id="print-final-report-btn" class="flex-1 inline-flex items-center justify-center gap-2 bg-gray-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
                                 <!-- Printer icon (Heroicons) -->
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V4a1 1 0 011-1h10a1 1 0 011 1v5M6 18v2a1 1 0 001 1h10a1 1 0 001-1v-2M6 14h12a2 2 0 002-2V9a2 2 0 00-2-2H6a2 2 0 00-2-2v3a2 2 0 002 2z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                                 </svg>
-                                พิมพ์รายงาน
+                                Print Report
                             </button>
                             <button id="exportCsvButton" class="flex-1 inline-flex items-center justify-center gap-2 bg-emerald-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -833,11 +707,9 @@
             };
 
             // === Initialize Pyodide for Enhanced OCR ===
-            async function initializePyodide() {
-                try {
+            async function initializePyodide() {                try {
                     if (pyodideReady) return;
                     
-                    updateFloatingDebugInfo('status', 'Initializing Pyodide...', 'info');
                     pyodide = await loadPyodide();
                     
                     // Install required packages
@@ -977,13 +849,9 @@ def analyze_image_quality(image_data_base64):
     except Exception as e:
         return {'error': str(e)}
                     `);
-                    
-                    pyodideReady = true;
-                    updateFloatingDebugInfo('status', 'Pyodide initialized successfully', 'success');
-                    
-                } catch (error) {
-                    console.error('Failed to initialize Pyodide:', error);
-                    updateFloatingDebugInfo('status', `Pyodide init failed: ${error.message}`, 'error');
+                      pyodideReady = true;
+                      } catch (error) {
+                    // Silent error handling for production
                 }
             }            // === Floating Scanner Functions ===
             function initializeFloatingScanner() {
@@ -1075,11 +943,9 @@ def analyze_image_quality(image_data_base64):
                 
                 document.addEventListener('mouseup', dragEnd);
                 document.addEventListener('touchend', dragEnd);
-                
-                // Initialize event listeners
+                  // Initialize event listeners
                 setupFloatingTabSwitching();
                 setupFloatingControls();
-                setupFloatingDebugPanel();
             }
 
             function setupFloatingTabSwitching() {
@@ -1134,125 +1000,10 @@ def analyze_image_quality(image_data_base64):
                 preprocessingSelect.addEventListener('change', (e) => {
                     floatingOcrSettings.preprocessing = e.target.value;
                 });
-                
-                // Close button
+                  // Close button
                 const closeBtn = document.getElementById('close-floating-scanner');
                 closeBtn.addEventListener('click', closeFloatingScanner);
-                
-                // Debug toggle
-                const debugToggle = document.getElementById('toggle-floating-debug');
-                debugToggle.addEventListener('click', toggleFloatingDebug);
-            }            function setupFloatingDebugPanel() {
-                const debugPanel = document.getElementById('floating-debug-panel');
-                const debugHeader = document.getElementById('debug-panel-header');
-                const closeDebugBtn = document.getElementById('close-floating-debug');
-                const minimizeDebugBtn = document.getElementById('minimize-floating-debug');
-                  // Close functionality
-                closeDebugBtn.addEventListener('click', () => {
-                    debugPanel.classList.remove('active');
-                    setTimeout(() => {
-                        if (!debugPanel.classList.contains('active')) {
-                            debugPanel.style.display = 'none';
-                            debugPanel.style.visibility = 'hidden';
-                            debugPanel.style.opacity = '0';
-                        }
-                    }, 350);
-                });
-                
-                // Minimize/maximize functionality
-                minimizeDebugBtn.addEventListener('click', () => {
-                    debugPanel.classList.toggle('minimized');
-                    minimizeDebugBtn.textContent = debugPanel.classList.contains('minimized') ? '+' : '−';
-                    minimizeDebugBtn.title = debugPanel.classList.contains('minimized') ? 'Maximize' : 'Minimize';
-                });
-                  // Make debug panel draggable with enhanced responsiveness
-                let isDraggingDebug = false;
-                let debugCurrentX = 0;
-                let debugCurrentY = 0;
-                let debugInitialX = 0;
-                let debugInitialY = 0;
-                let debugXOffset = 0;
-                let debugYOffset = 0;
-                
-                function debugDragStart(e) {
-                    // Only drag if clicking on the header itself, not buttons
-                    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-                        return;
-                    }
-                    
-                    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-                    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-                    
-                    debugInitialX = clientX - debugXOffset;
-                    debugInitialY = clientY - debugYOffset;
-                    isDraggingDebug = true;
-                    
-                    // Enhanced visual feedback
-                    debugPanel.style.cursor = 'grabbing';
-                    debugPanel.style.userSelect = 'none';
-                    debugPanel.style.transition = 'none'; // Disable transition during drag
-                    debugHeader.style.transform = 'scale(0.98)'; // Subtle scale effect
-                }
-                  function debugDrag(e) {
-                    if (isDraggingDebug) {
-                        e.preventDefault();
-                        
-                        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-                        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-                        
-                        const newX = clientX - debugInitialX;
-                        const newY = clientY - debugInitialY;
-                        
-                        // Only update if position actually changed (performance optimization)
-                        if (Math.abs(newX - debugCurrentX) > 1 || Math.abs(newY - debugCurrentY) > 1) {
-                            debugCurrentX = newX;
-                            debugCurrentY = newY;
-                            
-                            debugXOffset = debugCurrentX;
-                            debugYOffset = debugCurrentY;
-                            
-                            // Constrain to viewport bounds
-                            const rect = debugPanel.getBoundingClientRect();
-                            const maxX = window.innerWidth - rect.width;
-                            const maxY = window.innerHeight - rect.height;
-                            
-                            debugCurrentX = Math.max(0, Math.min(debugCurrentX, maxX));
-                            debugCurrentY = Math.max(0, Math.min(debugCurrentY, maxY));
-                            
-                            // Smooth transform with GPU acceleration
-                            requestAnimationFrame(() => {
-                                debugPanel.style.transform = `translate3d(${debugCurrentX}px, ${debugCurrentY}px, 0)`;
-                            });
-                        }
-                    }
-                }
-                
-                function debugDragEnd() {
-                    if (isDraggingDebug) {
-                        debugInitialX = debugCurrentX;
-                        debugInitialY = debugCurrentY;
-                        isDraggingDebug = false;
-                        
-                        // Restore visual feedback
-                        debugPanel.style.cursor = '';
-                        debugPanel.style.userSelect = '';
-                        debugPanel.style.transition = 'transform 0.3s ease-in-out, width 0.3s ease-in-out, height 0.3s ease-in-out, visibility 0.3s ease-in-out, opacity 0.3s ease-in-out';
-                        debugHeader.style.transform = 'scale(1)';
-                    }
-                }
-                
-                // Enhanced event listeners for both mouse and touch
-                debugHeader.addEventListener('mousedown', debugDragStart);
-                debugHeader.addEventListener('touchstart', debugDragStart, { passive: false });
-                
-                document.addEventListener('mousemove', debugDrag);
-                document.addEventListener('touchmove', debugDrag, { passive: false });
-                
-                document.addEventListener('mouseup', debugDragEnd);
-                document.addEventListener('touchend', debugDragEnd);
-            }
-
-            async function startFloatingTextScanner() {
+            }            async function startFloatingTextScanner() {
                 try {
                     if (floatingStream) {
                         floatingStream.getTracks().forEach(track => track.stop());
@@ -1268,14 +1019,10 @@ def analyze_image_quality(image_data_base64):
                     };
                     
                     floatingStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    const video = document.getElementById('floating-text-video');
-                    video.srcObject = floatingStream;
+                    const video = document.getElementById('floating-text-video');                    video.srcObject = floatingStream;
                     video.play();
-                    
-                    updateFloatingDebugInfo('status', 'Camera started', 'success');
                 } catch (err) {
                     updateFloatingResults(`<p class="text-red-500">Camera error: ${err.message}</p>`);
-                    updateFloatingDebugInfo('status', `Camera error: ${err.message}`, 'error');
                 }
             }
 
@@ -1347,12 +1094,10 @@ def analyze_image_quality(image_data_base64):
 
             async function processFloatingOcrFrame() {
                 if (!floatingOcrStreaming || !floatingStream || !cvReady) return;
-                
-                const video = document.getElementById('floating-text-video');
+                  const video = document.getElementById('floating-text-video');
                 if (video.readyState < 2) return;
                 
                 const startTime = performance.now();
-                updateFloatingDebugInfo('status', 'Processing frame...', 'info');
                 
                 const canvas = document.createElement('canvas');
                 
@@ -1390,9 +1135,7 @@ def analyze_image_quality(image_data_base64):
                         if (qualityObj.error) {
                             throw new Error(qualityObj.error);
                         }
-                        
-                        // Provide quality feedback
-                        updateFloatingDebugInfo('confidence', `Quality: ${qualityObj.overall}`, 'info');
+                          // Provide quality feedback
                         
                         if (qualityObj.overall === 'too_dark') {
                             updateFloatingResults(`<p class="text-yellow-600">ภาพมืดเกินไป กรุณาเพิ่มแสงสว่าง</p>`);
@@ -1429,10 +1172,8 @@ def analyze_image_quality(image_data_base64):
                         // Fallback to OpenCV processing
                         await performOpenCVProcessing(canvas, startTime);
                     }
-                    
-                } catch (err) {
+                      } catch (err) {
                     updateFloatingResults(`<p class="text-red-500">Processing error: ${err.message}</p>`);
-                    updateFloatingDebugInfo('status', `Error: ${err.message}`, 'error');
                 }
             }
 
@@ -1486,14 +1227,8 @@ def analyze_image_quality(image_data_base64):
                            .replace(/[8]/g, 'B')
                            .replace(/[5]/g, 'S')
                            .replace(/[1]/g, 'I')
-                           .replace(/[\.]/g, '')
-                           .replace(/[,]/g, '')
+                           .replace(/[\.]/g, '')                           .replace(/[,]/g, '')
                            .replace(/[\s]/g, '');
-                
-                // Update debug info
-                updateFloatingDebugInfo('process-time', `${processingTime.toFixed(0)}ms`);
-                updateFloatingDebugInfo('confidence', `${confidence.toFixed(1)}%`);
-                updateFloatingDebugInfo('last-text', text || 'No text');
                 
                 // Enhanced Apple serial validation
                 const appleSerialMatch = text.match(/[A-Z0-9\-]{8,}/);
@@ -1503,15 +1238,12 @@ def analyze_image_quality(image_data_base64):
                     /[0-9]/.test(text) &&
                     !/[^A-Z0-9\-]/.test(text)
                 );
-                
-                if (isValidAppleSerial && confidence >= floatingOcrSettings.confidence) {
+                  if (isValidAppleSerial && confidence >= floatingOcrSettings.confidence) {
                     const finalText = appleSerialMatch[0];
-                    updateFloatingDebugInfo('status', 'Apple serial recognized successfully', 'success');
                     updateFloatingResults(`<p>Apple Serial: <b>${finalText}</b></p>`);
                     processFloatingScannedCode(finalText, 'Text Scan');
                     stopFloatingOcrStreaming();
                 } else {
-                    updateFloatingDebugInfo('status', `${isValidAppleSerial ? 'Low confidence' : 'Invalid pattern'}: ${confidence.toFixed(1)}%`, 'error');
                     updateFloatingResults(`<p class='text-blue-500'>Scanning... (${confidence.toFixed(1)}%)</p>`);
                 }
             }
@@ -1551,14 +1283,10 @@ def analyze_image_quality(image_data_base64):
                 }
             }            function processFloatingScannedCode(code, reason) {
                 const scannedText = code.toUpperCase();
-                
-                // Store latest scanned text and add to history
+                  // Store latest scanned text and add to history
                 lastScannedText = scannedText;
                 scanHistory.unshift({ text: scannedText, timestamp: new Date().toLocaleTimeString(), reason });
                 if (scanHistory.length > 10) scanHistory.pop(); // Keep last 10 scans
-                
-                // Update debug panel with scan history
-                updateFloatingDebugInfo('scan-history', scanHistory.map(s => `${s.timestamp}: ${s.text} (${s.reason})`).join('\n'));
                 
                 let item = null;
                 
@@ -1690,10 +1418,8 @@ def analyze_image_quality(image_data_base64):
                             }
                         }
                     }
-                    
-                    if (bestMatch && bestScore > 0.5) {
+                      if (bestMatch && bestScore > 0.5) {
                         item = bestMatch;
-                        updateFloatingDebugInfo('match-score', `Best match: ${(bestScore * 100).toFixed(1)}%`);
                     }
                 }
                 
@@ -1727,12 +1453,10 @@ def analyze_image_quality(image_data_base64):
                         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         row.classList.add('ring-2', 'ring-offset-2', 'ring-green-500');
                         setTimeout(() => row.classList.remove('ring-2', 'ring-offset-2', 'ring-green-500'), 800);
-                    }
-                } else {
+                    }                } else {
                     playSound('error');
                     // Show scanned text even when no match found
                     updateFloatingResults(`<div class="text-center w-full"><p class="font-bold text-red-600">SKU Not Found</p><p class="text-sm text-slate-700 font-medium">Scanned: ${scannedText}</p><p class="text-xs text-slate-400 mt-1">Latest scan stored • No matching SKU in ${currentScannerContext} data</p></div>`);
-                    updateFloatingDebugInfo('match-score', 'No match found');
                 }
             }
 
@@ -1771,13 +1495,8 @@ def analyze_image_quality(image_data_base64):
                 if (!pyodideReady) {
                     initializePyodide();
                 }
-                
-                updateFloatingResults('<p class="text-blue-500">Scanner ready</p>');
-                updateFloatingDebugInfo('status', `Scanner opened (${context})`, 'info');
-            }function closeFloatingScanner() {
-                if (!floatingScanner) return;
-                
-                console.log('Closing floating scanner...');
+                  updateFloatingResults('<p class="text-blue-500">Scanner ready</p>');
+            }function closeFloatingScanner() {                if (!floatingScanner) return;
                 
                 // Stop all scanner activities first
                 stopFloatingTextScanner();
@@ -1786,23 +1505,18 @@ def analyze_image_quality(image_data_base64):
                 
                 // Clear all video streams
                 const video = document.getElementById('floating-text-video');
-                if (video && video.srcObject) {
-                    const tracks = video.srcObject.getTracks();
+                if (video && video.srcObject) {                    const tracks = video.srcObject.getTracks();
                     tracks.forEach(track => {
                         track.stop();
-                        console.log('Stopped video track:', track.label);
                     });
                     video.srcObject = null;
                 }
                 
                 // Force stop Quagga barcode scanner
-                if (typeof Quagga !== 'undefined' && Quagga.running) {
-                    try {
+                if (typeof Quagga !== 'undefined' && Quagga.running) {                    try {
                         Quagga.offDetected(onFloatingBarcodeDetected);
-                        Quagga.stop();
-                        console.log('Quagga barcode scanner stopped');
-                    } catch (err) {
-                        console.error('Error stopping Quagga:', err);
+                        Quagga.stop();                    } catch (err) {
+                        // Silent error handling for production
                     }
                 }
                 
@@ -1810,38 +1524,26 @@ def analyze_image_quality(image_data_base64):
                 const barcodeView = document.getElementById('floating-barcode-view');
                 const quaggaVideo = barcodeView.querySelector('video');
                 if (quaggaVideo && quaggaVideo.srcObject) {
-                    const tracks = quaggaVideo.srcObject.getTracks();
-                    tracks.forEach(track => track.stop());
+                    const tracks = quaggaVideo.srcObject.getTracks();                tracks.forEach(track => track.stop());
                     quaggaVideo.srcObject = null;
                 }
                 
-                // Hide debug panel completely
-                const debugPanel = document.getElementById('floating-debug-panel');
-                debugPanel.classList.remove('active');
-                
-                // Reset any custom transform on both scanner and debug panel
+                // Reset any custom transform on scanner
                 floatingScanner.style.transform = '';
-                debugPanel.style.transform = '';
                 
                 // Ensure proper transition is enabled
                 floatingScanner.style.transition = 'transform 0.3s ease-in-out, visibility 0.3s ease-in-out, opacity 0.3s ease-in-out';
                 
                 // Hide scanner completely with proper CSS states
                 floatingScanner.classList.remove('active');
-                
-                // Force complete hiding after animation
+                  // Force complete hiding after animation
                 setTimeout(() => {
                     if (!floatingScanner.classList.contains('active')) {
                         floatingScanner.style.display = 'none';
                         floatingScanner.style.visibility = 'hidden';
                         floatingScanner.style.opacity = '0';
-                        console.log('Scanner completely hidden');
                     }
                 }, 350); // Wait for CSS transition to complete
-                
-                // Reset scanner state
-                updateFloatingDebugInfo('status', 'Scanner closed', 'info');
-                console.log('Scanner window hidden completely');
                 
                 // Reset tab states for next opening
                 setTimeout(() => {
@@ -1851,76 +1553,18 @@ def analyze_image_quality(image_data_base64):
                     document.getElementById('floating-text-view').classList.add('hidden');
                     document.getElementById('floating-ocr-preview').classList.add('hidden');
                     document.getElementById('floating-ocr-controls').classList.add('hidden');
-                    
-                    // Clear results when scanner is closed
+                      // Clear results when scanner is closed
                     updateFloatingResults('<p class="text-gray-400">Click scan to start</p>');
                     
                     currentScannerMode = 'barcode';
-                    console.log('Scanner reset to initial state');
                 }, 400); // Wait for animation to complete
-            }            function toggleFloatingDebug() {
-                const debugPanel = document.getElementById('floating-debug-panel');
-                
-                if (debugPanel.classList.contains('active')) {
-                    // Hide debug panel
-                    debugPanel.classList.remove('active');
-                    setTimeout(() => {
-                        if (!debugPanel.classList.contains('active')) {
-                            debugPanel.style.display = 'none';
-                            debugPanel.style.visibility = 'hidden';
-                            debugPanel.style.opacity = '0';
-                        }
-                    }, 350);
-                } else {
-                    // Show debug panel
-                    debugPanel.style.display = 'block';
-                    debugPanel.style.visibility = 'visible';
-                    debugPanel.style.opacity = '1';
-                    debugPanel.classList.add('active');
-                }
             }
 
             function updateFloatingResults(html) {
                 const resultsEl = document.getElementById('floating-scanner-results');
                 if (resultsEl) {
                     resultsEl.innerHTML = html;
-                }
-            }            function updateFloatingDebugInfo(type, value, status = 'info') {
-                const elements = {
-                    'last-text': 'floating-ocr-last-text',
-                    'confidence': 'floating-ocr-confidence',
-                    'process-time': 'floating-ocr-process-time',
-                    'status': 'floating-ocr-status',
-                    'cache-hits': 'floating-ocr-cache-hits',
-                    'success-rate': 'floating-ocr-success-rate',
-                    'match-score': 'floating-match-score',
-                    'scan-history': 'floating-scan-history'
-                };
-                
-                const element = document.getElementById(elements[type]);
-                if (element) {
-                    if (type === 'scan-history') {
-                        // Special handling for scan history - multiline display
-                        element.innerHTML = value.split('\n').slice(0, 5).join('<br>') || 'No scans yet';
-                        element.scrollTop = element.scrollHeight;
-                    } else {
-                        element.textContent = value;
-                        const colorClass = status === 'success' ? 'text-green-400' : 
-                                         status === 'error' ? 'text-red-400' : 
-                                         'text-blue-400';
-                        element.className = colorClass;
-                    }
-                }
-                
-                if (type === 'status' && status === 'success') {
-                    const historyEl = document.getElementById('floating-ocr-history');
-                    if (historyEl) {
-                        const newEntry = `${new Date().toLocaleTimeString()}: ${value}`;
-                        historyEl.innerHTML = (historyEl.innerHTML + '<br>' + newEntry).split('<br>').slice(-10).join('<br>');
-                        historyEl.scrollTop = historyEl.scrollHeight;
-                    }
-                }
-            }
+                }            }
 
             // === OCR Enhancement Variables ===
             let tesseractWorker = null;
@@ -1955,12 +1599,9 @@ def analyze_image_quality(image_data_base64):
             let finalOcrCacheHits = 0;
 
             // Pattern learning
-            let ocrPatternLearning = new Map();
-            let finalOcrPatternLearning = new Map();
+            let ocrPatternLearning = new Map();            let finalOcrPatternLearning = new Map();
 
-            // Debug tracking
-            let ocrDebugHistory = [];
-            let finalOcrDebugHistory = [];            // === OCR Enhancement Functions ===
+            // === OCR Enhancement Functions ===
             async function initTesseract(language = 'eng', isDemo = true) {
                 const worker = isDemo ? tesseractWorker : finalTesseractWorker;
                 if (worker) {
@@ -1990,13 +1631,10 @@ def analyze_image_quality(image_data_base64):
                     // Better edge detection for clear text
                     edges_use_image_gradients: 1
                 });
-                
-                if (isDemo) {
+                  if (isDemo) {
                     tesseractWorker = newWorker;
-                    updateOcrDebugInfo('status', 'Apple OCR Worker initialized', 'success');
                 } else {
                     finalTesseractWorker = newWorker;
-                    updateFinalOcrDebugInfo('status', 'Apple OCR Worker initialized', 'success');
                 }
                 
                 return newWorker;
@@ -2036,28 +1674,21 @@ def analyze_image_quality(image_data_base64):
                 const errorMsg = error.message || 'Unknown OCR error';
                 console.error('OCR Error:', error);
                 
-                // Update debug info
+                // Handle error processing
                 if (isDemo) {
-                    updateOcrDebugInfo('status', `Error: ${errorMsg}`, 'error');
                 } else {
-                    updateFinalOcrDebugInfo('status', `Error: ${errorMsg}`, 'error');
                 }
-                
-                // Attempt recovery based on error type
+                  // Attempt recovery based on error type
                 if (errorMsg.includes('Worker')) {
                     // Worker-related error - reinitialize
                     setTimeout(() => {
-                        console.log('Attempting to reinitialize Tesseract worker');
                         initTesseract(isDemo ? ocrSettings.demo.language : ocrSettings.final.language, isDemo);
                     }, 1000);
                 } else if (errorMsg.includes('canvas') || errorMsg.includes('image')) {
                     // Image processing error - skip frame
-                    console.log('Skipping frame due to image processing error');
-                } else if (errorMsg.includes('memory')) {
-                    // Memory issue - clear cache and restart
+                } else if (errorMsg.includes('memory')) {                    // Memory issue - clear cache and restart
                     cleanupOcrCache();
                     setTimeout(() => {
-                        console.log('Attempting recovery after memory error');
                         initTesseract(isDemo ? ocrSettings.demo.language : ocrSettings.final.language, isDemo);
                     }, 2000);
                 }
@@ -2083,25 +1714,20 @@ def analyze_image_quality(image_data_base64):
                 
                 const avgConfidence = recentPerformance.reduce((sum, p) => sum + p.confidence, 0) / recentPerformance.length;
                 const successRate = recentPerformance.filter(p => p.success).length / recentPerformance.length;
-                
-                // Adapt preprocessing based on performance
+                  // Adapt preprocessing based on performance
                 if (successRate < 0.3 && avgConfidence < 70) {
                     // Poor performance - increase preprocessing
                     if (settings.preprocessing === 'basic') {
                         settings.preprocessing = 'enhanced';
-                        console.log(`Adaptive OCR: Upgrading to enhanced preprocessing (${isDemo ? 'demo' : 'final'})`);
                     } else if (settings.preprocessing === 'enhanced') {
                         settings.preprocessing = 'aggressive';
-                        console.log(`Adaptive OCR: Upgrading to aggressive preprocessing (${isDemo ? 'demo' : 'final'})`);
                     }
                 } else if (successRate > 0.8 && avgConfidence > 85) {
                     // Great performance - reduce preprocessing for speed
                     if (settings.preprocessing === 'aggressive') {
                         settings.preprocessing = 'enhanced';
-                        console.log(`Adaptive OCR: Downgrading to enhanced preprocessing (${isDemo ? 'demo' : 'final'})`);
                     } else if (settings.preprocessing === 'enhanced') {
                         settings.preprocessing = 'basic';
-                        console.log(`Adaptive OCR: Downgrading to basic preprocessing (${isDemo ? 'demo' : 'final'})`);
                     }
                 }
                 
@@ -2109,66 +1735,6 @@ def analyze_image_quality(image_data_base64):
                 const selectElement = document.getElementById(isDemo ? 'ocr-preprocessing-select' : 'final-ocr-preprocessing-select');
                 if (selectElement && selectElement.value !== settings.preprocessing) {
                     selectElement.value = settings.preprocessing;
-                }
-            }
-
-            function updateOcrDebugInfo(type, value, status = 'info') {
-                const elements = {
-                    'last-text': 'ocr-last-text',
-                    'confidence': 'ocr-confidence',
-                    'process-time': 'ocr-process-time',
-                    'status': 'ocr-status',
-                    'cache-hits': 'ocr-cache-hits',
-                    'success-rate': 'ocr-success-rate'
-                };
-                
-                const element = document.getElementById(elements[type]);
-                if (element) {
-                    element.textContent = value;
-                    element.className = `font-mono text-${status === 'success' ? 'green' : status === 'error' ? 'red' : 'blue'}-600`;
-                }
-                
-                if (type === 'status' && status === 'success') {
-                    ocrDebugHistory.push(`${new Date().toLocaleTimeString()}: ${value}`);
-                    updateOcrHistory();
-                }
-            }
-
-            function updateFinalOcrDebugInfo(type, value, status = 'info') {
-                const elements = {
-                    'last-text': 'final-ocr-last-text',
-                    'confidence': 'final-ocr-confidence',
-                    'process-time': 'final-ocr-process-time',
-                    'status': 'final-ocr-status',
-                    'cache-hits': 'final-ocr-cache-hits',
-                    'success-rate': 'final-ocr-success-rate'
-                };
-                
-                const element = document.getElementById(elements[type]);
-                if (element) {
-                    element.textContent = value;
-                    element.className = `font-mono text-${status === 'success' ? 'green' : status === 'error' ? 'red' : 'blue'}-600`;
-                }
-                
-                if (type === 'status' && status === 'success') {
-                    finalOcrDebugHistory.push(`${new Date().toLocaleTimeString()}: ${value}`);
-                    updateFinalOcrHistory();
-                }
-            }
-
-            function updateOcrHistory() {
-                const historyEl = document.getElementById('ocr-history');
-                if (historyEl) {
-                    historyEl.innerHTML = ocrDebugHistory.slice(-10).join('<br>');
-                    historyEl.scrollTop = historyEl.scrollHeight;
-                }
-            }
-
-            function updateFinalOcrHistory() {
-                const historyEl = document.getElementById('final-ocr-history');
-                if (historyEl) {
-                    historyEl.innerHTML = finalOcrDebugHistory.slice(-10).join('<br>');
-                    historyEl.scrollTop = historyEl.scrollHeight;
                 }            }
 
             // Cache management functions
@@ -2203,43 +1769,22 @@ def analyze_image_quality(image_data_base64):
                     const entries = Array.from(finalOcrResultsCache.entries());
                     entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
                     const toDelete = entries.slice(0, entries.length - maxCacheSize);
-                    toDelete.forEach(([key]) => finalOcrResultsCache.delete(key));
-                }
+                    toDelete.forEach(([key]) => finalOcrResultsCache.delete(key));                }
             }
-
+            
             function resetOcrStats() {
                 ocrSuccessCount = 0;
                 ocrTotalAttempts = 0;
                 ocrCacheHits = 0;
                 ocrPerformanceHistory.length = 0;
-                ocrDebugHistory.length = 0;
                 ocrResultsCache.clear();
                 ocrPatternLearning.clear();
-                
-                finalOcrSuccessCount = 0;
+                  finalOcrSuccessCount = 0;
                 finalOcrTotalAttempts = 0;
                 finalOcrCacheHits = 0;
                 finalOcrPerformanceHistory.length = 0;
-                finalOcrDebugHistory.length = 0;
                 finalOcrResultsCache.clear();
                 finalOcrPatternLearning.clear();
-                
-                // Update debug displays
-                updateOcrDebugInfo('success-rate', '0%');
-                updateOcrDebugInfo('cache-hits', '0');
-                updateOcrDebugInfo('last-text', 'None');
-                updateOcrDebugInfo('confidence', '0%');
-                updateOcrDebugInfo('process-time', '0ms');
-                updateOcrDebugInfo('status', 'Reset', 'info');
-                updateOcrHistory();
-                
-                updateFinalOcrDebugInfo('success-rate', '0%');
-                updateFinalOcrDebugInfo('cache-hits', '0');
-                updateFinalOcrDebugInfo('last-text', 'None');
-                updateFinalOcrDebugInfo('confidence', '0%');
-                updateFinalOcrDebugInfo('process-time', '0ms');
-                updateFinalOcrDebugInfo('status', 'Reset', 'info');
-                updateFinalOcrHistory();
             }
 
             // Auto-cleanup cache every 2 minutes
@@ -3110,7 +2655,6 @@ def analyze_image_quality(image_data_base64):
                 
                 const startTime = performance.now();
                 ocrTotalAttempts++;
-                updateOcrDebugInfo('status', 'Processing frame...', 'info');
                 
                 const canvas = document.createElement('canvas');
                 
@@ -3140,9 +2684,6 @@ def analyze_image_quality(image_data_base64):
                 if (ocrResultsCache.has(cacheKey)) {
                     ocrCacheHits++;
                     const cachedResult = ocrResultsCache.get(cacheKey);
-                    updateOcrDebugInfo('cache-hits', ocrCacheHits.toString());
-                    updateOcrDebugInfo('last-text', cachedResult.text);
-                    updateOcrDebugInfo('confidence', `${cachedResult.confidence.toFixed(1)}%`);
                     
                     if (cachedResult.text && cachedResult.text.match(/[A-Z0-9\-]{8,}/)) {
                         scannerResultsEl.innerHTML = `<p>Serial Number: <b>${cachedResult.text}</b> (cached)</p>`;
@@ -3176,15 +2717,12 @@ def analyze_image_quality(image_data_base64):
                 // Enhanced lighting feedback for Apple products
                 if (avgBrightness < 55) {
                     scannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพมืดเกินไป กรุณาเพิ่มแสงสว่าง (${avgBrightness.toFixed(0)})</p>`;
-                    updateOcrDebugInfo('status', 'Low light detected', 'error');
                     return;
                 } else if (avgBrightness > 220) {
                     scannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพสว่างเกินไป กรุณาลดแสงสว่าง (${avgBrightness.toFixed(0)})</p>`;
-                    updateOcrDebugInfo('status', 'Too bright detected', 'error');
                     return;
                 } else if (avgContrast < 15) {
                     scannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพไม่ชัดเจน กรุณาปรับโฟกัส (${avgContrast.toFixed(0)})</p>`;
-                    updateOcrDebugInfo('status', 'Low contrast detected', 'error');
                     return;
                 }
 
@@ -3309,10 +2847,7 @@ def analyze_image_quality(image_data_base64):
                     ocrPerformanceHistory.push({ time: processingTime, confidence, success: false });
                     if (ocrPerformanceHistory.length > 50) ocrPerformanceHistory.shift();
                     
-                    // Update debug info
-                    updateOcrDebugInfo('process-time', `${processingTime.toFixed(0)}ms`);
-                    updateOcrDebugInfo('confidence', `${confidence.toFixed(1)}%`);
-                    updateOcrDebugInfo('success-rate', `${((ocrSuccessCount / ocrTotalAttempts) * 100).toFixed(1)}%`);
+                    // Process validation results
                     
                     // --- Enhanced Apple Serial Validation ---
                     const appleSerialMatch = text.match(/[A-Z0-9\-]{8,}/);
@@ -3336,15 +2871,11 @@ def analyze_image_quality(image_data_base64):
                         ocrSuccessCount++;
                         ocrPerformanceHistory[ocrPerformanceHistory.length - 1].success = true;
                         
-                        updateOcrDebugInfo('last-text', finalText);
-                        updateOcrDebugInfo('status', 'Apple serial recognized successfully', 'success');
                         
                         scannerResultsEl.innerHTML = `<p>Apple Serial: <b>${finalText}</b></p>`;
                         processScannedCode(finalText, 'Text Scan');
                         stopOcrStreaming();
                     } else {
-                        updateOcrDebugInfo('last-text', text || 'No text');
-                        updateOcrDebugInfo('status', `${isValidAppleSerial ? 'Low confidence' : 'Invalid Apple pattern'}: ${confidence.toFixed(1)}%`, 'error');
                         scannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning Apple products... (${confidence.toFixed(1)}%)</p>`;
                     }
                     
@@ -3504,9 +3035,8 @@ def analyze_image_quality(image_data_base64):
                     try {
                         // Use the same processed data as the app (sohLookup)
                         const allItems = Object.values(state.sohLookup).filter(item => item.SOH > 0);
-                        
-                        if (allItems.length === 0) {
-                            showToast('No SOH data available to export', 'warning');
+                          if (allItems.length === 0) {
+                            showModal("Warning", "No SOH data available to export");
                             return;
                         }
 
@@ -3528,11 +3058,10 @@ def analyze_image_quality(image_data_base64):
                         XLSX.utils.book_append_sheet(wb, ws, "SOH Export");
                         const filename = `SOH_Export_${state.branchName || 'Branch'}_${state.countDate || new Date().toISOString().split('T')[0]}.xlsx`;
                         XLSX.writeFile(wb, filename);
-                        
-                        showToast(`Successfully exported ${allItems.length} items to ${filename}`, 'success');
+                          showModal("Success", `Successfully exported ${allItems.length} items to ${filename}`);
                     } catch (error) {
                         console.error('Export SOH Excel error:', error);
-                        showToast('Failed to export SOH Excel file', 'error');
+                        showModal("Error", "Failed to export SOH Excel file");
                     }
                 }
                 
@@ -3594,13 +3123,8 @@ def analyze_image_quality(image_data_base64):
                     if (tesseractWorker) {
                         await initTesseract(ocrSettings.demo.language, true);
                     }
-                });
-                addListener('ocr-preprocessing-select', 'change', (e) => {
+                });                addListener('ocr-preprocessing-select', 'change', (e) => {
                     ocrSettings.demo.preprocessing = e.target.value;
-                });
-                addListener('toggle-debug-btn', 'click', () => {
-                    const panel = document.getElementById('ocr-debug-panel');
-                    panel.classList.toggle('hidden');
                 });
 
                 // Final scanner OCR controls
@@ -3618,26 +3142,24 @@ def analyze_image_quality(image_data_base64):
                     ocrSettings.final.language = e.target.value;
                     if (finalTesseractWorker) {
                         await initTesseract(ocrSettings.final.language, false);
-                    }
-                });
+                    }                });
+                
                 addListener('final-ocr-preprocessing-select', 'change', (e) => {
                     ocrSettings.final.preprocessing = e.target.value;
-                });
-                addListener('final-toggle-debug-btn', 'click', () => {
-                    const panel = document.getElementById('final-ocr-debug-panel');
-                    panel.classList.toggle('hidden');
                 });
 
                 window.addEventListener('beforeunload', (e) => { if (hasUnsavedChanges) e.preventDefault(); });
             }
             
-            initializeAppListeners();            // === Initialize Floating Scanner ===
+            initializeAppListeners();
+            
+            // === Initialize Floating Scanner ===
+            
             function setupFloatingScanner() {
                 floatingScanner = document.getElementById('floating-scanner');
                 if (floatingScanner) {
                     // Call the actual initialization function
                     initializeFloatingScanner();
-                    console.log('Floating scanner initialized successfully');
                 } else {
                     console.error('Floating scanner element not found');
                     // Retry after a short delay in case DOM is still loading
@@ -3645,16 +3167,16 @@ def analyze_image_quality(image_data_base64):
                         floatingScanner = document.getElementById('floating-scanner');
                         if (floatingScanner) {
                             initializeFloatingScanner();
-                            console.log('Floating scanner initialized successfully (delayed)');
                         }
-                    }, 100);
-                }
+                    }, 100);                }
             }
             
             // Initialize floating scanner after DOM is ready
             setupFloatingScanner();
 
-            // --- Final Report Scanner Logic ---            // Legacy final scanner variables - replaced by floating scanner
+            // --- Final Report Scanner Logic ---
+            
+            // Legacy final scanner variables - replaced by floating scanner
             /*
             const finalOpenScannerBtn = getEl('final-openScannerBtn');
             const finalCloseScannerBtn = getEl('final-closeScannerBtn');
@@ -3745,7 +3267,6 @@ def analyze_image_quality(image_data_base64):
                 
                 const startTime = performance.now();
                 finalOcrTotalAttempts++;
-                updateFinalOcrDebugInfo('status', 'Processing frame...', 'info');
                 
                 const canvas = document.createElement('canvas');
                 
@@ -3775,9 +3296,6 @@ def analyze_image_quality(image_data_base64):
                 if (finalOcrResultsCache.has(cacheKey)) {
                     finalOcrCacheHits++;
                     const cachedResult = finalOcrResultsCache.get(cacheKey);
-                    updateFinalOcrDebugInfo('cache-hits', finalOcrCacheHits.toString());
-                    updateFinalOcrDebugInfo('last-text', cachedResult.text);
-                    updateFinalOcrDebugInfo('confidence', `${cachedResult.confidence.toFixed(1)}%`);
                     
                     if (cachedResult.text && cachedResult.text.match(/[A-Z0-9\-]{8,}/)) {
                         finalScannerResultsEl.innerHTML = `<p>Serial Number: <b>${cachedResult.text}</b> (cached)</p>`;
@@ -3811,15 +3329,12 @@ def analyze_image_quality(image_data_base64):
                 // Enhanced lighting feedback for Apple products
                 if (avgBrightness < 55) {
                     finalScannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพมืดเกินไป กรุณาเพิ่มแสงสว่าง (${avgBrightness.toFixed(0)})</p>`;
-                    updateFinalOcrDebugInfo('status', 'Low light detected', 'error');
                     return;
                 } else if (avgBrightness > 220) {
                     finalScannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพสว่างเกินไป กรุณาลดแสงสว่าง (${avgBrightness.toFixed(0)})</p>`;
-                    updateFinalOcrDebugInfo('status', 'Too bright detected', 'error');
                     return;
                 } else if (avgContrast < 15) {
                     finalScannerResultsEl.innerHTML = `<p class="text-yellow-600">ภาพไม่ชัดเจน กรุณาปรับโฟกัส (${avgContrast.toFixed(0)})</p>`;
-                    updateFinalOcrDebugInfo('status', 'Low contrast detected', 'error');
                     return;
                 }
 
@@ -3944,10 +3459,7 @@ def analyze_image_quality(image_data_base64):
                     finalOcrPerformanceHistory.push({ time: processingTime, confidence, success: false });
                     if (finalOcrPerformanceHistory.length > 50) finalOcrPerformanceHistory.shift();
                     
-                    // Update debug info
-                    updateFinalOcrDebugInfo('process-time', `${processingTime.toFixed(0)}ms`);
-                    updateFinalOcrDebugInfo('confidence', `${confidence.toFixed(1)}%`);
-                    updateFinalOcrDebugInfo('success-rate', `${((finalOcrSuccessCount / finalOcrTotalAttempts) * 100).toFixed(1)}%`);
+                    // Process validation results
                     
                     // --- Enhanced Apple Serial Validation ---
                     const appleSerialMatch = text.match(/[A-Z0-9\-]{8,}/);
@@ -3971,15 +3483,11 @@ def analyze_image_quality(image_data_base64):
                         finalOcrSuccessCount++;
                         finalOcrPerformanceHistory[finalOcrPerformanceHistory.length - 1].success = true;
                         
-                        updateFinalOcrDebugInfo('last-text', finalText);
-                        updateFinalOcrDebugInfo('status', 'Apple serial recognized successfully', 'success');
                         
                         finalScannerResultsEl.innerHTML = `<p>Apple Serial: <b>${finalText}</b></p>`;
                         processFinalScannedCode(finalText, 'Text Scan');
                         finalStopOcrStreaming();
                     } else {
-                        updateFinalOcrDebugInfo('last-text', text || 'No text');
-                        updateFinalOcrDebugInfo('status', `${isValidAppleSerial ? 'Low confidence' : 'Invalid Apple pattern'}: ${confidence.toFixed(1)}%`, 'error');
                         finalScannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning Apple products... (${confidence.toFixed(1)}%)</p>`;
                     }
                     
@@ -4223,11 +3731,11 @@ def analyze_image_quality(image_data_base64):
             // Ctrl+Shift+I (Inspect), Ctrl+Shift+J (Console), Ctrl+U (View Source)
             if (
                 (event.ctrlKey && event.shiftKey && (event.key.toUpperCase() === "I" || event.key.toUpperCase() === "J" || event.keyCode === 73 || event.keyCode === 74)) ||
-                (event.ctrlKey && (event.key.toUpperCase() === "U" || event.keyCode === 85))
-            ) {
+                (event.ctrlKey && (event.key.toUpperCase() === "U" || event.keyCode === 85))            ) {
                 event.preventDefault();
                 showDevtoolsToast("Developer tools access is disabled.");
-            }        });
+            }
+        });
 
         // Navigation functions
         function handleNavLogout() {
@@ -4235,7 +3743,7 @@ def analyze_image_quality(image_data_base64):
                 localStorage.removeItem('isLoggedIn');
                 localStorage.removeItem('currentUser');
                 localStorage.removeItem('userRole');
-                window.location.href = '../login.html';
+                window.location.href = '../index.html';
             }
         }
 

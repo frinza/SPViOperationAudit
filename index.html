@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Operations Audit SPVi Toolkit</title>
+    <title>Login - Operations Audit SPVi Toolkit</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Firebase SDK -->
@@ -17,455 +17,462 @@
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="styles/spvi-main.css">
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-gradient-to-br from-blue-50 via-white to-slate-50 min-h-screen">
 
-    <div class="container mx-auto px-6 py-12 md:py-20">
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-        <header class="text-center mb-12 md:mb-16">
-            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
-                Operations Audit SPVi Toolkit
-            </h1>
-            <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
-                เครื่องมือตรวจสอบสาขา โดย ฝ่าย Operation Audit SPVi
-            </p>
-        </header>
-
-        <main>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-
-                <a href="tools/stock-count.html" class="tool-card group">
-                    <div class="p-8">
-                        <div class="icon-wrapper bg-blue-100 text-blue-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                            </svg>
-                        </div>
-                        <h2 class="mt-6 text-xl font-bold text-slate-900">
-                            ตรวจนับสต็อก
-                        </h2>
-                        <p class="mt-2 text-slate-500">
-                            ตรวจนับสินค้าจริงของสาขาเปรียบเทียบรายงานในระบบ
-                        </p>
-                        <div class="mt-6 text-blue-600 font-semibold flex items-center gap-2">
-                            เปิดใช้งาน
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="tools/cash-control.html" class="tool-card group">
-                    <div class="p-8">
-                        <div class="icon-wrapper bg-green-100 text-green-600">
-                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                        </div>
-                        <h2 class="mt-6 text-xl font-bold text-slate-900">
-                            ตรวจนับเงิน
-                        </h2>
-                        <p class="mt-2 text-slate-500">
-                            ตรวจนับเงินสดและเอกสารแทนเงินสดของสาขา
-                        </p>
-                        <div class="mt-6 text-green-600 font-semibold flex items-center gap-2">
-                            เปิดใช้งาน
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="tools/checklist.html" class="tool-card group">
-                    <div class="p-8">
-                        <div class="icon-wrapper bg-yellow-100 text-yellow-700">
-                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                           </svg>
-                        </div>
-                        <h2 class="mt-6 text-xl font-bold text-slate-900">
-                            บันทึกผลการตรวจสอบสาขา
-                        </h2>
-                        <p class="mt-2 text-slate-500">
-                           สรุปผลการตรวจสอบการปฏิบัติงานในรูปแบบ Checklist
-                        </p>
-                        <div class="mt-6 text-yellow-700 font-semibold flex items-center gap-2">
-                            เปิดใช้งาน
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </div>
-                </a>
-                
-                <a href="tools/risk-analyzer.html" class="tool-card group">
-                    <div class="p-8">
-                        <div class="icon-wrapper bg-rose-100 text-rose-600">
-                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <h2 class="mt-6 text-xl font-bold text-slate-900">
-                           วิเคราะห์ความเสี่ยงสาขา
-                        </h2>
-                        <p class="mt-2 text-slate-500">
-                           นำเข้าข้อมูลผลการตรวจสอบเพื่อประมวลผลและจัดลำดับความเสี่ยง
-                        </p>
-                        <div class="mt-6 text-rose-600 font-semibold flex items-center gap-2">
-                            เปิดใช้งาน
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="tools/audit-calendar.html" class="tool-card group">
-                    <div class="p-8">
-                        <div class="icon-wrapper bg-purple-100 text-purple-600">
-                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                           </svg>
-                        </div>
-                        <h2 class="mt-6 text-xl font-bold text-slate-900">
-                           ปฏิทินตรวจสอบ
-                        </h2>
-                        <p class="mt-2 text-slate-500">
-                           ดูแผนและกำหนดการตรวจสอบทั้งหมดในรูปแบบปฏิทิน
-                        </p>
-                        <div class="mt-6 text-purple-600 font-semibold flex items-center gap-2">
-                            เปิดใช้งาน
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </div>
-                </a>
-                
-                <a href="tools/report-comparison.html" class="tool-card group">
-                    <div class="p-8">
-                        <div class="icon-wrapper bg-cyan-100 text-cyan-600">
-                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                           </svg>
-                        </div>
-                        <h2 class="mt-6 text-xl font-bold text-slate-900">
-                           เปรียบเทียบรายงาน
-                        </h2>
-                        <p class="mt-2 text-slate-500">
-                           เปรียบเทียบผลการตรวจสอบ 2 ครั้งเพื่อดูการเปลี่ยนแปลง
-                        </p>
-                        <div class="mt-6 text-cyan-600 font-semibold flex items-center gap-2">
-                            เปิดใช้งาน
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="tools/issue-tracker.html" class="tool-card group">
-                    <div class="p-8">
-                        <div class="icon-wrapper bg-orange-100 text-orange-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </div>
-                        <h2 class="mt-6 text-xl font-bold text-slate-900">
-                           ติดตามประเด็น
-                        </h2>
-                        <p class="mt-2 text-slate-500">
-                           จัดการและติดตามรายการที่ต้องแก้ไขจากการตรวจสอบทั้งหมด
-                        </p>
-                        <div class="mt-6 text-orange-600 font-semibold flex items-center gap-2">
-                            เปิดใช้งาน
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </div>
-                </a>
-
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            
+            <!-- Header -->
+            <div class="text-center">
+                <div class="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-6">
+                    <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold text-slate-900">Operations Audit SPVi</h2>
+                <p class="mt-2 text-sm text-slate-600">เข้าสู่ระบบเครื่องมือตรวจสอบสาขา</p>
             </div>
-        </main>
 
-        <footer class="text-center mt-16 md:mt-24 text-slate-500">
-            <p>&copy; 2025 SPVi/Operation Audit. All Rights Reserved.</p>
-        </footer>
+            <!-- Login Form -->
+            <div class="auth-card p-8" id="login-form">
+                <form class="space-y-6" onsubmit="handleLogin(event)">
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-slate-700 mb-2">
+                            อีเมล
+                        </label>
+                        <input 
+                            id="login-email" 
+                            name="email" 
+                            type="email" 
+                            required 
+                            class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="กรุณาใส่อีเมลของคุณ"
+                        >
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-slate-700 mb-2">
+                            รหัสผ่าน
+                        </label>
+                        <input 
+                            id="login-password" 
+                            name="password" 
+                            type="password" 
+                            required 
+                            class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="กรุณาใส่รหัสผ่านของคุณ"
+                        >
+                    </div>
+                    <div>
+                        <button 
+                            type="submit" 
+                            id="login-button"
+                            class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span id="login-button-text">เข้าสู่ระบบ</span>
+                            <span id="login-button-loading" class="hidden">
+                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                กำลังเข้าสู่ระบบ...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-slate-600">
+                        ยังไม่มีบัญชี? 
+                        <button 
+                            onclick="showRegisterForm()" 
+                            class="text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                            สมัครสมาชิก
+                        </button>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div class="auth-card p-8 hidden" id="register-form">
+                <form class="space-y-6" onsubmit="handleRegister(event)">
+                    <div>
+                        <label for="register-name" class="block text-sm font-medium text-slate-700 mb-2">
+                            ชื่อ-นามสกุล
+                        </label>
+                        <input 
+                            id="register-name" 
+                            name="name" 
+                            type="text" 
+                            required 
+                            class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="กรุณาใส่ชื่อ-นามสกุลของคุณ"
+                        >
+                    </div>
+                    <div>
+                        <label for="register-email" class="block text-sm font-medium text-slate-700 mb-2">
+                            อีเมล
+                        </label>
+                        <input 
+                            id="register-email" 
+                            name="email" 
+                            type="email" 
+                            required 
+                            class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="กรุณาใส่อีเมลของคุณ"
+                        >
+                    </div>
+                    <div>
+                        <label for="register-department" class="block text-sm font-medium text-slate-700 mb-2">
+                            แผนก/ฝ่าย
+                        </label>
+                        <input 
+                            id="register-department" 
+                            name="department" 
+                            type="text" 
+                            required 
+                            class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="กรุณาใส่แผนก/ฝ่ายของคุณ"
+                        >
+                    </div>
+                    <div>
+                        <label for="register-position" class="block text-sm font-medium text-slate-700 mb-2">
+                            ตำแหน่ง
+                        </label>
+                        <input 
+                            id="register-position" 
+                            name="position" 
+                            type="text" 
+                            required 
+                            class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="กรุณาใส่ตำแหน่งของคุณ"
+                        >
+                    </div>
+                    <div>
+                        <label for="register-password" class="block text-sm font-medium text-slate-700 mb-2">
+                            รหัสผ่าน
+                        </label>
+                        <input 
+                            id="register-password" 
+                            name="password" 
+                            type="password" 
+                            required 
+                            minlength="6"
+                            class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="รหัสผ่านอย่างน้อย 6 ตัวอักษร"
+                        >
+                    </div>
+                    <div>
+                        <label for="register-confirm-password" class="block text-sm font-medium text-slate-700 mb-2">
+                            ยืนยันรหัสผ่าน
+                        </label>
+                        <input 
+                            id="register-confirm-password" 
+                            name="confirmPassword" 
+                            type="password" 
+                            required 
+                            minlength="6"
+                            class="input-field w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="กรุณายืนยันรหัสผ่าน"
+                        >
+                    </div>
+                    <div>
+                        <button 
+                            type="submit" 
+                            id="register-button"
+                            class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span id="register-button-text">สมัครสมาชิก</span>
+                            <span id="register-button-loading" class="hidden">
+                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                กำลังสมัครสมาชิก...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-slate-600">
+                        มีบัญชีแล้ว? 
+                        <button 
+                            onclick="showLoginForm()" 
+                            class="text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                            เข้าสู่ระบบ
+                        </button>
+                    </p>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <script>
-        // Custom toast for shortcut blocking
-        function showDevtoolsToast(message) {
-            let toast = document.getElementById('devtools-toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'devtools-toast';
-                toast.style.position = 'fixed';
-                toast.style.bottom = '2rem';
-                toast.style.left = '50%';
-                toast.style.transform = 'translateX(-50%)';
-                toast.style.background = '#222';
-                toast.style.color = '#fff';
-                toast.style.padding = '1rem 2rem';
-                toast.style.borderRadius = '8px';
-                toast.style.fontSize = '1rem';
-                toast.style.zIndex = '9999';
-                toast.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-                toast.style.fontFamily = "'Sarabun', 'Noto Sans Thai', sans-serif";
-                document.body.appendChild(toast);
-            }
-            toast.textContent = message;
-            toast.style.display = 'block';
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toast-container');
+            
+            // Remove any existing toasts
+            const existingToasts = toastContainer.querySelectorAll('.spvi-toast');
+            existingToasts.forEach(existingToast => {
+                existingToast.classList.remove('show');
+                setTimeout(() => {
+                    if (existingToast.parentNode) {
+                        existingToast.remove();
+                    }
+                }, 300);
+            });
+            
+            // Create new toast
+            const toast = document.createElement('div');
+            toast.className = `spvi-toast ${type}`;
+            
+            // Add icon based on type
+            const icon = getToastIcon(type);
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 mr-3">
+                        ${icon}
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-medium">${message}</p>
+                    </div>
+                </div>
+            `;
+            
+            // Add new toast after a small delay to ensure previous ones are removed
+            setTimeout(() => {
+                toastContainer.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 100);
+            }, 350);
+            
+            // Auto-hide after 4 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.remove();
+                        }
+                    }, 300);
+                }
+            }, 4350);
         }
 
-        // Disable right-click
+        function getToastIcon(type) {
+            const icons = {
+                'success': `<svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>`,
+                'error': `<svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>`,
+                'warning': `<svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>`,
+                'info': `<svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>`
+            };
+            return icons[type] || icons['info'];
+        }
+
+        // Form switching
+        function showLoginForm() {
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+        }
+
+        function showRegisterForm() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+        }
+
+        // Firebase Authentication functions
+        async function handleLogin(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const email = formData.get('email');
+            const password = formData.get('password');
+
+            // Set loading state
+            setLoginLoading(true);
+
+            try {
+                showToast('กำลังตรวจสอบข้อมูล...', 'info');
+                
+                const user = await SPViAuth.loginUser(email, password);
+
+                if (!user) {
+                    showToast('อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบข้อมูลอีกครั้ง', 'error');
+                    return;
+                }
+
+                if (user.status === 'pending') {
+                    showToast('บัญชีของคุณอยู่ระหว่างการพิจารณาอนุมัติ กรุณารอการติดต่อจากผู้ดูแลระบบ', 'warning');
+                    return;
+                }
+
+                if (user.status === 'rejected') {
+                    showToast('บัญชีของคุณไม่ได้รับการอนุมัติ กรุณาติดต่อผู้ดูแลระบบเพื่อขอข้อมูลเพิ่มเติม', 'error');
+                    return;
+                }                SPViAuth.setCurrentUser(user);
+                showToast('เข้าสู่ระบบสำเร็จ! กำลังเปลี่ยนหน้า...', 'success');
+
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+            } catch (error) {
+                showToast('เกิดข้อผิดพลาดในการเข้าสู่ระบบ: ' + error.message, 'error');
+            } finally {
+                setLoginLoading(false);
+            }
+        }
+
+        function setLoginLoading(isLoading) {
+            const button = document.getElementById('login-button');
+            const buttonText = document.getElementById('login-button-text');
+            const buttonLoading = document.getElementById('login-button-loading');
+            
+            if (isLoading) {
+                button.disabled = true;
+                buttonText.classList.add('hidden');
+                buttonLoading.classList.remove('hidden');
+            } else {
+                button.disabled = false;
+                buttonText.classList.remove('hidden');
+                buttonLoading.classList.add('hidden');
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const name = formData.get('name');
+            const email = formData.get('email');
+            const department = formData.get('department');
+            const position = formData.get('position');
+            const password = formData.get('password');
+            const confirmPassword = formData.get('confirmPassword');
+
+            if (password !== confirmPassword) {
+                showToast('รหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง', 'error');
+                return;
+            }
+
+            // Set loading state
+            setRegisterLoading(true);
+
+            try {
+                showToast('กำลังตรวจสอบข้อมูล...', 'info');
+
+                // Check if user already exists
+                const existingUser = await SPViAuth.getUserByEmail(email);
+                if (existingUser) {
+                    showToast('อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น', 'error');
+                    return;
+                }
+
+                await SPViAuth.registerUser({
+                    name,
+                    email,
+                    department,
+                    position,
+                    password
+                });
+
+                showToast('สมัครสมาชิกเรียบร้อยแล้ว! ผู้ดูแลระบบจะตรวจสอบและอนุมัติบัญชีของคุณในภายหลัง', 'success');
+                
+                setTimeout(() => {
+                    showLoginForm();
+                    event.target.reset();
+                }, 2000);
+            } catch (error) {
+                showToast('เกิดข้อผิดพลาดในการสมัครสมาชิก: ' + error.message, 'error');
+            } finally {
+                setRegisterLoading(false);
+            }
+        }
+
+        function setRegisterLoading(isLoading) {
+            const button = document.getElementById('register-button');
+            const buttonText = document.getElementById('register-button-text');
+            const buttonLoading = document.getElementById('register-button-loading');
+            
+            if (isLoading) {
+                button.disabled = true;
+                buttonText.classList.add('hidden');
+                buttonLoading.classList.remove('hidden');
+            } else {
+                button.disabled = false;
+                buttonText.classList.remove('hidden');
+                buttonLoading.classList.add('hidden');
+            }
+        }
+
+        // Check if user is already logged in
+        function checkAuth() {
+            const currentUser = SPViAuth.getCurrentUser();
+            
+            if (currentUser && currentUser.status === 'approved') {
+                window.location.href = 'dashboard.html';
+            }
+        }
+        
+        // Clear any corrupted auth state if we're on login page
+        function clearCorruptedAuthState() {
+            const currentUser = SPViAuth.getCurrentUser();
+            if (currentUser && (!currentUser.status || currentUser.status !== 'approved')) {
+                SPViAuth.clearCurrentUser();
+            }
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Initialize Firebase and create default admin
+                await SPViAuth.initializeFirebase();
+                await SPViAuth.initializeDefaultAdmin();
+                
+
+                
+                // Clear any corrupted auth state first
+                clearCorruptedAuthState();
+                
+                // Then check if user is properly authenticated
+                checkAuth();
+            } catch (error) {
+                showToast('Firebase initialization failed. Please check configuration.', 'error');
+            }
+        });
+
+        // Disable dev tools
+        function showDevtoolsToast(message) {
+            showToast(message, 'warning');
+        }
+
         document.addEventListener("contextmenu", function(event) {
             event.preventDefault();
             showDevtoolsToast("Right-click is disabled.");
         });
 
-        // Disable specific keyboard shortcuts
         document.addEventListener("keydown", function(event) {
-            // F12
             if (event.key === "F12" || event.keyCode === 123) {
                 event.preventDefault();
                 showDevtoolsToast("Inspect Element is disabled.");
             }
-            // Ctrl+Shift+I (Inspect), Ctrl+Shift+J (Console), Ctrl+U (View Source)
             if (
                 (event.ctrlKey && event.shiftKey && (event.key.toUpperCase() === "I" || event.key.toUpperCase() === "J" || event.keyCode === 73 || event.keyCode === 74)) ||
                 (event.ctrlKey && (event.key.toUpperCase() === "U" || event.keyCode === 85))
             ) {
                 event.preventDefault();
                 showDevtoolsToast("Developer tools access is disabled.");
-            }
-        });
-    </script>
-
-    <!-- Floating AI Chatbot Button & Modal -->
-    <style>
-        #chatbot-fab {
-          position: fixed;
-          bottom: 2.5rem;
-          right: 2.5rem;
-          z-index: 50;
-          background: #2563eb;
-          color: #fff;
-          border-radius: 9999px;
-          width: 56px;
-          height: 56px;
-          box-shadow: 0 4px 24px rgba(37,99,235,0.18);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: box-shadow 0.2s;
-        }
-        #chatbot-fab:hover { box-shadow: 0 8px 32px rgba(37,99,235,0.28); }
-        #chatbot-modal-bg {
-          display: none;
-          position: fixed;
-          z-index: 49;
-          inset: 0;
-          background: rgba(30,41,59,0.25);
-        }
-        #chatbot-modal {
-          display: none;
-          position: fixed;
-          z-index: 51;
-          bottom: 6.5rem;
-          right: 2.5rem;
-          width: 100%;
-          max-width: 400px;
-          max-height: 80vh;
-          background: #fff;
-          border-radius: 1.5rem;
-          box-shadow: 0 8px 32px rgba(30,41,59,0.18);
-          overflow: hidden;
-          flex-direction: column;
-        }
-        @media (max-width: 500px) {
-          #chatbot-modal { right: 0; left: 0; bottom: 0; max-width: 100vw; border-radius: 0; }
-        }
-        .chat-bubble { max-width: 80%; word-wrap: break-word; }
-        .user-bubble { background-color: #3b82f6; color: white; }
-        .ai-bubble { background-color: #e5e7eb; color: #1f2937; }
-        .typing-indicator span {
-          height: 8px; width: 8px; background-color: #9ca3af; border-radius: 50%; display: inline-block;
-          animation: bounce 1.4s infinite ease-in-out both;
-        }
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes bounce { 0%,80%,100%{transform:scale(0);} 40%{transform:scale(1.0);} }
-    </style>
-
-    <div id="chatbot-fab" title="AI Chatbot">
-      <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h6m-6 4h8M21 12c0 4.418-4.03 8-9 8-1.326 0-2.583-.26-3.68-.73L3 21l1.09-3.27C3.39 16.06 3 14.57 3 13c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-      </svg>
-    </div>
-    <div id="chatbot-modal-bg"></div>
-    <div id="chatbot-modal" class="flex">
-      <div class="w-full h-full flex flex-col bg-white">
-        <!-- Header -->
-        <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-blue-600 text-white">
-          <h1 class="text-lg font-semibold">Local AI Chatbot</h1>
-          <button id="chatbot-close" class="w-8 h-8 bg-white text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-100 transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-        <!-- Chat Container -->
-        <div id="chat-container" class="flex-1 p-4 overflow-y-auto" style="background:#f8fafc;">
-          <div class="flex justify-start mb-4">
-            <div class="ai-bubble rounded-lg py-2 px-4 chat-bubble bg-gray-200 text-gray-800">
-              <p class="text-sm">Hello! I'm your friendly AI assistant. How can I help you today?</p>
-            </div>
-          </div>
-        </div>
-        <!-- Typing Indicator -->
-        <div id="typing-indicator" class="p-4 hidden">
-          <div class="flex items-center justify-start">
-            <div class="ai-bubble rounded-lg py-3 px-4 bg-gray-200 text-gray-800">
-              <div class="typing-indicator">
-                <span></span><span></span><span></span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Input Area -->
-        <div class="p-4 border-t border-gray-200 bg-white">
-          <div class="flex items-center space-x-3">
-            <input type="text" id="user-input" placeholder="Type your message..." class="flex-1 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-            <button id="send-button" class="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-transform duration-150 ease-in-out active:scale-95">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <script>
-        const chatbotFab = document.getElementById('chatbot-fab');
-        const chatbotModal = document.getElementById('chatbot-modal');
-        const chatbotModalBg = document.getElementById('chatbot-modal-bg');
-        const chatbotClose = document.getElementById('chatbot-close');
-        const chatContainer = document.getElementById('chat-container');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const typingIndicator = document.getElementById('typing-indicator');
-        let chatHistory = [];
-
-        function openChatbot() {
-          chatbotModal.style.display = 'flex';
-          chatbotModalBg.style.display = 'block';
-          setTimeout(() => userInput.focus(), 200);
-        }
-        function closeChatbot() {
-          chatbotModal.style.display = 'none';
-          chatbotModalBg.style.display = 'none';
-        }
-        chatbotFab.onclick = openChatbot;
-        chatbotModalBg.onclick = closeChatbot;
-        chatbotClose.onclick = closeChatbot;
-
-        // Add message to chat
-        function addMessageToChat(sender, message) {
-          const messageWrapper = document.createElement('div');
-          const messageBubble = document.createElement('div');
-          const messageText = document.createElement('p');
-          messageWrapper.classList.add('flex', 'mb-4');
-          messageBubble.classList.add('rounded-lg', 'py-2', 'px-4', 'chat-bubble');
-          messageText.classList.add('text-sm');
-          if (sender === 'user') {
-            messageWrapper.classList.add('justify-end');
-            messageBubble.classList.add('user-bubble');
-          } else {
-            messageWrapper.classList.add('justify-start');
-            messageBubble.classList.add('ai-bubble');
-          }
-          messageText.innerText = message;
-          messageBubble.appendChild(messageText);
-          messageWrapper.appendChild(messageBubble);
-          chatContainer.appendChild(messageWrapper);
-          chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        // Typing indicator
-        function showTypingIndicator(show) {
-          typingIndicator.style.display = show ? 'block' : 'none';
-          if (show) chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        // Gemini API call (replace API key if needed)
-        async function getAIChatResponse(prompt) {
-          showTypingIndicator(true);
-          chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-          const payload = { contents: chatHistory };
-          const apiKey = "AIzaSyAuWkWlmGv0AqizfxpOxDgIK4SmrJrDBHU"; // <-- Insert Gemini API key
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-          try {
-            const response = await fetch(apiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-            if (!response.ok) {
-              const errorBody = await response.json();
-              console.error("API Error:", errorBody);
-              throw new Error(`API request failed with status ${response.status}`);
-            }
-            const result = await response.json();
-            let text = "Sorry, I couldn't generate a response.";
-            if (result.candidates && result.candidates.length > 0 &&
-                result.candidates[0].content && result.candidates[0].content.parts &&
-                result.candidates[0].content.parts.length > 0) {
-              text = result.candidates[0].content.parts[0].text;
-            } else {
-              console.error("Unexpected API response structure:", result);
-            }
-            chatHistory.push({ role: "model", parts: [{ text: text }] });
-            return text;
-          } catch (error) {
-            console.error('Error fetching AI response:', error);
-            return "I'm having trouble connecting right now. Please try again later.";
-          } finally {
-            showTypingIndicator(false);
-          }
-        }
-
-        // Send message
-        async function sendMessage() {
-          const message = userInput.value.trim();
-          if (message === '') return;
-          addMessageToChat('user', message);
-          userInput.value = '';
-          const aiResponse = await getAIChatResponse(message);
-          addMessageToChat('ai', aiResponse);
-        }
-        sendButton.addEventListener('click', sendMessage);
-        userInput.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            sendMessage();
-          }
-        });
-    </script>
-
-    <script>
-        // Initialize Firebase when page loads
-        document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                await SPViAuth.initializeFirebase();
-                await SPViAuth.initializeDefaultAdmin();
-            } catch (error) {
-                console.error('Firebase initialization error:', error);
             }
         });
     </script>

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operations Audit SPVi Toolkit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    
+    <!-- Firebase Auth System -->
+    <script src="firebase-auth.js"></script>
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="styles/spvi-main.css">
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto px-6 py-12 md:py-20">
+
+        <header class="text-center mb-12 md:mb-16">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+                Operations Audit SPVi Toolkit
+            </h1>
+            <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+                เครื่องมือตรวจสอบสาขา โดย ฝ่าย Operation Audit SPVi
+            </p>
+        </header>
+
+        <main>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+
+                <a href="tools/stock-count.html" class="tool-card group">
+                    <div class="p-8">
+                        <div class="icon-wrapper bg-blue-100 text-blue-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                        </div>
+                        <h2 class="mt-6 text-xl font-bold text-slate-900">
+                            ตรวจนับสต็อก
+                        </h2>
+                        <p class="mt-2 text-slate-500">
+                            ตรวจนับสินค้าจริงของสาขาเปรียบเทียบรายงานในระบบ
+                        </p>
+                        <div class="mt-6 text-blue-600 font-semibold flex items-center gap-2">
+                            เปิดใช้งาน
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="tools/cash-control.html" class="tool-card group">
+                    <div class="p-8">
+                        <div class="icon-wrapper bg-green-100 text-green-600">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
+                        <h2 class="mt-6 text-xl font-bold text-slate-900">
+                            ตรวจนับเงิน
+                        </h2>
+                        <p class="mt-2 text-slate-500">
+                            ตรวจนับเงินสดและเอกสารแทนเงินสดของสาขา
+                        </p>
+                        <div class="mt-6 text-green-600 font-semibold flex items-center gap-2">
+                            เปิดใช้งาน
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="tools/checklist.html" class="tool-card group">
+                    <div class="p-8">
+                        <div class="icon-wrapper bg-yellow-100 text-yellow-700">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                           </svg>
+                        </div>
+                        <h2 class="mt-6 text-xl font-bold text-slate-900">
+                            บันทึกผลการตรวจสอบสาขา
+                        </h2>
+                        <p class="mt-2 text-slate-500">
+                           สรุปผลการตรวจสอบการปฏิบัติงานในรูปแบบ Checklist
+                        </p>
+                        <div class="mt-6 text-yellow-700 font-semibold flex items-center gap-2">
+                            เปิดใช้งาน
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+                
+                <a href="tools/risk-analyzer.html" class="tool-card group">
+                    <div class="p-8">
+                        <div class="icon-wrapper bg-rose-100 text-rose-600">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h2 class="mt-6 text-xl font-bold text-slate-900">
+                           วิเคราะห์ความเสี่ยงสาขา
+                        </h2>
+                        <p class="mt-2 text-slate-500">
+                           นำเข้าข้อมูลผลการตรวจสอบเพื่อประมวลผลและจัดลำดับความเสี่ยง
+                        </p>
+                        <div class="mt-6 text-rose-600 font-semibold flex items-center gap-2">
+                            เปิดใช้งาน
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="tools/audit-calendar.html" class="tool-card group">
+                    <div class="p-8">
+                        <div class="icon-wrapper bg-purple-100 text-purple-600">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                           </svg>
+                        </div>
+                        <h2 class="mt-6 text-xl font-bold text-slate-900">
+                           ปฏิทินตรวจสอบ
+                        </h2>
+                        <p class="mt-2 text-slate-500">
+                           ดูแผนและกำหนดการตรวจสอบทั้งหมดในรูปแบบปฏิทิน
+                        </p>
+                        <div class="mt-6 text-purple-600 font-semibold flex items-center gap-2">
+                            เปิดใช้งาน
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+                
+                <a href="tools/report-comparison.html" class="tool-card group">
+                    <div class="p-8">
+                        <div class="icon-wrapper bg-cyan-100 text-cyan-600">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                           </svg>
+                        </div>
+                        <h2 class="mt-6 text-xl font-bold text-slate-900">
+                           เปรียบเทียบรายงาน
+                        </h2>
+                        <p class="mt-2 text-slate-500">
+                           เปรียบเทียบผลการตรวจสอบ 2 ครั้งเพื่อดูการเปลี่ยนแปลง
+                        </p>
+                        <div class="mt-6 text-cyan-600 font-semibold flex items-center gap-2">
+                            เปิดใช้งาน
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="tools/issue-tracker.html" class="tool-card group">
+                    <div class="p-8">
+                        <div class="icon-wrapper bg-orange-100 text-orange-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </div>
+                        <h2 class="mt-6 text-xl font-bold text-slate-900">
+                           ติดตามประเด็น
+                        </h2>
+                        <p class="mt-2 text-slate-500">
+                           จัดการและติดตามรายการที่ต้องแก้ไขจากการตรวจสอบทั้งหมด
+                        </p>
+                        <div class="mt-6 text-orange-600 font-semibold flex items-center gap-2">
+                            เปิดใช้งาน
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+
+            </div>
+        </main>
+
+        <footer class="text-center mt-16 md:mt-24 text-slate-500">
+            <p>&copy; 2025 SPVi/Operation Audit. All Rights Reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Custom toast for shortcut blocking
+        function showDevtoolsToast(message) {
+            let toast = document.getElementById('devtools-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'devtools-toast';
+                toast.style.position = 'fixed';
+                toast.style.bottom = '2rem';
+                toast.style.left = '50%';
+                toast.style.transform = 'translateX(-50%)';
+                toast.style.background = '#222';
+                toast.style.color = '#fff';
+                toast.style.padding = '1rem 2rem';
+                toast.style.borderRadius = '8px';
+                toast.style.fontSize = '1rem';
+                toast.style.zIndex = '9999';
+                toast.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                toast.style.fontFamily = "'Sarabun', 'Noto Sans Thai', sans-serif";
+                document.body.appendChild(toast);
+            }
+            toast.textContent = message;
+            toast.style.display = 'block';
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        }
+
+        // Disable right-click
+        document.addEventListener("contextmenu", function(event) {
+            event.preventDefault();
+            showDevtoolsToast("Right-click is disabled.");
+        });
+
+        // Disable specific keyboard shortcuts
+        document.addEventListener("keydown", function(event) {
+            // F12
+            if (event.key === "F12" || event.keyCode === 123) {
+                event.preventDefault();
+                showDevtoolsToast("Inspect Element is disabled.");
+            }
+            // Ctrl+Shift+I (Inspect), Ctrl+Shift+J (Console), Ctrl+U (View Source)
+            if (
+                (event.ctrlKey && event.shiftKey && (event.key.toUpperCase() === "I" || event.key.toUpperCase() === "J" || event.keyCode === 73 || event.keyCode === 74)) ||
+                (event.ctrlKey && (event.key.toUpperCase() === "U" || event.keyCode === 85))
+            ) {
+                event.preventDefault();
+                showDevtoolsToast("Developer tools access is disabled.");
+            }
+        });
+    </script>
+
+    <!-- Floating AI Chatbot Button & Modal -->
+    <style>
+        #chatbot-fab {
+          position: fixed;
+          bottom: 2.5rem;
+          right: 2.5rem;
+          z-index: 50;
+          background: #2563eb;
+          color: #fff;
+          border-radius: 9999px;
+          width: 56px;
+          height: 56px;
+          box-shadow: 0 4px 24px rgba(37,99,235,0.18);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: box-shadow 0.2s;
+        }
+        #chatbot-fab:hover { box-shadow: 0 8px 32px rgba(37,99,235,0.28); }
+        #chatbot-modal-bg {
+          display: none;
+          position: fixed;
+          z-index: 49;
+          inset: 0;
+          background: rgba(30,41,59,0.25);
+        }
+        #chatbot-modal {
+          display: none;
+          position: fixed;
+          z-index: 51;
+          bottom: 6.5rem;
+          right: 2.5rem;
+          width: 100%;
+          max-width: 400px;
+          max-height: 80vh;
+          background: #fff;
+          border-radius: 1.5rem;
+          box-shadow: 0 8px 32px rgba(30,41,59,0.18);
+          overflow: hidden;
+          flex-direction: column;
+        }
+        @media (max-width: 500px) {
+          #chatbot-modal { right: 0; left: 0; bottom: 0; max-width: 100vw; border-radius: 0; }
+        }
+        .chat-bubble { max-width: 80%; word-wrap: break-word; }
+        .user-bubble { background-color: #3b82f6; color: white; }
+        .ai-bubble { background-color: #e5e7eb; color: #1f2937; }
+        .typing-indicator span {
+          height: 8px; width: 8px; background-color: #9ca3af; border-radius: 50%; display: inline-block;
+          animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%,80%,100%{transform:scale(0);} 40%{transform:scale(1.0);} }
+    </style>
+
+    <div id="chatbot-fab" title="AI Chatbot">
+      <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+      </svg>
+    </div>
+    <div id="chatbot-modal-bg"></div>
+    <div id="chatbot-modal" class="flex">
+      <div class="w-full h-full flex flex-col bg-white">
+        <!-- Header -->
+        <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-blue-600 text-white">
+          <div class="flex items-center gap-3">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+            <h1 class="text-lg font-semibold">ผู้ช่วยตรวจสอบอัตโนมัติ</h1>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="clearChatHistory()" class="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition" title="ลบประวัติการสนทนา">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+            <button id="chatbot-close" class="w-8 h-8 bg-white text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-100 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <!-- Chat Container -->
+        <div id="chat-container" class="flex-1 p-4 overflow-y-auto" style="background:#f8fafc;">
+          <div class="flex justify-start mb-4">
+            <div class="ai-bubble rounded-lg py-2 px-4 chat-bubble bg-gray-200 text-gray-800">
+              <p class="text-sm">สวัสดีครับ! ผมเป็นผู้ช่วยตรวจสอบอัตโนมัติของ SPVi พร้อมช่วยเหลือคุณในการตรวจสอบสาขา มีอะไรให้ช่วยไหมครับ?</p>
+            </div>
+          </div>
+        </div>
+        <!-- Typing Indicator -->
+        <div id="typing-indicator" class="p-4 hidden">
+          <div class="flex items-center justify-start">
+            <div class="ai-bubble rounded-lg py-3 px-4 bg-gray-200 text-gray-800">
+              <div class="typing-indicator">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Input Area -->
+        <div class="p-4 border-t border-gray-200 bg-white">
+          <div class="flex items-center space-x-3">
+            <input type="text" id="user-input" placeholder="Type your message..." class="flex-1 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+            <button id="send-button" class="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-transform duration-150 ease-in-out active:scale-95">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+        const chatbotFab = document.getElementById('chatbot-fab');
+        const chatbotModal = document.getElementById('chatbot-modal');
+        const chatbotModalBg = document.getElementById('chatbot-modal-bg');
+        const chatbotClose = document.getElementById('chatbot-close');
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const typingIndicator = document.getElementById('typing-indicator');
+        let chatHistory = [];
+
+        // SPVi Audit Knowledge Base
+        const spviKnowledgeBase = {
+          auditProcedures: [
+            "การตรวจนับสต็อกสินค้า: ตรวจสอบความถูกต้องของสินค้าคงคลังเทียบกับระบบ",
+            "การตรวจสอบเงินสด: ตรวจนับเงินสดและเอกสารแทนเงินสดในสาขา", 
+            "การประเมินความเสี่ยง: วิเคราะห์และจัดลำดับความเสี่ยงของสาขา",
+            "การตรวจสอบ Checklist: บันทึกผลการปฏิบัติงานตามมาตรฐาน SPVi",
+            "การเปรียบเทียบรายงาน: เปรียบเทียบผลการตรวจสอบระหว่างช่วงเวลา"
+          ],
+          commonIssues: [
+            "สินค้าไม่ตรงตามระบบ: ตรวจสอบการรับ-จ่ายสินค้า",
+            "เงินสดไม่ตรงยอด: ตรวจสอบการทำรายการและการเก็บรักษา",
+            "ขั้นตอนการทำงานไม่ถูกต้อง: อบรมและปรับปรุงกระบวนการ"
+          ],
+          tools: [
+            "เครื่องมือตรวจนับสต็อก: สแกนบาร์โค้ดและ OCR อัตโนมัติ",
+            "ระบบตรวจนับเงิน: คำนวณและตรวจสอบยอดเงินสด",
+            "ปฏิทินตรวจสอบ: กำหนดการและติดตามการตรวจสอบ"
+          ]
+        };
+
+        // Load chat history from localStorage
+        function loadChatHistory() {
+          const saved = localStorage.getItem('spvi_chat_history');
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              chatHistory = parsed.history || [];
+              
+              // Restore chat display
+              parsed.messages?.forEach(msg => {
+                addMessageToChat(msg.sender, msg.message, false);
+              });
+              
+              return true;
+            } catch (error) {
+              console.error('Error loading chat history:', error);
+            }
+          }
+          return false;
+        }
+
+        // Save chat history to localStorage
+        function saveChatHistory() {
+          try {
+            const chatData = {
+              history: chatHistory,
+              messages: Array.from(chatContainer.children).map(wrapper => {
+                const isUser = wrapper.classList.contains('justify-end');
+                const messageText = wrapper.querySelector('p').textContent;
+                return {
+                  sender: isUser ? 'user' : 'ai',
+                  message: messageText,
+                  timestamp: new Date().toISOString()
+                };
+              }),
+              lastUpdated: new Date().toISOString()
+            };
+            localStorage.setItem('spvi_chat_history', JSON.stringify(chatData));
+          } catch (error) {
+            console.error('Error saving chat history:', error);
+          }
+        }
+
+        // Clear chat history
+        function clearChatHistory() {
+          if (confirm('ต้องการลบประวัติการสนทนาทั้งหมดหรือไม่?')) {
+            chatHistory = [];
+            localStorage.removeItem('spvi_chat_history');
+            chatContainer.innerHTML = `
+              <div class="flex justify-start mb-4">
+                <div class="ai-bubble rounded-lg py-2 px-4 chat-bubble bg-gray-200 text-gray-800">
+                  <p class="text-sm">สวัสดีครับ! ผมเป็นผู้ช่วยตรวจสอบอัตโนมัติของ SPVi พร้อมช่วยเหลือคุณในการตรวจสอบสาขา มีอะไรให้ช่วยไหมครับ?</p>
+                </div>
+              </div>
+            `;
+          }
+        }
+
+        // Enhanced AI response with SPVi knowledge
+        function enhancePromptWithKnowledge(userPrompt) {
+          const context = `
+คุณเป็นผู้ช่วยตรวจสอบอัตโนมัติของ SPVi (ผู้ช่วยตรวจสอบสาขา) 
+ความรู้เฉพาะของคุณ:
+
+ขั้นตอนการตรวจสอบ SPVi:
+${spviKnowledgeBase.auditProcedures.map(item => `- ${item}`).join('\n')}
+
+ปัญหาที่พบบ่อย:
+${spviKnowledgeBase.commonIssues.map(item => `- ${item}`).join('\n')}
+
+เครื่องมือที่ใช้:
+${spviKnowledgeBase.tools.map(item => `- ${item}`).join('\n')}
+
+กรุณาตอบเป็นภาษาไทยและให้คำแนะนำที่เป็นประโยชน์สำหรับการตรวจสอบสาขา
+
+คำถามจากผู้ใช้: ${userPrompt}
+          `;
+          return context;
+        }
+
+        function openChatbot() {
+          // Load chat history if this is the first time opening
+          if (!chatHistory.length && chatContainer.children.length === 1) {
+            const historyLoaded = loadChatHistory();
+            if (!historyLoaded) {
+              // Keep the default greeting if no history found
+            }
+          }
+          
+          chatbotModal.style.display = 'flex';
+          chatbotModalBg.style.display = 'block';
+          setTimeout(() => userInput.focus(), 200);
+        }
+        function closeChatbot() {
+          chatbotModal.style.display = 'none';
+          chatbotModalBg.style.display = 'none';
+        }
+        chatbotFab.onclick = openChatbot;
+        chatbotModalBg.onclick = closeChatbot;
+        chatbotClose.onclick = closeChatbot;
+
+        // Add message to chat
+        function addMessageToChat(sender, message, shouldSave = true) {
+          const messageWrapper = document.createElement('div');
+          const messageBubble = document.createElement('div');
+          const messageText = document.createElement('p');
+          messageWrapper.classList.add('flex', 'mb-4');
+          messageBubble.classList.add('rounded-lg', 'py-2', 'px-4', 'chat-bubble');
+          messageText.classList.add('text-sm');
+          if (sender === 'user') {
+            messageWrapper.classList.add('justify-end');
+            messageBubble.classList.add('user-bubble');
+          } else {
+            messageWrapper.classList.add('justify-start');
+            messageBubble.classList.add('ai-bubble');
+          }
+          messageText.innerText = message;
+          messageBubble.appendChild(messageText);
+          messageWrapper.appendChild(messageBubble);
+          chatContainer.appendChild(messageWrapper);
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+          
+          // Save to localStorage if requested
+          if (shouldSave) {
+            saveChatHistory();
+          }
+        }
+
+        // Typing indicator
+        function showTypingIndicator(show) {
+          typingIndicator.style.display = show ? 'block' : 'none';
+          if (show) chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Gemini API call with SPVi knowledge enhancement
+        async function getAIChatResponse(prompt) {
+          showTypingIndicator(true);
+          
+          // Enhance prompt with SPVi-specific knowledge
+          const enhancedPrompt = enhancePromptWithKnowledge(prompt);
+          
+          chatHistory.push({ role: "user", parts: [{ text: enhancedPrompt }] });
+          const payload = { contents: chatHistory };
+          const apiKey = "AIzaSyAuWkWlmGv0AqizfxpOxDgIK4SmrJrDBHU"; // <-- Insert Gemini API key
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+          try {
+            const response = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+              const errorBody = await response.json();
+              throw new Error(`API request failed with status ${response.status}`);
+            }
+            const result = await response.json();
+            let text = "ขออภัยครับ ไม่สามารถให้คำตอบได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง";
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+              text = result.candidates[0].content.parts[0].text;
+            }
+            chatHistory.push({ role: "model", parts: [{ text: text }] });
+            return text;
+          } catch (error) {
+            return "เกิดปัญหาในการเชื่อมต่อ กรุณาลองใหม่อีกครั้งครับ";
+          } finally {
+            showTypingIndicator(false);
+          }
+        }
+
+        // Send message
+        async function sendMessage() {
+          const message = userInput.value.trim();
+          if (message === '') return;
+          addMessageToChat('user', message);
+          userInput.value = '';
+          const aiResponse = await getAIChatResponse(message);
+          addMessageToChat('ai', aiResponse);
+        }
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            sendMessage();
+          }
+        });
+    </script>
+
+    <script>
+        // Initialize Firebase when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await SPViAuth.initializeFirebase();
+                await SPViAuth.initializeDefaultAdmin();
+                
+                const currentUser = SPViAuth.getCurrentUser();
+                
+                // Check if user exists and is approved
+                if (!currentUser) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                if (currentUser.status !== 'approved') {
+                    SPViAuth.clearCurrentUser();
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                // Add user info to navigation
+                SPViAuth.addUserInfo();
+            } catch (error) {
+                // If Firebase fails, redirect to login
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+
+</body>
+</html>
