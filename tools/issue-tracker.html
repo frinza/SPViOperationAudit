@@ -102,78 +102,30 @@
     </div>
 
     <script>
-        // --- Configuration ---
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwnDq_TuWsM-0ICVNX9MzmSYnsCTEhAjob44CKeKmS4W-APbwpsyIQc7mWkQeS53WsuMA/exec';
-        const APP_ID = 'main-branch-audits'; // A unique ID for this instance of the tracker
-
-        // --- State ---
+        // --- Firestore Configuration ---
         let allIssues = [];
         let issueToDeleteId = null;
-
-        // --- UI Elements ---
         const issueListEl = document.getElementById('issue-list');
         const filterInput = document.getElementById('filter-input');
         const statusEl = document.getElementById('connection-status');
         const addIssueBtn = document.getElementById('add-issue-btn');
-        
-        // Modals
         const issueModal = document.getElementById('issue-modal');
         const deleteModal = document.getElementById('delete-modal');
         const issueForm = document.getElementById('issue-form');
+        let firestore = null;
+        let issuesCollection = null;
 
-        // --- Data Fetching & Saving ---
+        // --- Firestore CRUD ---
         function showStatus(message, isError = false) {
             statusEl.textContent = message;
             statusEl.className = `mt-4 text-sm ${isError ? 'text-red-500' : 'text-slate-400'}`;
         }
-        
-        async function saveData() {
-            if (!GAS_WEB_APP_URL.startsWith('http')) {
-                showStatus('Please set your Google Apps Script URL first.', true);
-                return;
-            }
-            showStatus('Saving...');
-            try {
-                // IMPORTANT: Apps Script simple POSTs often work best with 'no-cors' mode 
-                // and sending the payload as text. The script then parses the text.
-                const response = await fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', 
-                    cache: 'no-cache',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ appId: APP_ID, issues: allIssues }),
-                    redirect: 'follow'
-                });
-                
-                // NOTE: 'no-cors' mode means we can't read the response. We optimistically assume it worked.
-                // This is a common pattern for simple Apps Script webhooks.
-                showStatus('All changes saved.', false);
-
-            } catch (error) {
-                console.error('Error saving data:', error);
-                showStatus(`Save failed: ${error.message}`, true);
-            }
-        }
 
         async function loadData() {
-            if (!GAS_WEB_APP_URL.startsWith('http')) {
-                issueListEl.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500">Please configure the Google Apps Script URL in the code.</td></tr>`;
-                showStatus('Not configured.', true);
-                return;
-            }
-            showStatus('Loading data from cloud...');
+            showStatus('Loading data from Firestore...');
             try {
-                const response = await fetch(`${GAS_WEB_APP_URL}?appId=${APP_ID}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                
-                allIssues = data.issues || [];
+                const snapshot = await issuesCollection.orderBy('createdAt', 'desc').get();
+                allIssues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderIssues();
                 showStatus('Data loaded successfully.', false);
             } catch (error) {
@@ -183,28 +135,50 @@
             }
         }
 
+        async function saveIssueToFirestore(issue) {
+            try {
+                if (issue.id && typeof issue.id === 'string') {
+                    // Update
+                    const { id, ...data } = issue;
+                    await issuesCollection.doc(id).set(data, { merge: true });
+                } else {
+                    // Add new
+                    const { id, ...data } = issue;
+                    const docRef = await issuesCollection.add({
+                        ...data,
+                        createdAt: new Date()
+                    });
+                    issue.id = docRef.id;
+                }
+            } catch (error) {
+                showStatus(`Save failed: ${error.message}`, true);
+            }
+        }
+
+        async function deleteIssueFromFirestore(id) {
+            try {
+                await issuesCollection.doc(id).delete();
+            } catch (error) {
+                showStatus(`Delete failed: ${error.message}`, true);
+            }
+        }
+
         // --- Rendering ---
         const renderIssues = () => {
             issueListEl.innerHTML = '';
             const filterText = filterInput.value.toLowerCase();
-            
-            const filteredIssues = allIssues.filter(issue => 
+            const filteredIssues = allIssues.filter(issue =>
                 (issue.branch && issue.branch.toLowerCase().includes(filterText)) ||
                 (issue.issue && issue.issue.toLowerCase().includes(filterText))
             );
-
             if (filteredIssues.length === 0) {
-                 issueListEl.innerHTML = '<tr><td colspan="6" class="text-center p-8 text-slate-500">ไม่พบประเด็นที่ตรงกัน หรือยังไม่มีข้อมูล</td></tr>';
-                 return;
+                issueListEl.innerHTML = '<tr><td colspan="6" class="text-center p-8 text-slate-500">ไม่พบประเด็นที่ตรงกัน หรือยังไม่มีข้อมูล</td></tr>';
+                return;
             }
-
-            filteredIssues.sort((a, b) => b.id - a.id); // Sort by most recent first
-
             filteredIssues.forEach(issue => {
                 const row = document.createElement('tr');
                 row.className = issue.isNew ? "hover:bg-slate-50 is-new" : "hover:bg-slate-50";
-                delete issue.isNew; // remove the flag after use
-
+                delete issue.isNew;
                 row.innerHTML = `
                     <td class="px-4 py-4 whitespace-nowrap font-medium text-slate-800">${issue.branch || ''}</td>
                     <td class="px-4 py-4 text-slate-600">${issue.issue || ''}</td>
@@ -236,13 +210,12 @@
             const modalIssueId = document.getElementById('modal-issue-id');
             const modalBranch = document.getElementById('modal-branch');
             const modalIssue = document.getElementById('modal-issue');
-
-            if (issue) { // Editing existing issue
+            if (issue) {
                 modalTitle.textContent = 'แก้ไขประเด็น';
                 modalIssueId.value = issue.id;
                 modalBranch.value = issue.branch;
                 modalIssue.value = issue.issue;
-            } else { // Adding new issue
+            } else {
                 modalTitle.textContent = 'เพิ่มประเด็นใหม่';
                 issueForm.reset();
             }
@@ -252,66 +225,58 @@
         function showDeleteModal(id) { issueToDeleteId = id; deleteModal.classList.remove('hidden'); }
         function hideDeleteModal() { issueToDeleteId = null; deleteModal.classList.add('hidden'); }
 
-        // --- Event Listeners ---
         addIssueBtn.addEventListener('click', () => showIssueModal());
-
-        issueForm.addEventListener('submit', (e) => {
+        issueForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const id = parseInt(document.getElementById('modal-issue-id').value);
+            const id = document.getElementById('modal-issue-id').value;
             const branch = document.getElementById('modal-branch').value;
             const issueText = document.getElementById('modal-issue').value;
-
-            if (id) { // Editing existing item
+            if (id) {
                 const issue = allIssues.find(i => i.id === id);
                 if (issue) {
                     issue.branch = branch;
                     issue.issue = issueText;
+                    await saveIssueToFirestore(issue);
                 }
-            } else { // Adding new item
+            } else {
                 const newIssue = {
-                    id: Date.now(),
                     branch: branch,
                     issue: issueText,
                     status: 'รอดำเนินการ',
                     assignee: '',
                     dueDate: '',
-                    isNew: true // flag for animation
+                    isNew: true,
+                    createdAt: new Date()
                 };
-                allIssues.push(newIssue);
+                await saveIssueToFirestore(newIssue);
+                allIssues.unshift(newIssue);
             }
-            renderIssues();
-            saveData();
+            await loadData();
             hideIssueModal();
         });
-        
         document.getElementById('modal-cancel-btn').addEventListener('click', hideIssueModal);
         document.getElementById('delete-cancel-btn').addEventListener('click', hideDeleteModal);
-        
-        document.getElementById('delete-confirm-btn').addEventListener('click', () => {
+        document.getElementById('delete-confirm-btn').addEventListener('click', async () => {
             if (issueToDeleteId) {
-                allIssues = allIssues.filter(i => i.id !== issueToDeleteId);
-                renderIssues();
-                saveData();
+                await deleteIssueFromFirestore(issueToDeleteId);
+                await loadData();
                 hideDeleteModal();
             }
         });
-        
         issueListEl.addEventListener('click', e => {
-            const id = parseInt(e.target.dataset.id);
+            const id = e.target.dataset.id;
             if (!id) return;
-            
             if (e.target.classList.contains('delete-btn')) showDeleteModal(id);
             if (e.target.classList.contains('edit-btn')) {
                 const issueToEdit = allIssues.find(i => i.id === id);
                 if (issueToEdit) showIssueModal(issueToEdit);
             }
         });
-
         // Debounce for live input saving
         let debounceTimer;
         function handleFieldUpdate(e) {
             const target = e.target;
-            const id = parseInt(target.dataset.id);
+            const id = target.dataset.id;
             const issue = allIssues.find(i => i.id === id);
             if(issue) {
                 const field = target.dataset.field || (target.classList.contains('status-select') ? 'status' : null);
@@ -320,22 +285,29 @@
                 }
             }
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(saveData, 750); // Save 750ms after user stops typing
+            debounceTimer = setTimeout(async () => {
+                if (issue) await saveIssueToFirestore(issue);
+            }, 750);
         }
-
         issueListEl.addEventListener('input', e => {
             if (e.target.classList.contains('field-input')) handleFieldUpdate(e);
         });
         issueListEl.addEventListener('change', e => {
             if (e.target.classList.contains('status-select')) handleFieldUpdate(e);
         });
-
         filterInput.addEventListener('keyup', renderIssues);
-        
         // --- Initial Load ---
-        window.onload = loadData;
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await SPViAuth.initializeFirebase();
+                firestore = firebase.firestore();
+                issuesCollection = firestore.collection('issues');
+                await loadData();
+            } catch (error) {
+                showStatus('Firestore connection failed: ' + error.message, true);
+            }
+        });
     </script>
-
     <script>
         // Custom toast for shortcut blocking
         function showDevtoolsToast(message) {
