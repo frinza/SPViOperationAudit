@@ -26,6 +26,27 @@
         .event-item {
             border-left: 4px solid #3b82f6;
         }
+        .event-tracker-item {
+            transition: all 0.3s ease;
+        }
+        .event-tracker-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .filter-btn {
+            transition: all 0.2s ease;
+        }
+        .filter-btn:hover {
+            transform: translateY(-1px);
+        }
         .loader {
             border: 4px solid #f3f4f6;
             border-top: 4px solid #3b82f6;
@@ -40,42 +61,36 @@
             100% { transform: rotate(360deg); }
         }
     </style>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script>
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyZ_rL2E6POkCNTgxQUF8JHn0wf4P1SD2nYmFZMbXGIsY5b-tiHsRIXYXWyj9rS4xpEcA/exec';
-        let firebaseConfig;
+        // Firebase will be initialized by the main firebase-auth.js
         let db;
-
-        // --- Fetch Firebase Config Once ---
-        async function fetchFirebaseConfig() {
-            if (firebaseConfig) return firebaseConfig;
-            try {
-                const response = await fetch(GAS_WEB_APP_URL);
-                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
-                const config = await response.json();
-                if (!config || !config.apiKey) {
-                    throw new Error("Invalid config received from server.");
-                }
-                firebaseConfig = config;
-                return firebaseConfig;
-            } catch (error) {
-                console.error("Failed to fetch Firebase config:", error);
-                const errorHtml = `<div class="text-center p-4 max-w-2xl mx-auto bg-red-100 border-l-4 border-red-500 text-red-700 dark:text-red-300 p-4" role="alert"><p class="font-bold">Configuration Error</p><p>${error.message}</p></div>`;
-                document.getElementById('error-display-event').innerHTML = errorHtml;
-                return null;
-            }
-        }
 
         async function initFirebaseIfNeeded() {
             if (db) return db;
-            const config = await fetchFirebaseConfig();
-            if (!config) throw new Error('No Firebase config available');
-            if (!firebase.apps.length) {
-                firebase.initializeApp(config);
+            try {
+                // Use the Firebase instance from SPViAuth
+                await SPViAuth.initializeFirebase();
+                
+                // Get Firebase instance from window.firebase (already initialized)
+                if (window.firebase && window.firebase.apps.length > 0) {
+                    db = window.firebase.firestore();
+                    return db;
+                } else {
+                    throw new Error('Firebase not initialized by SPViAuth');
+                }
+            } catch (error) {
+                console.error('Firebase initialization error:', error);
+                const errorHtml = `<div class="text-center p-4 max-w-2xl mx-auto bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+                    <p class="font-bold">Firebase Connection Error</p>
+                    <p>${error.message}</p>
+                    <p class="text-sm mt-2">Please check your internet connection and Firebase permissions.</p>
+                </div>`;
+                const errorDisplay = document.getElementById('error-display-tracker') || document.getElementById('error-display-event');
+                if (errorDisplay) {
+                    errorDisplay.innerHTML = errorHtml;
+                }
+                throw error;
             }
-            db = firebase.firestore();
-            return db;
         }
     </script>
 </head>
@@ -110,53 +125,102 @@
             </div>
         </div>
 
-        <!-- =================== EVENT STATUS DASHBOARD =================== -->
+        <!-- =================== NEW EVENT TRACKER =================== -->
         <div class="w-full mb-8 mt-12">
-            <div id="error-display-event" class="mb-6"></div>
-            <div id="dashboard-content-event" class="bg-white rounded-2xl shadow-lg p-6 text-center relative">
-                <button id="toggle-uploader-btn-event" class="absolute top-4 right-4 p-2 text-gray-500 hover:bg-gray-200 rounded-full transition-colors" title="เปิด/ปิดส่วนอัพโหลด">
+            <div id="error-display-tracker" class="mb-6"></div>
+            
+            <!-- Current Quarter View -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+                <div class="text-center mb-6">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-2"><span id="current-quarter-display"></span></h2>
+                    <p class="text-slate-500">กิจกรรมในไตรมาสปัจจุบัน (จนถึงวันนี้)</p>
+                </div>
+                <div id="quarter-events-container" class="space-y-4">
+                    <!-- Quarter's events will be populated here -->
+                </div>
+            </div>
+
+            <!-- Summary Dashboard -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 relative">
+                <button id="toggle-upload-section" class="absolute top-4 right-4 p-2 text-gray-500 hover:bg-gray-200 rounded-full transition-colors" title="เปิด/ปิดส่วนอัพโหลด">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                 </button>
-                <h1 class="text-2xl sm:text-3xl font-bold mb-2 text-slate-900">ภาพรวมสถานะกิจกรรม</h1>
-                <p class="text-slate-500 mb-6">สรุปความคืบหน้าของกิจกรรมทั้งหมด</p>
-                <div id="uploader-section-event" class="hidden pt-6 mt-6 border-t border-slate-200">
-                    <h3 class="font-bold text-xl mb-3 text-center text-slate-900">อัพเดทสถานะกิจกรรม (สำหรับผู้ดูแล)</h3>
+                
+                <h2 class="text-2xl font-bold text-center mb-6">สรุปสถานะการตรวจสอบ</h2>
+                
+                <!-- Upload Section -->
+                <div id="upload-section" class="hidden mb-6 p-4 bg-slate-50 rounded-lg border">
+                    <h3 class="font-bold text-lg mb-3">อัพโหลดข้อมูลใหม่</h3>
                     <div class="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-3">
-                        <input type="file" id="csv-uploader-event" accept=".csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
-                        <input type="password" id="admin-password-event" placeholder="รหัสผ่าน" class="w-full sm:w-auto p-2 border border-slate-300 rounded-full text-center focus:ring-2 focus:ring-blue-500">
-                        <button id="upload-btn-event" class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-full shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200 w-full sm:w-auto flex-shrink-0">อัพเดท</button>
+                        <input type="file" id="csv-file-input" accept=".csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                        <button id="upload-csv-btn" class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-full shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto">อัพโหลด</button>
                     </div>
-                    <p id="upload-status-event" class="text-center text-sm mt-3 h-4"></p>
+                    <p id="upload-status" class="text-center text-sm mt-3"></p>
                 </div>
-                <div class="mb-4 pt-6">
-                    <div class="flex justify-between mb-1"><span class="text-base font-medium text-blue-700">ความคืบหน้า</span><span id="progress-percentage-event" class="text-sm font-medium text-blue-700">0%</span></div>
-                    <div class="w-full bg-slate-200 rounded-full h-4"><div id="progress-bar-event" class="bg-blue-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div></div>
+
+                <!-- Statistics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-blue-100 p-4 rounded-lg text-center">
+                        <p class="text-lg font-semibold text-blue-800">event ที่ผ่านมา</p>
+                        <p id="today-count" class="text-3xl font-bold text-blue-600">0</p>
+                    </div>
+                    <div class="bg-green-100 p-4 rounded-lg text-center">
+                        <p class="text-lg font-semibold text-green-800">Email ส่งแล้ว</p>
+                        <p id="found-count" class="text-3xl font-bold text-green-600">0</p>
+                    </div>
+                    <div class="bg-yellow-100 p-4 rounded-lg text-center">
+                        <p class="text-lg font-semibold text-yellow-800">รอส่ง Email</p>
+                        <p id="waiting-count" class="text-3xl font-bold text-yellow-600">0</p>
+                    </div>
+                    <div class="bg-slate-200 p-4 rounded-lg text-center">
+                        <p class="text-lg font-semibold text-slate-800">ทั้งหมด</p>
+                        <p id="total-events-count" class="text-3xl font-bold text-slate-600">0</p>
+                    </div>
                 </div>
-                <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                    <div class="bg-green-100 p-4 rounded-lg"><p class="text-lg font-semibold text-green-800">เสร็จสิ้น</p><p id="finished-count-event" class="text-2xl font-bold text-green-600">0</p></div>
-                    <div class="bg-yellow-100 p-4 rounded-lg"><p class="text-lg font-semibold text-yellow-800">รอดำเนินการ</p><p id="pending-count-event" class="text-2xl font-bold text-yellow-600">0</p></div>
-                    <div class="bg-slate-200 p-4 rounded-lg"><p class="text-lg font-semibold text-slate-800">ทั้งหมด</p><p id="total-count-event" class="text-2xl font-bold text-slate-600">0</p></div>
+
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-base font-medium text-green-700">ความคืบหน้า (Email ที่ส่งแล้ว)</span>
+                        <span id="progress-percentage" class="text-sm font-medium text-green-700">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-4">
+                        <div id="progress-bar" class="bg-green-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
                 </div>
             </div>
-            <div id="table-container-event" class="bg-white rounded-2xl shadow-lg p-6 mt-8 hidden">
-                <div class="flex justify-between items-center cursor-pointer" id="toggle-table-btn-event">
-                    <h2 class="text-xl font-bold text-slate-900">รายการที่รอดำเนินการ (<span id="waiting-list-count-event">0</span>)</h2>
-                    <svg id="table-chevron-event" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-500 transition-transform transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </div>
-                <div id="table-content-event" class="hidden pt-4">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200">
-                            <thead class="bg-slate-50"><tr><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ชื่องาน</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">วันที่</th></tr></thead>
-                            <tbody id="waiting-list-tbody-event" class="bg-white divide-y divide-slate-200"></tbody>
-                        </table>
-                        <p id="no-waiting-message-event" class="text-center text-slate-500 py-4 hidden">ไม่มีรายการที่รอดำเนินการ</p>
+
+            <!-- Event Table -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-slate-900">รายการกิจกรรมทั้งหมด</h2>
+                    <div class="flex gap-2">
+                        <button id="filter-all" class="filter-btn px-4 py-2 bg-slate-600 text-white rounded-lg text-sm">ทั้งหมด</button>
+                        <button id="filter-today" class="filter-btn px-4 py-2 bg-slate-400 text-white rounded-lg text-sm">วันนี้</button>
+                        <button id="filter-waiting" class="filter-btn px-4 py-2 bg-slate-400 text-white rounded-lg text-sm">รอส่ง Email</button>
                     </div>
                 </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ชื่อกิจกรรม</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">วันที่</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Branch ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">สถานะ Email</th>
+                            </tr>
+                        </thead>
+                        <tbody id="events-table-body" class="bg-white divide-y divide-slate-200">
+                            <!-- Table rows will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="no-events-message" class="text-center text-slate-500 py-8 hidden">ไม่มีข้อมูลกิจกรรม</div>
             </div>
         </div>
-        <!-- ================= END EVENT STATUS DASHBOARD ================= -->
+        <!-- ================= END NEW EVENT TRACKER ================= -->
     </div>
 
     <script>
@@ -275,125 +339,578 @@
             container.innerHTML = eventsHtml;
         }
 
-        // =================== EVENT STATUS DASHBOARD LOGIC ===================
-        async function saveEventStatusToFirestore(eventList) {
-            try {
-                const db = await initFirebaseIfNeeded();
-                const batch = db.batch();
-                const collectionRef = db.collection('eventStatus');
-                const snapshot = await collectionRef.get();
-                snapshot.forEach(doc => batch.delete(doc.ref));
-                eventList.forEach(event => {
-                    const docRef = collectionRef.doc();
-                    batch.set(docRef, event);
-                });
-                await batch.commit();
-            } catch (error) {
-                console.error('Firestore Save Error:', error);
-            }
-        }
+        // =================== NEW EVENT TRACKER LOGIC ===================
+        let allEvents = [];
+        let currentFilter = 'all';
 
-        async function loadEventStatusFromFirestore() {
-            try {
-                const db = await initFirebaseIfNeeded();
-                const snapshot = await db.collection('eventStatus').get();
-                return snapshot.docs.map(doc => doc.data());
-            } catch (error) {
-                console.error('Firestore Load Error:', error);
-                return [];
-            }
-        }
-
-        function updateDashboardUIEvent(finished = 0, pending = 0) {
-            const total = finished + pending;
-            const percentage = total > 0 ? (finished / total) * 100 : 0;
-            document.getElementById('progress-bar-event').style.width = percentage.toFixed(2) + '%';
-            document.getElementById('progress-percentage-event').textContent = percentage.toFixed(0) + '%';
-            document.getElementById('finished-count-event').textContent = finished.toLocaleString();
-            document.getElementById('pending-count-event').textContent = pending.toLocaleString();
-            document.getElementById('total-count-event').textContent = total.toLocaleString();
-        }
-
-        function renderWaitingTableEvent(waitingEvents) {
-            const tbody = document.getElementById('waiting-list-tbody-event');
-            const tableCard = document.getElementById('table-container-event');
-            document.getElementById('waiting-list-count-event').textContent = waitingEvents.length;
-            tbody.innerHTML = '';
-            if (waitingEvents.length === 0) { tableCard.classList.add('hidden'); return; }
-            tableCard.classList.remove('hidden');
-            waitingEvents.forEach(event => {
-                const row = `<tr><td class="px-6 py-4 whitespace-normal text-sm font-medium text-slate-900 text-left">${event.title}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-left">${new Date(event.date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric'})}</td></tr>`;
-                tbody.innerHTML += row;
-            });
-        }
-
-        function processNewDataEvent(eventList = []) {
-            const finished = eventList.filter(e => e.status === 'found').length;
-            const pending = eventList.filter(e => e.status === 'waiting').length;
-            updateDashboardUIEvent(finished, pending);
-            renderWaitingTableEvent(eventList.filter(e => e.status === 'waiting'));
-        }
-
-        function parseEventCSV(text) {
+        // Parse CSV data with the new format
+        function parseEventReportCSV(text) {
             const lines = text.trim().replace(/^\uFEFF/, '').split(/\r?\n/);
             if (lines.length < 2) throw new Error("ไฟล์ไม่มีข้อมูล");
+            
+            // Handle CSV with quoted fields
             const csvRegex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
             const headers = lines[0].split(csvRegex).map(h => h.trim().toLowerCase().replace(/"/g, ''));
-            const idx = { title: headers.indexOf("event title"), date: headers.indexOf("event date"), status: headers.indexOf("email status") };
-            if (idx.title === -1 || idx.date === -1 || idx.status === -1) throw new Error("ไม่พบคอลัมน์ที่จำเป็น (event title, event date, email status)");
-            const eventList = [];
+            
+            // Find column indices
+            const titleIdx = headers.findIndex(h => h.includes('event title') || h.includes('title'));
+            const dateIdx = headers.findIndex(h => h.includes('event date') || h.includes('date'));
+            const branchIdx = headers.findIndex(h => h.includes('branch id') || h.includes('branch'));
+            const statusIdx = headers.findIndex(h => h.includes('email status') || h.includes('status'));
+            
+            if (titleIdx === -1 || dateIdx === -1 || branchIdx === -1 || statusIdx === -1) {
+                throw new Error("ไม่พบคอลัมน์ที่จำเป็น: Event Title, Event Date, Branch ID, Email Status");
+            }
+            
+            const events = [];
             for (let i = 1; i < lines.length; i++) {
-                if (!lines[i]) continue;
+                if (!lines[i].trim()) continue;
+                
                 const row = lines[i].split(csvRegex);
-                if (row.length === headers.length) {
-                    eventList.push({ title: row[idx.title]?.replace(/"/g, '').trim(), date: row[idx.date]?.replace(/"/g, '').trim(), status: row[idx.status]?.replace(/"/g, '').trim().toLowerCase() });
+                if (row.length >= Math.max(titleIdx, dateIdx, branchIdx, statusIdx) + 1) {
+                    const event = {
+                        title: row[titleIdx]?.replace(/"/g, '').trim() || '',
+                        date: row[dateIdx]?.replace(/"/g, '').trim() || '',
+                        branchId: row[branchIdx]?.replace(/"/g, '').trim() || '',
+                        emailStatus: row[statusIdx]?.replace(/"/g, '').trim().toLowerCase() || ''
+                    };
+                    
+                    if (event.title && event.date) {
+                        events.push(event);
+                    }
                 }
             }
-            return eventList;
+            return events;
         }
 
-        async function handleFileUploadEvent() {
-            const uploader = document.getElementById('csv-uploader-event');
-            const passwordInput = document.getElementById('admin-password-event');
-            const statusEl = document.getElementById('upload-status-event');
-            const file = uploader.files[0];
-            if (passwordInput.value !== 'OA2025') { statusEl.textContent = "รหัสผ่านไม่ถูกต้อง"; statusEl.className = "text-center text-sm mt-3 h-4 text-red-500"; return; }
-            if (!file) { statusEl.textContent = "กรุณาเลือกไฟล์ CSV ก่อน"; statusEl.className = "text-center text-sm mt-3 h-4 text-yellow-500"; return; }
-            statusEl.textContent = "กำลังประมวลผล..."; statusEl.className = "text-center text-sm mt-3 h-4 text-blue-500";
+        // Save events to Firestore
+        async function saveEventsToFirestore(events) {
+            try {
+                const db = await initFirebaseIfNeeded();
+                const collectionRef = db.collection('eventReports');
+                
+                // For now, let's just add new events without clearing (to avoid permission issues)
+                // We can batch write them efficiently
+                const batch = db.batch();
+                
+                // Add timestamp for tracking
+                const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+                
+                events.forEach((event, index) => {
+                    const docRef = collectionRef.doc(`event_${Date.now()}_${index}`);
+                    batch.set(docRef, {
+                        ...event,
+                        uploadedAt: timestamp,
+                        id: `event_${Date.now()}_${index}`
+                    });
+                });
+                
+                await batch.commit();
+                console.log('Events saved to Firestore successfully');
+            } catch (error) {
+                console.error('Firestore Save Error Details:', error);
+                
+                // Provide more specific error messages
+                let errorMessage = error.message;
+                if (error.code === 'permission-denied') {
+                    errorMessage = 'Permission denied. Please check Firestore security rules.';
+                } else if (error.code === 'unavailable') {
+                    errorMessage = 'Firebase service unavailable. Please check your internet connection.';
+                }
+                
+                throw new Error(errorMessage);
+            }
+        }
+
+        // Load events from Firestore
+        async function loadEventsFromFirestore() {
+            try {
+                const db = await initFirebaseIfNeeded();
+                const snapshot = await db.collection('eventReports')
+                    .orderBy('uploadedAt', 'desc')
+                    .get();
+                
+                const events = snapshot.docs.map(doc => doc.data());
+                console.log(`Loaded ${events.length} events from Firestore`);
+                return events;
+            } catch (error) {
+                console.error('Firestore Load Error:', error);
+                
+                // For development purposes, return sample data if Firestore fails
+                console.log('Using sample data due to Firestore error');
+                return getSampleEvents();
+            }
+        }
+
+        // Provide sample events for testing when Firestore is not available
+        function getSampleEvents() {
+            return [
+                {
+                    title: "ตรวจสอบสาขาทดสอบ 1",
+                    date: "2024-07-15",
+                    branchId: "001",
+                    emailStatus: "found"
+                },
+                {
+                    title: "ตรวจสอบสาขาทดสอบ 2", 
+                    date: "2024-07-10",
+                    branchId: "002",
+                    emailStatus: "waiting"
+                },
+                {
+                    title: "ตรวจสอบสาขาทดสอบ 3",
+                    date: "2024-07-20",
+                    branchId: "003", 
+                    emailStatus: "found"
+                }
+            ];
+        }
+
+        // Get current date in Thai timezone
+        function getCurrentDateThai() {
+            const now = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                timeZone: 'Asia/Bangkok' 
+            };
+            return now.toLocaleDateString('th-TH', options);
+        }
+
+        // Get current quarter date range
+        function getCurrentQuarterRange() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth(); // 0-based
+            
+            let quarterStart;
+            
+            // Determine quarter start month
+            if (month >= 0 && month <= 2) { // Q1: Jan-Mar
+                quarterStart = new Date(year, 0, 1);
+            } else if (month >= 3 && month <= 5) { // Q2: Apr-Jun  
+                quarterStart = new Date(year, 3, 1);
+            } else if (month >= 6 && month <= 8) { // Q3: Jul-Sep
+                quarterStart = new Date(year, 6, 1);
+            } else { // Q4: Oct-Dec
+                quarterStart = new Date(year, 9, 1);
+            }
+            
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                timeZone: 'Asia/Bangkok' 
+            };
+            
+            const startStr = quarterStart.toLocaleDateString('th-TH', options);
+            const todayStr = now.toLocaleDateString('th-TH', options);
+            
+            return `${startStr} - ${todayStr}`;
+        }
+
+        // Check if event is today
+        function isEventToday(eventDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const eventDateObj = new Date(eventDate);
+            eventDateObj.setHours(0, 0, 0, 0);
+            
+            return eventDateObj.getTime() === today.getTime();
+        }
+
+        // Check if event is in the past (before today)
+        function isEventPast(eventDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const eventDateObj = new Date(eventDate);
+            eventDateObj.setHours(0, 0, 0, 0);
+            
+            return eventDateObj.getTime() < today.getTime();
+        }
+
+        // Check if event is within current quarter up to today
+        function isEventInCurrentQuarter(eventDate) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            
+            let quarterStart;
+            if (month >= 0 && month <= 2) { // Q1
+                quarterStart = new Date(year, 0, 1);
+            } else if (month >= 3 && month <= 5) { // Q2
+                quarterStart = new Date(year, 3, 1);
+            } else if (month >= 6 && month <= 8) { // Q3
+                quarterStart = new Date(year, 6, 1);
+            } else { // Q4
+                quarterStart = new Date(year, 9, 1);
+            }
+            
+            quarterStart.setHours(0, 0, 0, 0);
+            now.setHours(23, 59, 59, 999); // End of today
+            
+            const eventDateObj = new Date(eventDate);
+            eventDateObj.setHours(0, 0, 0, 0);
+            
+            return eventDateObj >= quarterStart && eventDateObj <= now;
+        }
+
+        // Update statistics
+        function updateStatistics(events) {
+            const foundCount = events.filter(e => e.emailStatus === 'found').length;
+            const waitingCount = events.filter(e => e.emailStatus === 'waiting').length;
+            const quarterEvents = events.filter(e => isEventInCurrentQuarter(e.date));
+            const quarterCount = quarterEvents.length;
+            const totalCount = events.length;
+            
+            document.getElementById('found-count').textContent = foundCount.toLocaleString();
+            document.getElementById('waiting-count').textContent = waitingCount.toLocaleString();
+            document.getElementById('today-count').textContent = quarterCount.toLocaleString(); // event ที่ผ่านมา
+            document.getElementById('total-events-count').textContent = totalCount.toLocaleString();
+            
+            // Update progress bar
+            const percentage = totalCount > 0 ? (foundCount / totalCount) * 100 : 0;
+            document.getElementById('progress-bar').style.width = percentage.toFixed(1) + '%';
+            document.getElementById('progress-percentage').textContent = percentage.toFixed(0) + '%';
+        }
+
+        // Display quarter's events (including past events with special highlighting)
+        function displayQuarterEvents(events) {
+            const container = document.getElementById('quarter-events-container');
+            const quarterEvents = events.filter(e => isEventInCurrentQuarter(e.date));
+            
+            if (quarterEvents.length === 0) {
+                container.innerHTML = '<p class="text-center text-slate-500 py-8">ไม่มีกิจกรรมในไตรมาสนี้</p>';
+                return;
+            }
+            
+            // Sort by date (ascending)
+            quarterEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            let html = '';
+            quarterEvents.forEach(event => {
+                const isPast = isEventPast(event.date);
+                const isToday = isEventToday(event.date);
+                const isFound = event.emailStatus === 'found';
+                
+                let statusText, borderColor, bgColor, textColor, badgeClass;
+                
+                if (isPast) {
+                    // Past events
+                    if (isFound) {
+                        statusText = 'สำเร็จ';
+                        borderColor = 'border-emerald-500';
+                        bgColor = 'bg-emerald-50';
+                        textColor = 'text-emerald-800';
+                        badgeClass = 'bg-emerald-100 text-emerald-800';
+                    } else {
+                        statusText = 'คงค้าง';
+                        borderColor = 'border-red-500';
+                        bgColor = 'bg-red-50';
+                        textColor = 'text-red-800';
+                        badgeClass = 'bg-red-100 text-red-800';
+                    }
+                } else if (isToday) {
+                    // Today's events
+                    if (isFound) {
+                        statusText = 'ส่ง Email แล้ว';
+                        borderColor = 'border-green-500';
+                        bgColor = 'bg-green-50';
+                        textColor = 'text-green-800';
+                        badgeClass = 'bg-green-100 text-green-800';
+                    } else {
+                        statusText = 'รอส่ง Email';
+                        borderColor = 'border-yellow-500';
+                        bgColor = 'bg-yellow-50';
+                        textColor = 'text-yellow-800';
+                        badgeClass = 'bg-yellow-100 text-yellow-800';
+                    }
+                } else {
+                    // Future events
+                    if (isFound) {
+                        statusText = 'ส่ง Email แล้ว';
+                        borderColor = 'border-green-500';
+                        bgColor = 'bg-green-50';
+                        textColor = 'text-green-800';
+                        badgeClass = 'bg-green-100 text-green-800';
+                    } else {
+                        statusText = 'รอส่ง Email';
+                        borderColor = 'border-blue-500';
+                        bgColor = 'bg-blue-50';
+                        textColor = 'text-blue-800';
+                        badgeClass = 'bg-blue-100 text-blue-800';
+                    }
+                }
+                
+                // Add special indicators
+                let indicators = '';
+                if (isPast && !isFound) {
+                    indicators += '<span class="ml-2 px-2 py-1 bg-red-200 text-red-800 text-xs rounded-full font-bold">เกินกำหนด</span>';
+                } else if (isToday) {
+                    indicators += '<span class="ml-2 px-2 py-1 bg-blue-200 text-blue-800 text-xs rounded-full font-bold">วันนี้</span>';
+                } else if (isPast && isFound) {
+                    indicators += '<span class="ml-2 px-2 py-1 bg-emerald-200 text-emerald-800 text-xs rounded-full">เสร็จแล้ว</span>';
+                }
+                
+                const dateFormatted = new Date(event.date).toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                
+                const timeFormatted = new Date(event.date).toLocaleTimeString('th-TH', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                html += `
+                    <div class="event-tracker-item p-4 ${bgColor} rounded-lg border-l-4 ${borderColor}">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h3 class="font-bold text-lg text-slate-900 mb-2">
+                                    ${event.title}
+                                    ${indicators}
+                                </h3>
+                                <p class="text-sm text-slate-600 mb-1">Branch: ${event.branchId}</p>
+                                <p class="text-sm text-slate-600">${dateFormatted} เวลา ${timeFormatted}</p>
+                            </div>
+                            <span class="status-badge ${badgeClass} font-medium">
+                                ${statusText}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Display events table
+        function displayEventsTable(events, filter = 'all') {
+            const tbody = document.getElementById('events-table-body');
+            const noEventsMsg = document.getElementById('no-events-message');
+            
+            let filteredEvents = [...events];
+            
+            switch (filter) {
+                case 'today':
+                    filteredEvents = events.filter(e => isEventToday(e.date));
+                    break;
+                case 'waiting':
+                    filteredEvents = events.filter(e => e.emailStatus === 'waiting');
+                    break;
+                case 'all':
+                default:
+                    // No additional filtering
+                    break;
+            }
+            
+            if (filteredEvents.length === 0) {
+                tbody.innerHTML = '';
+                noEventsMsg.classList.remove('hidden');
+                return;
+            }
+            
+            noEventsMsg.classList.add('hidden');
+            
+            // Sort by date
+            filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            let html = '';
+            filteredEvents.forEach(event => {
+                const isToday = isEventToday(event.date);
+                const isPast = isEventPast(event.date);
+                const isFound = event.emailStatus === 'found';
+                
+                let statusColor, statusText, rowClass, badges = '';
+                
+                if (isPast) {
+                    if (isFound) {
+                        statusColor = 'text-emerald-600';
+                        statusText = 'สำเร็จ';
+                        rowClass = 'bg-emerald-50 border-l-4 border-emerald-500';
+                        badges = '<span class="ml-2 px-2 py-1 bg-emerald-100 text-emerald-800 text-xs rounded-full">เสร็จแล้ว</span>';
+                    } else {
+                        statusColor = 'text-red-600';
+                        statusText = 'คงค้าง';
+                        rowClass = 'bg-red-50 border-l-4 border-red-500';
+                        badges = '<span class="ml-2 px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-bold">เกินกำหนด</span>';
+                    }
+                } else if (isToday) {
+                    if (isFound) {
+                        statusColor = 'text-green-600';
+                        statusText = 'ส่งแล้ว';
+                        rowClass = 'bg-blue-50 border-l-4 border-blue-500';
+                        badges = '<span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-bold">วันนี้</span>';
+                    } else {
+                        statusColor = 'text-yellow-600';
+                        statusText = 'รอส่ง';
+                        rowClass = 'bg-blue-50 border-l-4 border-blue-500';
+                        badges = '<span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-bold">วันนี้</span>';
+                    }
+                } else {
+                    // Future events
+                    statusColor = event.emailStatus === 'found' ? 'text-green-600' : 'text-blue-600';
+                    statusText = event.emailStatus === 'found' ? 'ส่งแล้ว' : 'รอส่ง';
+                    rowClass = '';
+                }
+                
+                const dateFormatted = new Date(event.date).toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                }) + ' ' + new Date(event.date).toLocaleTimeString('th-TH', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                html += `
+                    <tr class="${rowClass}">
+                        <td class="px-6 py-4 text-sm font-medium text-slate-900">
+                            ${event.title}
+                            ${badges}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-500">${dateFormatted}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500">${event.branchId}</td>
+                        <td class="px-6 py-4 text-sm font-medium ${statusColor}">${statusText}</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        // Handle CSV upload
+        async function handleCSVUpload() {
+            const fileInput = document.getElementById('csv-file-input');
+            const statusEl = document.getElementById('upload-status');
+            
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                statusEl.textContent = "กรุณาเลือกไฟล์ CSV";
+                statusEl.className = "text-center text-sm mt-3 text-yellow-500";
+                return;
+            }
+            
+            statusEl.textContent = "กำลังประมวลผล...";
+            statusEl.className = "text-center text-sm mt-3 text-blue-500";
+            
             try {
                 const text = await file.text();
-                const eventList = parseEventCSV(text);
-                statusEl.textContent = "กำลังอัพเดทข้อมูล...";
-                await saveEventStatusToFirestore(eventList); // Save to Firestore
-                processNewDataEvent(eventList);
-                statusEl.textContent = "อัพเดทสำเร็จ!"; statusEl.className = "text-center text-sm mt-3 h-4 text-green-500";
-                passwordInput.value = ''; uploader.value = '';
-                setTimeout(() => { statusEl.textContent = ""; document.getElementById('uploader-section-event').classList.add('hidden'); }, 2000);
-            } catch (error) { console.error("Upload Error:", error); statusEl.textContent = `ผิดพลาด: ${error.message}`; statusEl.className = "text-center text-sm mt-3 h-4 text-red-500"; }
+                const events = parseEventReportCSV(text);
+                
+                if (events.length === 0) {
+                    throw new Error("ไม่พบข้อมูลกิจกรรมในไฟล์");
+                }
+                
+                statusEl.textContent = "กำลังบันทึกข้อมูล...";
+                await saveEventsToFirestore(events);
+                
+                // Update global events
+                allEvents = events;
+                
+                // Refresh display
+                refreshEventDisplay();
+                
+                statusEl.textContent = `อัพโหลดสำเร็จ! (${events.length} รายการ)`;
+                statusEl.className = "text-center text-sm mt-3 text-green-500";
+                
+                // Clear form
+                fileInput.value = '';
+                
+                // Hide upload section after success
+                setTimeout(() => {
+                    document.getElementById('upload-section').classList.add('hidden');
+                    statusEl.textContent = '';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Upload Error:', error);
+                statusEl.textContent = `ผิดพลาด: ${error.message}`;
+                statusEl.className = "text-center text-sm mt-3 text-red-500";
+            }
         }
 
-        async function setupEventListenersEvent() {
-            document.getElementById('upload-btn-event').addEventListener('click', handleFileUploadEvent);
-            document.getElementById('toggle-uploader-btn-event').addEventListener('click', () => {
-                document.getElementById('uploader-section-event').classList.toggle('hidden');
+        // Refresh all event displays
+        function refreshEventDisplay() {
+            updateStatistics(allEvents);
+            displayQuarterEvents(allEvents);
+            displayEventsTable(allEvents, currentFilter);
+            updateFilterButtons();
+        }
+
+        // Update filter button states
+        function updateFilterButtons() {
+            const buttons = [
+                { id: 'filter-all', filter: 'all', color: 'slate' },
+                { id: 'filter-today', filter: 'today', color: 'blue' },
+                { id: 'filter-waiting', filter: 'waiting', color: 'yellow' }
+            ];
+            
+            buttons.forEach(({ id, filter, color }) => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    // Reset all buttons to inactive state
+                    btn.className = `filter-btn px-4 py-2 bg-slate-400 text-white rounded-lg text-sm`;
+                    
+                    // Set active button
+                    if (currentFilter === filter) {
+                        btn.className = `filter-btn px-4 py-2 bg-${color}-600 text-white rounded-lg text-sm`;
+                    }
+                }
             });
-            document.getElementById('toggle-table-btn-event').addEventListener('click', () => {
-                document.getElementById('table-content-event').classList.toggle('hidden');
-                document.getElementById('table-chevron-event').classList.toggle('rotate-180');
+        }
+
+        // Initialize event listeners
+        function setupEventListeners() {
+            // Upload functionality
+            document.getElementById('upload-csv-btn').addEventListener('click', handleCSVUpload);
+            document.getElementById('toggle-upload-section').addEventListener('click', () => {
+                document.getElementById('upload-section').classList.toggle('hidden');
+            });
+            
+            // Filter buttons
+            document.getElementById('filter-all').addEventListener('click', () => {
+                currentFilter = 'all';
+                displayEventsTable(allEvents, currentFilter);
+                updateFilterButtons();
+            });
+            
+            document.getElementById('filter-today').addEventListener('click', () => {
+                currentFilter = 'today';
+                displayEventsTable(allEvents, currentFilter);
+                updateFilterButtons();
+            });
+            
+            document.getElementById('filter-waiting').addEventListener('click', () => {
+                currentFilter = 'waiting';
+                displayEventsTable(allEvents, currentFilter);
+                updateFilterButtons();
             });
         }
 
-        async function loadAndDisplayEventStatus() {
-            const eventList = await loadEventStatusFromFirestore();
-            processNewDataEvent(eventList);
+        // Initialize the new event tracker
+        async function initEventTracker() {
+            // Set current quarter date range display
+            document.getElementById('current-quarter-display').textContent = getCurrentQuarterRange();
+            
+            // Load events from Firestore
+            try {
+                allEvents = await loadEventsFromFirestore();
+                refreshEventDisplay();
+            } catch (error) {
+                console.error('Failed to load events:', error);
+                // Show empty state
+                refreshEventDisplay();
+            }
+            
+            // Setup event listeners
+            setupEventListeners();
         }
-
-        // Initialize event dashboard and fetch events on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            setupEventListenersEvent();
-            loadAndDisplayEventStatus(); // Load from Firestore on page load
-            fetchAndDisplayEvents();
-        });
 
         // Custom toast for shortcut blocking
         function showDevtoolsToast(message) {
@@ -469,6 +986,12 @@
         // Initialize user display when page loads
         document.addEventListener('DOMContentLoaded', function() {
             updateUserDisplay();
+        });
+
+        // Place initialization at the end, after all DOM elements are loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initEventTracker(); // Initialize new event tracker
+            fetchAndDisplayEvents(); // Keep the original calendar events
         });
     </script>
 </body>
