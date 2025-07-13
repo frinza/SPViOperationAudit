@@ -3047,8 +3047,8 @@ def analyze_image_quality(image_data_base64):
                         const rows = allItems.map(item => ({
                             SKU: item.SKU,
                             Description: item.Description,
-                            Age: item.Age || '',
                             SRP: item.Price || '',
+                            Age: item.Age || '',
                             SOH: item.SOH || '',
                             FAMILY: item.isDemo ? 'DEMO' : 'NONE'
                         }));
