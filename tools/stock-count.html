@@ -231,6 +231,11 @@
             z-index: 21;
             pointer-events: none;
         }
+
+        th {
+            text-align: center;
+            vertical-align: middle;
+        }
         /* Print Styles */
         @media print {
             body {
@@ -305,7 +310,23 @@
                 z-index: auto !important;
                 box-shadow: none !important;
             }
-            .print-legal-section { display: block !important; page-break-before: always; }
+            .print-legal-section { 
+                display: block !important;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            
+            /*print report summary section*/
+            #dashboard-summary-section > .grid,
+            #dashboard-summary-section > .p-4.bg-slate-50,
+            #dashboard-summary-section > .flex.justify-between.items-center,
+            #dashboard-summary-section > h3 {
+                display: none !important;
+            }
+            #final-summary {
+                display: block !important;
+                page-break-after: avoid;
+            }
         }
         @media screen {
             .print-legal-section { display: none !important; }
@@ -474,7 +495,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="main-panel-workflow" class="hidden">
+                <div id="main-panel-workflow" class="hidden no-print">
                      <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
                          <h2 class="text-2xl font-semibold mb-2 text-slate-800">ตรวจนับสินค้าขาย</h2>
                          <div id="wf-step-tabs" class="mb-4 border-b border-slate-200">
@@ -550,7 +571,7 @@
         <div id="final-report-container" class="mt-8 hidden">
             <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
                 <div class="space-y-8">
-                    <div class="space-y-4">
+                    <div class="space-y-4" id="dashboard-summary-section">
                         <div class="flex justify-between items-center">
                             <h3 class="text-xl font-semibold text-slate-800">Dashboard สรุปผล</h3>
                             <div class="flex items-center gap-2 no-print">
@@ -687,6 +708,7 @@
             let hasUnsavedChanges = false;
             let state = getInitialState();
             let finalSummaryData = {};            // === Floating Scanner Variables ===
+            let forcePrintMode = false;
             let floatingScanner = null;
             let floatingStream = null;
             let floatingOcrStreaming = false;
@@ -800,12 +822,12 @@ def process_image_enhanced(image_data_base64, preprocessing_mode='enhanced'):
         # Convert to base64 for return
         buffer = io.BytesIO()
         processed_image.save(buffer, format='PNG')
-        processed_base64 = base64.b64encode(buffer.getvalue()).decode()
+        processed_base64 = base64.b64encode(buffer.getvalue()).decode();
         
-        return f"data:image/png;base64,{processed_base64}"
+        return f"data:image/png;base64,{processed_base64}";
         
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"Error: {str(e)}";
 
 def analyze_image_quality(image_data_base64):
     """
@@ -825,7 +847,7 @@ def analyze_image_quality(image_data_base64):
         # Calculate metrics
         brightness = np.mean(gray)
         contrast = np.std(gray)
-        sharpness = cv2.Laplacian(gray, cv2.CV_64F).var()
+        sharpness = cv2.Laplacian(gray, cv2.CV_64F).var();
         
         # Quality assessment
         quality = {
@@ -833,21 +855,21 @@ def analyze_image_quality(image_data_base64):
             'contrast': float(contrast),
             'sharpness': float(sharpness),
             'overall': 'good'
-        }
+        };
         
         if brightness < 50:
             quality['overall'] = 'too_dark'
-        elif brightness > 200:
+        else if (brightness > 200):
             quality['overall'] = 'too_bright'
-        elif contrast < 30:
+        else if (contrast < 30):
             quality['overall'] = 'low_contrast'
-        elif sharpness < 100:
+        else if (sharpness < 100):
             quality['overall'] = 'blurry'
             
         return quality
         
     except Exception as e:
-        return {'error': str(e)}
+        return {'error': str(e)};
                     `);
                       pyodideReady = true;
                       } catch (error) {
@@ -1072,7 +1094,8 @@ def analyze_image_quality(image_data_base64):
                 
                 const quaggaVideo = document.querySelector('#floating-barcode-view video');
                 if (quaggaVideo && quaggaVideo.srcObject) {
-                    quaggaVideo.srcObject.getTracks().forEach(track => track.stop());
+                    const tracks = quaggaVideo.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
                     quaggaVideo.srcObject = null;
                 }
             }
@@ -1227,7 +1250,6 @@ def analyze_image_quality(image_data_base64):
                            .replace(/[8]/g, 'B')
                            .replace(/[5]/g, 'S')
                            .replace(/[1]/g, 'I')
-                           .replace(/[\.]/g, '')                           .replace(/[,]/g, '')
                            .replace(/[\s]/g, '');
                 
                 // Enhanced Apple serial validation
@@ -1800,6 +1822,11 @@ def analyze_image_quality(image_data_base64):
                 };
             }
             
+            function getAllValidSkus() {
+                // Use the processed SKU list from SOH upload
+                return Object.keys(state.sohLookup);
+            }
+
             const formatNumber = (num) => (num ?? 0).toLocaleString('en-US');
 
             function showLoader(message = "Processing...") { 
@@ -2097,8 +2124,8 @@ def analyze_image_quality(image_data_base64):
 
             function renderDemoCountTable(data) {
                 const container = getEl('demo-count-container');
-                const headers = `<thead><tr><th class="p-3 text-left w-12">Status</th><th class="p-3 text-left" data-sort-by="SKU">SKU<span class="sort-indicator"></span></th><th class="p-3 text-left" data-sort-by="Description">Description<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="Age">Age<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="Price">SRP<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="SOH">SOH<span class="sort-indicator"></span></th><th class="p-3 text-center w-32">Counted Qty</th><th class="p-3 text-center w-24">Diff</th></tr></thead>`;
-                const body = data.length > 0 ? data.map(renderDemoTableRow).join('') : `<tr><td colspan="8" class="text-center p-6 text-slate-500">No items match filter.</td></tr>`;
+                const headers = `<thead><tr><th class="p-3 text-center w-12">No.</th><th class="p-3 text-center" data-sort-by="SKU">SKU<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="Description">Description<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="Age">Age<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="Price">SRP<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="SOH">SOH<span class="sort-indicator"></span></th><th class="p-3 text-center w-32">Counted Qty</th><th class="p-3 text-center w-24">Diff</th></tr></thead>`;
+                const body = data.length > 0 ? data.map((item, idx) => renderDemoTableRow(item, idx)).join('') : `<tr><td colspan="8" class="text-center p-6 text-slate-500">No items match filter.</td></tr>`;
                 container.innerHTML = `<table class="w-full text-sm">${headers}<tbody>${body}</tbody></table>`;
                 const sortingTh = container.querySelector(`th[data-sort-by="${state.demoSort.column}"]`);
                 if (sortingTh) {
@@ -2106,11 +2133,20 @@ def analyze_image_quality(image_data_base64):
                 }
             }
 
-            function renderDemoTableRow(item) {
+            function renderDemoTableRow(item, idx) {
                 const diff = (item.counted === null) ? null : item.counted - item.SOH;
                 const diffText = diff === null ? '-' : (diff > 0 ? `+${diff}` : diff);
                 let { rowClass, statusDotColor } = getRowVisuals(diff, true);
-                return `<tr class="border-b border-slate-200 transition-colors duration-200 ${rowClass}" data-sku="${item.SKU}"><td class="p-3 text-center"><span class="status-dot ${statusDotColor}"></span></td><td class="p-3 font-medium text-slate-700">${item.SKU}</td><td class="p-3 text-slate-600">${item.Description}</td><td class="p-3 text-center text-slate-600">${item.Age || '-'}</td><td class="p-3 text-right text-slate-600">${formatNumber(item.Price)}</td><td class="p-3 text-center text-slate-600">${item.SOH}</td><td class="p-3"><input type="number" value="${item.counted ?? ''}" class="w-full text-center p-1.5 border border-slate-300 rounded-md bg-white"/></td><td class="p-3 text-center font-bold diff-cell">${diffText}</td></tr>`;
+                return `<tr class="border-b border-slate-200 transition-colors duration-200 ${rowClass}" data-sku="${item.SKU}">
+                    <td class="p-3 text-center">${idx + 1}</td>
+                    <td class="p-3 font-medium text-slate-700">${item.SKU}</td>
+                    <td class="p-3 text-slate-600">${item.Description}</td>
+                    <td class="p-3 text-center text-slate-600">${item.Age || '-'}</td>
+                    <td class="p-3 text-right text-slate-600">${formatNumber(item.Price)}</td>
+                    <td class="p-3 text-center text-slate-600">${item.SOH}</td>
+                    <td class="p-3"><input type="number" value="${item.counted ?? ''}" class="w-full text-center p-1.5 border border-slate-300 rounded-md bg-white"/></td>
+                    <td class="p-3 text-center font-bold diff-cell">${diffText}</td>
+                </tr>`;
             }
 
             function updateDemoSummary() {
@@ -2377,16 +2413,26 @@ def analyze_image_quality(image_data_base64):
             function renderFinalReportTable(data) {
                 const container = getEl('final-report-table-container');
                 if (!data.length) { container.innerHTML = '<p class="text-center p-10 text-slate-500">No data matches the current filter.</p>'; return; }
-                const headers = `<thead><tr><th class="p-3 text-center w-12">Status</th><th class="p-3 text-left" data-sort-by="SKU">SKU<span class="sort-indicator"></span></th><th class="p-3 text-left" data-sort-by="Description">Description<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="SOH">SOH<span class="sort-indicator"></span></th><th class="p-3 text-center">Final Count</th><th class="p-3 text-center" data-sort-by="FinalDiff">Final Diff<span class="sort-indicator"></span></th><th class="p-3 text-left">Reason</th><th class="p-3 text-left">Remark</th></tr></thead>`;
-                const body = `<tbody>${data.map(renderFinalReportRow).join('')}</tbody>`;
+                const headers = `<thead><tr><th class="p-3 text-center w-12">No.</th><th class="p-3 text-center" data-sort-by="SKU">SKU<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="Description">Description<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="SOH">SOH<span class="sort-indicator"></span></th><th class="p-3 text-center">Final Count</th><th class="p-3 text-center" data-sort-by="FinalDiff">Final Diff<span class="sort-indicator"></span></th><th class="p-3 text-center">Reason</th><th class="p-3 text-center">Remark</th></tr></thead>`;
+                const body = `<tbody>${data.map((item, idx) => renderFinalReportRow(item, idx)).join('')}</tbody>`;
                 container.innerHTML = `<table class="w-full text-sm">${headers}${body}</tbody></table>`;
                 const sortingTh = container.querySelector(`th[data-sort-by="${state.finalReportSort.column}"]`);
                 if (sortingTh) { sortingTh.querySelector('.sort-indicator').textContent = state.finalReportSort.direction === 'asc' ? '▲' : '▼'; }
             }
 
-            function renderFinalReportRow(item) {
+            function renderFinalReportRow(item, idx) {
                 const { rowClass, statusDotColor } = getRowVisuals(item.FinalDiff, item.isDemo);
-                return `<tr class="border-b border-slate-200 ${rowClass}" data-sku="${item.SKU}"><td class="p-3 text-center"><span class="status-dot ${statusDotColor}"></span></td><td class="p-3 font-medium text-slate-800">${item.SKU}</td><td class="p-3 text-slate-600">${item.Description}</td><td class="p-3 text-center">${item.SOH}</td><td class="p-3 text-center w-24"><input type="number" value="${item.Recount}" class="w-full text-center p-1.5 border border-slate-300 rounded-md"/></td><td class="p-3 font-bold text-center">${item.FinalDiff > 0 ? '+' : ''}${item.FinalDiff}</td><td class="p-3 text-slate-600">${item.ReasonFinal || 'N/A'}</td><td class="p-3 w-40"><input type="text" value="${item.Remark || ''}" class="w-full p-1.5 border border-slate-300 rounded-md"/></td></tr>`;
+                const isPrint = forcePrintMode || window.matchMedia('print').matches;
+                return `<tr class="border-b border-slate-200 ${rowClass}" data-sku="${item.SKU}">
+                    <td class="p-3 text-center">${idx + 1}</td>
+                    <td class="p-3 font-medium text-slate-800">${item.SKU}</td>
+                    <td class="p-3 text-slate-600">${item.Description}</td>
+                    <td class="p-3 text-center">${item.SOH}</td>
+                    <td class="p-3 text-center w-24">${isPrint ? item.Recount : `<input type="number" value="${item.Recount}" class="w-full text-center p-1.5 border border-slate-300 rounded-md"/>`}</td>
+                    <td class="p-3 font-bold text-center">${item.FinalDiff > 0 ? '+' : ''}${item.FinalDiff}</td>
+                    <td class="p-3 text-slate-600">${item.ReasonFinal || 'N/A'}</td>
+                    <td class="p-3 w-40">${isPrint ? (item.Remark || '') : `<input type="text" value="${item.Remark || ''}" class="w-full p-1.5 border border-slate-300 rounded-md"/>`}</td>
+                </tr>`;
             }
 
             function getRowVisuals(diff, isDemo = false) {
@@ -2432,8 +2478,24 @@ def analyze_image_quality(image_data_base64):
                 finalSummaryData = summary; // Save for JSON export
                 finalSummaryData.netDiffCost = summary.overCost + summary.shortCost;
 
+                // Always show dashboard section, but hide charts in print if Net Diff Qty is 0
+                const dashboardSection = document.getElementById('dashboard-summary-section');
+                if (dashboardSection) {
+                    dashboardSection.classList.toggle('print-summary-only', (summary.overQty + summary.shortQty) === 0);
+                    dashboardSection.style.display = '';
+                }
                 summaryEl.innerHTML = `<h4 class="font-semibold text-center mb-1 text-slate-700">Report Summary</h4><div class="grid grid-cols-2 gap-x-4"><div class="text-green-600"><strong>Over Qty:</strong> ${formatNumber(summary.overQty)}</div><div class="text-green-600"><strong>Over Cost:</strong> ${formatNumber(summary.overCost)}</div><div class="text-red-600"><strong>Short Qty:</strong> ${formatNumber(summary.shortQty)}</div><div class="text-red-600"><strong>Short Cost:</strong> ${formatNumber(summary.shortCost)}</div><div class="col-span-2 border-t pt-1 mt-1"></div><div class="text-blue-600"><strong>Total Counted Qty:</strong> ${formatNumber(summary.totalCountedQty)}</div><div class="text-blue-600"><strong>Total Counted Cost:</strong> ${formatNumber(summary.totalCountedCost)}</div><div class="font-bold col-span-2 border-t pt-1 mt-1"></div><div class="font-bold"><strong>Net Diff Qty:</strong> ${formatNumber(summary.overQty + summary.shortQty)}</div><div class="font-bold"><strong>Net Diff Cost:</strong> ${formatNumber(finalSummaryData.netDiffCost)}</div></div>`;
             }
+
+            window.addEventListener('beforeprint', function() {
+                forcePrintMode = true;
+                applyFinalReportView(); // Re-render table in print mode
+            });
+            window.addEventListener('afterprint', function() {
+                forcePrintMode = false;
+                applyFinalReportView(); // Re-render table back to input mode
+                const dashboardSection = document.getElementById('dashboard-summary-section');
+            });
 
             function renderFinalReportCharts() {
                 if (!state.reconciledData.length) return;
@@ -2454,7 +2516,9 @@ def analyze_image_quality(image_data_base64):
             function exportFinalReport() {
                 if (!state.reconciledData.length) return showModal("Info", "No data to export.");
                 const dataToExport = state.reconciledData.map(item => ({ SKU: item.SKU, Description: item.Description, Age: item.Age, SRP: item.Price, SOH: item.SOH, Scan: item.Scan1, Recount: item.Recount, FinalDiff: item.FinalDiff, Remark: item.Remark || '', Reason: item.ReasonFinal, }));
-                downloadFile(Papa.unparse(dataToExport, { header: true }), `${state.countDate}_${state.branchName.replace(/\s+/g, '_')}_Report.csv`);
+                // Add UTF-8 BOM
+                const csv = '\uFEFF' + Papa.unparse(dataToExport, { header: true });
+                downloadFile(csv, `${state.countDate}_${state.branchName.replace(/\s+/g, '_')}_Report.csv`);
             }
 
             function exportStockCountToJSON() {
@@ -2913,8 +2977,28 @@ def analyze_image_quality(image_data_base64):
                 closeFloatingScanner();
             };const processScannedCode = (code, reason) => {
                 const scannedText = code.toUpperCase();
+                // Use processed SKU list for matching
+                const validSkus = getAllValidSkus();
                 // Try direct match
                 let item = state.demoMaster.find(i => i.SKU === scannedText);
+                // Try matching against all valid SKUs using your matching algorithms
+                if (!item) {
+                    const matchingAlgorithms = [
+                        (sku, scanned) => scanned === sku,
+                        (sku, scanned) => scanned === sku.replace(/^S/, ''),
+                        (sku, scanned) => scanned.includes(sku),
+                        (sku, scanned) => sku.includes(scanned),
+                    ];
+                    for (const sku of validSkus) {
+                        for (const algorithm of matchingAlgorithms) {
+                            if (algorithm(sku, scannedText)) {
+                                item = state.demoMaster.find(i => i.SKU === sku);
+                                if (item) break;
+                            }
+                        }
+                        if (item) break;
+                    }
+                }
                 // If not found, try with 'S' prefix
                 if (!item) item = state.demoMaster.find(i => i.SKU === 'S' + scannedText);
                 // If not found, try with 'CS' prefix  
@@ -3540,10 +3624,31 @@ def analyze_image_quality(image_data_base64):
                 if (finalScanCooldown[code] && now - finalScanCooldown[code] < 2000) return;
                 finalScanCooldown[code] = now;
                 processFinalScannedCode(code, 'Barcode');
-            }            function processFinalScannedCode(code, reason) {
+            }            
+            
+            function processFinalScannedCode(code, reason) {
                 const scannedText = code.toUpperCase();
+                // Use processed SKU list for matching
+                const validSkus = getAllValidSkus();
                 // Try direct match
                 let item = state.reconciledData.find(i => i.SKU === scannedText);
+                if (!item) {
+                    const matchingAlgorithms = [
+                        (sku, scanned) => scanned === sku,
+                        (sku, scanned) => scanned === sku.replace(/^S/, ''),
+                        (sku, scanned) => scanned.includes(sku),
+                        (sku, scanned) => sku.includes(scanned),
+                    ];
+                    for (const sku of validSkus) {
+                        for (const algorithm of matchingAlgorithms) {
+                            if (algorithm(sku, scannedText)) {
+                                item = state.reconciledData.find(i => i.SKU === sku);
+                                if (item) break;
+                            }
+                        }
+                        if (item) break;
+                    }
+                }
                 // If not found, try with 'S' prefix
                 if (!item) item = state.reconciledData.find(i => i.SKU === 'S' + scannedText);
                 // If not found, try with 'CS' prefix  
