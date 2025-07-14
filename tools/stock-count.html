@@ -232,6 +232,16 @@
             pointer-events: none;
         }
 
+        /* Left align Report Summary header */
+        #final-summary h4,
+        #dashboard-summary-section h4,
+        #dashboard-summary-section h3 {
+            font-size: 1.2rem !important;
+            text-align: left !important;
+            margin-left: 0 !important;
+            justify-content: flex-start !important;
+        }
+
         /* Print Styles */
         @media print {
             body {
@@ -323,7 +333,64 @@
                 display: block !important;
                 page-break-after: avoid;
             }
+            #info-box-container {
+                display: block !important;
+                background: #f7f7f7 !important;      /* light gray background */
+                border: 1.5px solid #888 !important; /* classic gray border */
+                border-radius: 0 !important;         /* no rounded corners */
+                padding: 1.2rem 1rem !important;
+                margin-bottom: 1.5rem !important;
+                box-sizing: border-box !important;
+                text-align: inherit !important;
+            }
+            #info-box-container .flex {
+                display: flex !important;
+                flex-direction: row !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                width: 100% !important;
+                gap: 2rem !important;
+                text-align: left !important;
+            }
+            #info-box-container strong,
+            #info-box-container span {
+                font-size: 1rem !important;
+                color: #222 !important;
+            }
+            #final-report-container > .bg-white {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+            .table-container {
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            #final-summary {
+                padding-left: 16px !important; /* or 1rem, adjust as needed */
+                padding-right: 16px !important;
+            }
+            #final-summary h4 {
+                border-bottom: 2px dashed #888 !important;
+                padding-bottom: 0.25em !important;
+                margin-bottom: 0.75em !important;
+            }
+            #print-page-header {
+                display: block !important;
+                page-break-after: avoid;
+                margin-bottom: 1.5rem;
+            }
+            .max-w-4xl, .container {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+            body {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
         }
+
         @media screen {
             .print-legal-section { display: none !important; }
         }
@@ -331,6 +398,19 @@
 </head>
 <body class="bg-slate-50 text-slate-800">
     <div class="max-w-4xl mx-auto">
+
+    <!-- === PAGE HEADER FOR PRINT (FIRST PAGE ONLY) === -->
+    <div id="print-page-header" style="display:none;">
+        <div style="width:100%; display:flex; justify-content:space-between; align-items:flex-start; font-size:1.1rem; margin-bottom:1.5rem;">
+            <div style="font-weight:bold;">Operation Audit</div>
+            <div style="text-align:right;">
+                <div style="font-weight:bold;">SPVi Public Company Limited</div>
+                <div style="font-size:0.95rem;">3rd Floor, Premier Place Building</div>
+                <div style="font-size:0.95rem;">Bangkok 10250</div>
+            </div>
+        </div>
+    </div>
+    <!-- END PAGE HEADER -->
 
     <!-- Loading Overlay -->
     <div id="loader-overlay" class="overlay hidden no-print">
