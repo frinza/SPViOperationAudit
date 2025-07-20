@@ -273,61 +273,240 @@
                 box-shadow: none !important;
                 margin: 0 !important;
             }
-            
-            /* Ensure print header section has minimal spacing */
-            .print-header-section {
-                margin: 0 !important;
-                padding: 0 !important;
-                height: 60px !important; /* Reduce header height */
-            }
-              /* Fix table container to eliminate wrapper spacing */
             .table-container {
                 max-height: none !important;
-                overflow: visible !important;
-                page-break-inside: avoid;
+                height: auto !important; /* Override any fixed height */
+                overflow: visible !important; /* Critical: no scrolling in print */
+                overflow-y: visible !important; /* Critical: no scrolling in print */
+                page-break-inside: auto !important;
                 margin: 0 !important; /* Remove all margins */
                 padding: 0 !important; /* Remove all padding */
                 border: none !important; /* Remove container border */
                 background: transparent !important;
+                break-inside: auto !important;
             }
-            
-            /* Add proper top margin to table for header clearance */
+              /* Add proper top margin to table for header clearance */
             .table-container table {
                 margin-top: 80px !important; /* Space for fixed header */
-            }table {
+            }            /* Enhanced table styling with consistent borders and reliable page breaks */
+            table {
                 width: 100% !important;
-                border-collapse: separate !important;
+                border-collapse: collapse !important;
                 border-spacing: 0 !important;
-                page-break-inside: auto;
+                page-break-inside: auto !important; /* Allow table to break across pages */
                 border: 1px solid #000 !important;
-            }
+                margin-bottom: 10pt !important;
+                /* Remove any constraints that prevent page breaking */
+                max-height: none !important;
+                height: auto !important;
+            }            /* Ensure table headers repeat on every page - Enhanced approach */
             thead {
-                display: table-header-group;
+                display: table-header-group !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                /* Legacy browser support */
+                -webkit-region-break-inside: avoid !important;
+                -webkit-column-break-inside: avoid !important;
+                -moz-page-break-inside: avoid !important;
+                -o-page-break-inside: avoid !important;
+                /* Additional properties for better header repetition */
+                position: static !important;
+                z-index: auto !important;
+                /* Force header group behavior */
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
+              /* Force header repetition with additional CSS properties */
+            thead th {
+                /* Override any sticky positioning that might interfere */
+                position: static !important;
+                top: auto !important;
+                z-index: auto !important;
+                /* Ensure headers are treated as part of table structure */
+                display: table-cell !important;
+                vertical-align: middle !important;
+            }
+            
+            /* Header row integrity */
+            thead tr {
+                display: table-row !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                -webkit-region-break-inside: avoid !important;
+                -webkit-column-break-inside: avoid !important;
+            }
+            
+            /* Override screen sticky headers in print mode */
+            th {
+                position: static !important;
+                top: auto !important;
+                z-index: auto !important;
+                background-color: #f1f5f9 !important;
+                font-weight: bold !important;
+                text-align: center !important;
+                border-bottom: 2px solid #000 !important;
+                break-after: avoid !important;
+                page-break-after: avoid !important;
+                cursor: default !important;
+            }
+            
             tbody {
-                display: table-row-group;
-            }
+                display: table-row-group !important;
+                page-break-inside: auto !important; /* Allow tbody to break */
+                /* Remove any height constraints */
+                max-height: none !important;
+                height: auto !important;
+            }              /* Consistent cell borders and spacing */
             th, td {
-                border-right: 1px solid #000 !important;
-                border-bottom: 1px solid #000 !important;
+                border: 1px solid #000 !important;
                 padding: 4px 8px !important;
                 background: #fff !important;
                 color: #000 !important;
-                page-break-inside: avoid;
-                page-break-after: auto;
+                vertical-align: top !important;
+                text-align: left !important;
+                /* CRITICAL: Prevent individual cell breaking */
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                -webkit-region-break-inside: avoid !important;
+                -webkit-column-break-inside: avoid !important;
             }
+              /* Center align specific columns (numbers, counts, etc.) */
+            td:nth-child(1), /* NO. */
+            td:nth-child(4), /* SRP */
+            td:nth-child(5), /* SOH */
+            td:nth-child(6), /* Final Count / Counted */
+            td:nth-child(7), /* Final Diff / Diff */
+            th:nth-child(1),
+            th:nth-child(4),
+            th:nth-child(5),
+            th:nth-child(6),
+            th:nth-child(7) {
+                text-align: center !important;
+            }            /* STRENGTHENED row break controls - Keep rows together */
+            tr {
+                page-break-inside: avoid !important; /* Prevent row from splitting */
+                break-inside: avoid !important; /* CSS3 equivalent */
+                -webkit-region-break-inside: avoid !important; /* Webkit */
+                -webkit-column-break-inside: avoid !important; /* Webkit columns */
+                /* Remove conflicting constraints */
+                height: auto !important;
+                max-height: none !important;
+                /* Additional constraints to force row integrity */
+                display: table-row !important;
+                vertical-align: baseline !important;
+            }
+            
+            /* Specific tbody row controls - FORCE rows to stay together */
+            tbody tr {
+                /* CRITICAL: Keep entire row together - MAXIMUM STRENGTH */
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                -webkit-region-break-inside: avoid !important;
+                -webkit-column-break-inside: avoid !important;
+                /* Legacy browser support */
+                -moz-page-break-inside: avoid !important;
+                -o-page-break-inside: avoid !important;
+                
+                /* Allow breaks between rows but NOT inside rows */
+                page-break-after: auto !important;
+                page-break-before: auto !important;
+                break-after: auto !important;
+                break-before: auto !important;
+                -webkit-region-break-after: auto !important;
+                -webkit-column-break-after: auto !important;
+                -webkit-region-break-before: auto !important;
+                -webkit-column-break-before: auto !important;
+                
+                /* Remove orphan/widow constraints that might force breaking */
+                orphans: unset !important;
+                widows: unset !important;
+                
+                /* Force structural integrity */
+                display: table-row !important;
+                position: relative !important;
+                z-index: 1 !important;
+            }
+              /* Individual cell controls to support row integrity */
+            td {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                -webkit-region-break-inside: avoid !important;
+                -webkit-column-break-inside: avoid !important;
+                /* Legacy browser support */
+                -moz-page-break-inside: avoid !important;
+                -o-page-break-inside: avoid !important;
+                /* Structural integrity */
+                display: table-cell !important;
+                vertical-align: top !important;
+                position: relative !important;
+            }
+            
+            /* Header cells - ensure they stick with their table structure */
             th {
-                background: #f1f5f9 !important;
-                font-weight: bold !important;
-                border-bottom: 2px solid #000 !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                -webkit-region-break-inside: avoid !important;
+                -webkit-column-break-inside: avoid !important;
+                /* Legacy browser support */
+                -moz-page-break-inside: avoid !important;
+                -o-page-break-inside: avoid !important;
+                /* Structural integrity */
+                display: table-cell !important;
+                vertical-align: middle !important;
+                position: relative !important;
             }
-            /* Clean table borders */
-            tr:first-child th:first-child,
-            tr:first-child td:first-child {
-                border-left: 1px solid #000 !important;
+            
+            /* Only keep first row with header to avoid orphaned headers */
+            tbody tr:first-child {
+                break-before: avoid !important;
+                page-break-before: avoid !important;
             }
-            tr:last-child td {
-                border-bottom: 1px solid #000 !important;
+              /* Ensure consistent table border all around */
+            table, table th, table td {
+                border-color: #000 !important;
+                border-style: solid !important;
+            }            /* Additional page break optimization for large tables */
+            table tbody tr:nth-child(10n) {
+                page-break-after: auto !important; /* Encourage breaks every 10 rows */
+            }
+            
+            /* Simplified cross-browser page break support - Table level only */
+            table {
+                -webkit-region-break-inside: auto;
+                -webkit-column-break-inside: auto;
+                break-inside: auto;
+                page-break-inside: auto;
+            }
+            
+            /* Header group support */
+            thead {
+                -webkit-region-break-inside: avoid;
+                -webkit-column-break-inside: avoid;
+                break-inside: avoid;
+                page-break-inside: avoid;
+                display: table-header-group;
+            }
+            
+            /* Note: tbody tr rules are now handled above in the strengthened section */
+              /* Prevent very long tables from being forced to single page */
+            .table-container {
+                page-break-inside: auto !important;
+                break-inside: auto !important;
+            }
+            
+            /* Force all scrollable containers to flow naturally in print */
+            div[style*="overflow"], 
+            div[style*="max-height"],
+            .overflow-auto,
+            .overflow-y-auto,
+            .max-h-screen,
+            .h-60,
+            .h-64,
+            .h-72,
+            .h-80 {
+                max-height: none !important;
+                height: auto !important;
+                overflow: visible !important;
             }.bg-white, .bg-slate-50, .bg-slate-100, .bg-slate-200, .bg-blue-100, .bg-green-100, .bg-red-100, .bg-amber-50 {
                 background: #fff !important;
                 border: none !important;
@@ -373,24 +552,62 @@
                 margin: 0 !important;
                 z-index: 999 !important;
                 page-break-after: avoid !important;
-            }
-            
-            /* Add proper table page breaks */
+            }            /* Enhanced table page break controls - PRIORITIZE row integrity */
             .table-container table {
                 page-break-before: auto !important;
                 page-break-after: auto !important;
+                page-break-inside: auto !important; /* Allow table to break across pages */
+                break-inside: auto !important; /* CSS3 equivalent */
+                margin-bottom: 10pt !important;
+                /* Force table to use natural document flow */
+                position: static !important;
+                display: table !important;
+                /* Remove all height constraints */
+                max-height: none !important;
+                height: auto !important;
+            }
+            
+            /* Simplified tbody controls - SUPPORT row integrity */
+            .table-container tbody {
                 page-break-inside: auto !important;
+                break-inside: auto !important;
+                /* Remove height constraints */
+                max-height: none !important;
+                height: auto !important;
             }
             
+            /* CRITICAL: Table container row controls - FORCE row integrity */
             .table-container tbody tr {
-                page-break-inside: avoid !important;
+                /* This reinforces the global tbody tr rules above */
+                page-break-inside: avoid !important; /* NEVER break inside rows */
+                break-inside: avoid !important;
+                -webkit-region-break-inside: avoid !important;
+                -webkit-column-break-inside: avoid !important;
+                
+                /* Allow natural breaks between complete rows */
                 page-break-after: auto !important;
+                page-break-before: auto !important;
             }
             
-            /* Force page break before new sections */
+            /* Keep header rows intact */
+            .table-container thead,
+            .table-container thead tr,
+            .table-container thead th {
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+              /* Ensure section breaks work properly */
             .table-container + .bg-white {
                 page-break-before: always !important;
                 margin-top: 20pt !important;
+            }
+            
+            /* Consistent page margins with print-header.css */
+            @page {
+                margin: 0mm 15mm 18mm 15mm !important;
+                size: A4 portrait !important;
             }
               /* Hide elements from print - including charts and buttons */
             .no-print, #loader-overlay, #modal-container, #camera-view-box, #file-ops-container, 
@@ -470,18 +687,11 @@
                 display: block !important; 
                 page-break-before: always; 
             }
-            
-            /* Remove unnecessary spacing and padding from containers */
+              /* Ensure proper page margins - remove duplicate @page rule */
             .space-y-8 > *:not(:first-child), 
             .space-y-4 > *:not(:first-child) {
                 margin-top: 10pt !important;
-            }
-            
-            /* Ensure proper page margins */
-            @page {
-                margin: 1in 0.75in 1in 0.75in;
-                size: A4;
-            }        }
+            }}
         @media screen {
             .print-legal-section { display: none !important; }
         }
