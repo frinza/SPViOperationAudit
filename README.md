@@ -1,27 +1,30 @@
 # 🎯 SPVi Operations Audit Toolkit
 
-> A comprehensive web-based application for operational auditing and branch management with Firebase authentication and user management.
+> A comprehensive web-based application for operational auditing and branch management with Firebase authentication, user management, and professional print-optimized reporting.
 
 [![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange)](https://firebase.google.com/)
 [![Authentication](https://img.shields.io/badge/Auth-Firebase%20Auth-blue)](https://firebase.google.com/products/auth)
 [![Language](https://img.shields.io/badge/Language-Thai%20%2F%20English-green)](https://fonts.google.com/specimen/Sarabun)
 [![Mobile](https://img.shields.io/badge/Mobile-Responsive-brightgreen)](https://tailwindcss.com/)
+[![Print](https://img.shields.io/badge/Print-Optimized-purple)](https://github.com/)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success)](https://github.com/)
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
+- [Recent Updates](#recent-updates)
 - [Getting Started](#getting-started)
 - [Firebase Setup](#firebase-setup)
 - [Deployment](#deployment)
 - [Available Tools](#available-tools)
+- [Print System](#print-system)
 - [User Management](#user-management)
 - [Security](#security)
 - [Troubleshooting](#troubleshooting)
 
 ## 🚀 Overview
 
-The SPVi Operations Audit Toolkit is a modern, responsive web application for operational teams to streamline audit processes, inventory management, and branch oversight. Built with Firebase for secure authentication and real-time data management.
+The SPVi Operations Audit Toolkit is a modern, responsive web application for operational teams to streamline audit processes, inventory management, and branch oversight. Built with Firebase for secure authentication and real-time data management, featuring professional print-optimized reporting for official documentation.
 
 ### ✨ Key Features
 
@@ -32,7 +35,28 @@ The SPVi Operations Audit Toolkit is a modern, responsive web application for op
 - 🛡️ **Security First** - Role-based permissions and secure data handling
 - 🎨 **Modern UI** - Clean, professional interface
 - 📊 **7 Specialized Tools** - Comprehensive audit and management tools
+- 🖨️ **Professional Print System** - Optimized print layouts for official reports
 - ⚡ **Production Ready** - Optimized and deployment-ready
+
+## 🆕 Recent Updates
+
+### Print System Enhancements (July 2025)
+**✅ Complete Print CSS Overhaul**
+
+- **🎯 Professional Print Layouts**: Optimized spacing, margins, and typography for official documentation
+- **📋 Enhanced Table Formatting**: Consistent borders, proper page breaks, and header repetition across pages  
+- **📝 Input Value Display**: Final Count and Remark fields now display correctly in printed reports
+- **🏢 Global Print Headers**: Standardized company headers with division branding across all tools
+- **📄 Cross-Browser Compatibility**: Consistent print output in Chrome, Safari, and Firefox
+- **⚡ Zero Performance Impact**: Print optimizations only affect print output, not screen performance
+
+### Key Print Improvements:
+- ✅ Eliminated excessive blank space in print layouts
+- ✅ Fixed table header repetition on multi-page reports  
+- ✅ Resolved header collision issues with content
+- ✅ Standardized table borders to professional 1px consistency
+- ✅ Enhanced page break handling for table rows
+- ✅ Professional spacing optimization (reduced from 100px+ to 50px top margin)
 
 ## 📁 Project Structure
 
@@ -44,7 +68,9 @@ SPViOperationAudit/
 ├── 📄 firebase-auth.js                 # 🔐 Core authentication system
 │
 ├── 📁 styles/
-│   └── 📄 spvi-main.css               # 🎨 Centralized stylesheet
+│   ├── 📄 spvi-main.css               # 🎨 Centralized stylesheet
+│   ├── 📄 print-header.css            # 🖨️ Global print header system
+│   └── 📄 print-legal.css             # 📄 Legal section print formatting
 │
 ├── 📁 tools/                          # 🛠️ Audit Tools (7 total)
 │   ├── 📄 stock-count.html            # 📦 Inventory counting
@@ -248,6 +274,67 @@ const firebaseConfig = {
 - Mitigation tracking
 - Risk reporting dashboard
 
+## 🖨️ Print System
+
+### Professional Print Features
+
+The SPVi toolkit includes a comprehensive print system designed for official audit documentation:
+
+**🏢 Global Print Headers**
+- Standardized company information on all printed reports
+- Division branding (Operation Audit Division)
+- Consistent header positioning across all tools
+- Only visible in print output (hidden on screen)
+
+**📋 Enhanced Table Formatting**
+- Professional table borders with consistent 1px styling
+- Table headers automatically repeat on subsequent pages
+- Intelligent page break handling to keep table rows intact
+- Optimized column spacing and alignment
+
+**📝 Input Value Display**
+- Final Count and Remark input fields display correctly in print
+- Data attributes preserve values during print process
+- Clean formatting with proper alignment and styling
+- Automatic cleanup after print completion
+
+**📄 Layout Optimization**
+- Minimal top spacing (50px) for efficient page usage
+- Proper margin settings for A4 paper format
+- Eliminated header collision issues with content
+- Professional typography using Sarabun font
+
+### Print System Architecture
+
+**Files:**
+- `styles/print-header.css` - Global print header system
+- `styles/print-legal.css` - Legal section formatting
+- Individual tool CSS - Tool-specific print enhancements
+
+**JavaScript Integration:**
+- `handlePrintReport()` function in stock-count tool
+- Data attribute management for input values
+- Clean separation between screen and print styles
+
+**Browser Compatibility:**
+- ✅ Chrome/Edge: Full functionality with header repetition
+- ✅ Safari: Compatible with table headers repeating properly  
+- ✅ Firefox: Page breaks function correctly
+
+### Usage Instructions
+
+1. **Load data** in any tool (e.g., Stock Count)
+2. **Enter values** in input fields as needed
+3. **Click "Print Report"** button
+4. **Verify in print preview:**
+   - Professional header with company information
+   - Complete table borders and proper spacing
+   - Input values visible and properly formatted
+   - Headers repeat on multiple pages
+   - No content collisions or excessive spacing
+
+**Result**: Professional, audit-ready documentation suitable for official reporting.
+
 ## 👥 User Management
 
 ### Admin Features
@@ -326,6 +413,13 @@ For technical support:
 © 2025 SPVi Operations Audit. All Rights Reserved.
 
 **System Status**: ✅ Production Ready  
-**Version**: 2.0  
+**Version**: 2.1 (Print System Enhanced)  
+**Last Updated**: July 2025
+
+### Recent Enhancements
+- 🖨️ **Complete Print System Overhaul** - Professional print layouts for all tools
+- 📋 **Enhanced Table Formatting** - Headers repeat, consistent borders, intelligent page breaks
+- 🏢 **Global Print Headers** - Standardized company branding across all printed reports
+- 📱 **Cross-Browser Print Compatibility** - Consistent output in all modern browsers
 
 Built with ❤️ for operational excellence.

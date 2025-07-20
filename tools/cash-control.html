@@ -16,6 +16,9 @@
     
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="../styles/spvi-main.css">
+    <link rel="stylesheet" href="../styles/print-legal.css">
+    <!-- Global Print Header -->
+    <link rel="stylesheet" href="../styles/print-header.css">
     <style>
         body {
             font-family: 'Sarabun', sans-serif;
@@ -53,34 +56,32 @@
                 min-height: 297mm;
                 margin: 0 auto;
                 padding: 0;
-                background: #fff;
+                background: #fff !important;
                 font-family: 'TH SarabunPSK', 'TH Sarabun New', 'Sarabun', 'Times New Roman', Times, serif !important;
                 color: #222 !important;
             }
-            @page {
-                size: A4 portrait;
-                margin: 18mm 12mm 18mm 12mm;
-            }
+            /* Global page margins controlled by print-header.css */
             body { 
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
                 font-size: 9pt !important;
                 line-height: 1.6 !important;
+                background: #fff !important;
             }
             .no-print { display: none !important; }
             .print-wrapper {
                 max-width: 100% !important;
                 padding: 0 !important;
                 margin: 0 !important;
-                border: 2px solid #222 !important;
+                border: none !important;
                 box-shadow: none !important;
                 background: #fff !important;
             }
             .print-container { 
                 max-width: 100% !important; 
                 box-shadow: none !important; 
-                border: 1px solid #bbb !important; 
-                border-radius: 0.5rem !important;
+                border: none !important; 
+                border-radius: 0 !important;
                 padding: 0.8rem 1.2rem !important;
                 margin-bottom: 1rem !important;
                 background: #fff !important;
@@ -127,25 +128,11 @@
             .border-t, .border-t-2, .border-b, .border-dashed, .border-gray-400, .border-gray-300, .border-gray-700, .border-gray-800 {
                 border-color: #222 !important;
             }
-            .certification {
-                border: 1.5px solid #222 !important;
-                border-radius: 0.5rem !important;
-                background: #f7f7f7 !important;
-                color: #222 !important;
-                font-size: 9pt !important;
-                margin: 2rem 0 1.5rem 0 !important;
-                padding: 1.2rem 1rem !important;
-            }
-            .signature-section {
-                margin-top: 2.5rem !important;
-                padding-top: 2rem !important;
-                border-top: 2px dashed #222 !important;
-                font-size: 9pt !important;
-            }
+            /* Legal section styling handled by global print-legal.css */
             #print-appendix {
                 page-break-before: auto !important;
                 break-before: auto !important;
-                margin-top: 1.5rem;
+                margin-top: 1rem;
             }
             .appendix-item {
                 break-inside: avoid-page !important;
@@ -213,17 +200,15 @@
             }
             .align-top { vertical-align: top !important; }
         }
+        
+        /* Enhanced collision fix is now in global print-legal.css */
     </style>
 </head>
-<body class="bg-gray-100 p-4 md:p-8">
-    <div class="max-w-4xl mx-auto print-wrapper">
-        <!-- Print Header  -->
-        <div class="print-header print-only" style="display:none;">
-            รายงานการตรวจสอบเงินสด (Cash Control Audit Report)<br>
-            ฝ่ายตรวจสอบปฏิบัติการ (Operation Audit) / SPVi Public Company Limited
-        </div>
- 
-        <!-- Headers -->
+<body class="p-4 md:p-8 logged-in">
+    <!-- Global Print Header Section -->
+    <div class="print-header-section"></div>
+    
+    <div class="max-w-full mx-auto px-4 md:px-6 lg:px-8 print-wrapper">
         <header class="text-center mb-6 no-print">
             <h1 class="text-3xl font-bold text-gray-800">ระบบตรวจนับเงินสด</h1>
             <p class="text-gray-600 mt-1">(Cash Control)</p>
@@ -378,29 +363,33 @@
             </div>
         </div>
 
-        <!-- Legal Declaration (before Signature Section) -->
-        <div class="print-only certification text-center my-8"
-             style="font-size: 11pt; padding: 2rem;">
-            ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องตามที่ตรวจสอบและเป็นความจริงทุกประการ<br>
-            <span style="font-size:10pt; color:#444;">
-                (I hereby certify that the information in this report is accurate and true to the best of my knowledge.)
-            </span>
-        </div>
-
-        <!-- Signature Section -->
-        <div class="max-w-5xl mx-auto mt-12 pt-12 border-t-2 border-dashed border-gray-400 print-only signature-section">
-            <div class="grid grid-cols-2 gap-8 text-center" style="font-size: 11pt;">
-                <div>
-                    <div style="height: 2.5rem;"></div> <!-- Add space before signature line -->
-                    <p class="mb-1">ลงชื่อ .................................................</p>
-                    <p>(ผู้ตรวจสอบ / Auditor)</p>
-                    <p class="mt-4">วันที่: ........ / ................ / ............</p>
+        <!-- Legal Declaration and Signature Section (print only) -->
+        <div class="print-legal-section">
+            <div class="legal-certification">
+                ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องตามที่ตรวจสอบและเป็นความจริงทุกประการ
+                <div class="english-text">
+                    (I hereby certify that the information in this report is accurate and true to the best of my knowledge.)
                 </div>
-                <div>
-                    <div style="height: 2.5rem;"></div> <!-- Add space before signature line -->
-                    <p class="mb-1">ลงชื่อ .................................................</p>
-                    <p>(ผู้รับการตรวจสอบ / Auditee)</p>
-                    <p class="mt-4">วันที่: ........ / ................ / ............</p>
+            </div>
+            
+            <div class="signature-section">
+                <div class="signature-container">
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div class="signature-name">ลงชื่อ .................................................</div>
+                        <div class="signature-title">(ผู้ตรวจสอบ / Auditor)</div>
+                        <div class="signature-date">
+                            วันที่: <span class="signature-date-line"></span> / <span class="signature-date-line"></span> / <span class="signature-date-line"></span>
+                        </div>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div class="signature-name">ลงชื่อ .................................................</div>
+                        <div class="signature-title">(ผู้รับการตรวจสอบ / Auditee)</div>
+                        <div class="signature-date">
+                            วันที่: <span class="signature-date-line"></span> / <span class="signature-date-line"></span> / <span class="signature-date-line"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -776,104 +765,6 @@
             calculateAll();
         });
 
-        // Custom toast for shortcut blocking
-        function showDevtoolsToast(message) {
-            let toast = document.getElementById('devtools-toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'devtools-toast';
-                toast.style.position = 'fixed';
-                toast.style.bottom = '2rem';
-                toast.style.left = '50%';
-                toast.style.transform = 'translateX(-50%)';
-                toast.style.background = '#222';
-                toast.style.color = '#fff';
-                toast.style.padding = '1rem 2rem';
-                toast.style.borderRadius = '8px';
-                toast.style.fontSize = '1rem';
-                toast.style.zIndex = '9999';
-                toast.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-                toast.style.fontFamily = "'Sarabun', 'Noto Sans Thai', sans-serif";
-                document.body.appendChild(toast);
-            }
-            toast.textContent = message;
-            toast.style.display = 'block';
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(() => { toast.style.display = 'none'; }, 2000);
-        }
-
-        // Disable right-click
-        document.addEventListener("contextmenu", function(event) {
-            event.preventDefault();
-            showDevtoolsToast("Right-click is disabled.");
-        });
-
-        // Disable specific keyboard shortcuts
-        document.addEventListener("keydown", function(event) {
-            // F12
-            if (event.key === "F12" || event.keyCode === 123) {
-                event.preventDefault();
-                showDevtoolsToast("Inspect Element is disabled.");
-            }
-            // Ctrl+Shift+I (Inspect), Ctrl+Shift+J (Console), Ctrl+U (View Source)
-            if (
-                (event.ctrlKey && event.shiftKey && (event.key.toUpperCase() === "I" || event.key.toUpperCase() === "J" || event.keyCode === 73 || event.keyCode === 74)) ||
-                (event.ctrlKey && (event.key.toUpperCase() === "U" || event.keyCode === 85))
-            ) {
-                event.preventDefault();
-                showDevtoolsToast("Developer tools access is disabled.");
-            }
-        });
-
-        // Navigation functions
-        function handleNavLogout() {
-            if (confirm('Are you sure you want to logout?')) {
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('userRole');
-                window.location.href = '../index.html';
-            }
-        }
-
-        function updateUserDisplay() {
-            const currentUser = localStorage.getItem('currentUser');
-            const userRole = localStorage.getItem('userRole');
-            const userNameElement = document.getElementById('user-name');
-            
-            if (userNameElement && currentUser) {
-                const displayName = currentUser.includes('@') ? currentUser.split('@')[0] : currentUser;
-                const roleText = userRole === 'admin' ? ' (Admin)' : '';
-                userNameElement.textContent = `${displayName}${roleText}`;
-            }
-        }
-
-        // Initialize user display when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            updateUserDisplay();
-        });
-
-        // Navigation functions
-        function handleNavLogout() {
-            if (confirm('Are you sure you want to logout?')) {
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('userRole');
-                window.location.href = '../index.html';
-            }
-        }
-
-        function updateUserDisplay() {
-            const currentUser = localStorage.getItem('currentUser');
-            const userRole = localStorage.getItem('userRole');
-            const userNameElement = document.getElementById('user-name');
-            
-            if (userNameElement && currentUser) {
-                const displayName = currentUser.includes('@') ? currentUser.split('@')[0] : currentUser;
-                const roleText = userRole === 'admin' ? ' (Admin)' : '';
-                userNameElement.textContent = `${displayName}${roleText}`;
-            }
-        }
-
         // Initialize user display when page loads
         document.addEventListener('DOMContentLoaded', async function() {
             try {
@@ -889,10 +780,10 @@
                 // Add user info to navigation
                 SPViAuth.addUserInfo();
                 
-                // Update local user display
-                updateUserDisplay();
+                // Setup centralized devtools protection
+                SPViAuth.setupDevToolsProtection();
             } catch (error) {
-                console.error('Authentication error:', error);
+                // Authentication error handled silently for production
                 // If authentication fails, redirect to login
                 window.location.href = '../index.html';
             }

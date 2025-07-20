@@ -186,7 +186,7 @@ body {
 
 /* Adjust body padding when user info bar is present */
 body.logged-in {
-    padding-top: 3rem;
+    padding-top: 4rem !important;
 }
 
 @media (max-width: 768px) {
@@ -213,7 +213,7 @@ body.logged-in {
     }
     
     body.logged-in {
-        padding-top: 4rem;
+        padding-top: 5rem !important;
     }
 }
 

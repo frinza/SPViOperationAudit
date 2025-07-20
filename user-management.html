@@ -454,7 +454,7 @@
                 updateStats();
                 renderUsers();
             } catch (error) {
-                console.error('Error loading users:', error);
+                // Error loading users handled silently for production
                 showToast('Error loading users: ' + error.message, 'error');
             }
         }
@@ -480,7 +480,7 @@
                 container.innerHTML = `
                     <div class="text-center py-12">
                         <svg class="w-12 h-12 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
                         <p class="text-slate-500">ไม่พบผู้ใช้งาน</p>
                     </div>
@@ -584,7 +584,7 @@
                 showToast(`User status updated to ${status}`, 'success');
                 await refreshUsers();
             } catch (error) {
-                console.error('Error updating user status:', error);
+                // Error updating user status handled silently for production
                 showToast('Error updating user status: ' + error.message, 'error');
             }
         }
@@ -633,7 +633,7 @@
                 closeEditModal();
                 await refreshUsers();
             } catch (error) {
-                console.error('Error updating user:', error);
+                // Error updating user handled silently for production
                 showToast('Error updating user: ' + error.message, 'error');
             }
         });
@@ -674,7 +674,7 @@
                 showToast('Password updated successfully', 'success');
                 closePasswordModal();
             } catch (error) {
-                console.error('Error updating password:', error);
+                // Error updating password handled silently for production
                 showToast('Error updating password: ' + error.message, 'error');
             }
         });
@@ -715,7 +715,7 @@
                 showToast('เปลี่ยนรหัสผ่าน Admin สำเร็จ', 'success');
                 closeAdminPasswordModal();
             } catch (error) {
-                console.error('Error changing admin password:', error);
+                // Error changing admin password handled silently for production
                 if (error.message.includes('Current password is incorrect')) {
                     showToast('รหัสผ่านปัจจุบันไม่ถูกต้อง', 'error');
                 } else {
@@ -738,7 +738,7 @@
                 showToast('User deleted successfully', 'success');
                 await refreshUsers();
             } catch (error) {
-                console.error('Error deleting user:', error);
+                // Error deleting user handled silently for production
                 showToast('Error deleting user: ' + error.message, 'error');
             }
         }
@@ -762,7 +762,7 @@
                 await SPViAuth.initializeFirebase();
                 await loadUsers();
             } catch (error) {
-                console.error('Initialization error:', error);
+                // Initialization error handled silently for production
                 showToast('Failed to initialize. Please check Firebase configuration.', 'error');
             }
         });

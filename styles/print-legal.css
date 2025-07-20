@@ -1,0 +1,110 @@
+/* 
+ * Global Print Legal Section CSS
+ * =================================
+ * Universal legal declaration and signature section for all SPVi audit reports
+ * Usage: Add this CSS to any HTML file that needs print legal sections
+ */
+
+/* Global Legal Section Styles */
+.print-legal-section {
+    display: none !important;
+}
+
+@media print {
+    .print-legal-section {
+        display: block !important;
+        page-break-before: always !important;
+        page-break-inside: avoid !important;
+        margin-top: 2rem !important;
+    }
+    
+    .legal-certification {
+        border: 1.5px solid #222 !important;
+        border-radius: 0.5rem !important;
+        background: #f7f7f7 !important;
+        color: #222 !important;
+        font-size: 11pt !important;
+        margin: 2rem 0 1.5rem 0 !important;
+        padding: 1.2rem 1rem !important;
+        text-align: center !important;
+        font-family: 'TH SarabunPSK', 'TH Sarabun New', 'Sarabun', 'Times New Roman', Times, serif !important;
+    }
+    
+    .legal-certification .english-text {
+        font-size: 10pt !important;
+        color: #444 !important;
+        margin-top: 0.5rem !important;
+    }
+    
+    .signature-section {
+        max-width: 600px !important;
+        margin: 2.5rem auto 0 auto !important;
+        padding-top: 0.2rem !important;
+        border-top: 2px dashed #222 !important;
+        font-size: 11pt !important;
+        font-family: 'TH SarabunPSK', 'TH Sarabun New', 'Sarabun', 'Times New Roman', Times, serif !important;
+    }
+    
+    .signature-container {
+        display: flex !important;
+        justify-content: space-between !important;
+        gap: 3rem !important;
+    }
+    
+    .signature-box {
+        text-align: center !important;
+        flex: 1 !important;
+    }
+    
+    .signature-line {
+        height: 2.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .signature-name {
+        margin-bottom: 0.5rem !important;
+        padding-bottom: 0.2rem !important;
+    }
+    
+    .signature-title {
+        margin-bottom: 1.5rem !important;
+        font-weight: normal !important;
+    }
+    
+    .signature-date {
+        margin-top: 1.5rem !important;
+    }
+    
+    .signature-date-line {
+        display: inline-block !important;
+        width: 3rem !important;
+        border-bottom: 1px solid #222 !important;
+        margin: 0 0.3rem !important;
+    }
+}
+
+@media screen {
+    .print-legal-section {
+        display: none !important;
+    }
+}
+
+/* Enhanced User Info Bar Collision Fix */
+/* Fix for top menu collision with user info bar - Global Solution */
+body.logged-in {
+    padding-top: 6rem !important;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+    body.logged-in {
+        padding-top: 7rem !important;
+    }
+}
+
+/* Extra responsive adjustments for very small screens */
+@media (max-width: 480px) {
+    body.logged-in {
+        padding-top: 8rem !important;
+    }
+}

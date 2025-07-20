@@ -1,0 +1,79 @@
+/*
+ * Global Print Header Section for SPVi Audit Tools
+ * ================================================
+ * Universal print header with company information and division branding
+ * 
+ * Usage: 
+ * 1. Add <link rel="stylesheet" href="../styles/print-header.css"> to your HTML head
+ * 2. Add <div class="print-header-section"></div> after opening body tag
+ * 3. The header will automatically appear only when printing
+ * 
+ * Features:
+ * - Company information (top right)
+ * - Division branding (top left) 
+ * - Fixed header background with border
+ * - Proper spacing for content below header
+ * - Only visible in print view
+ */
+
+@media print {
+    /* Ensure proper page setup */
+    @page {
+        margin: 0mm 12mm 18mm 0mm; /* Small top margin to work with negative header margin */
+        size: A4 portrait;
+    }
+    
+    /* Print Header Section - Only on first page */
+    .print-header-section {
+        display: block !important;
+        position: relative;
+        width: 100%;
+        height: 60px; /* Reduced from 80px to minimize header space */
+        margin: -20mm -12mm 0.2rem 5mm; /* Reduced negative top margin */
+        padding: 3px 30px; /* Further reduced padding */
+        background: #fff;
+        border-bottom: 2px solid #000;
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+    
+    /* Division Header - Top Left */
+    .print-header-section::before {
+        content: "Operation Audit Division\A(ฝ่ายตรวจสอบปฏิบัติการ)";
+        position: absolute;
+        top: 5px; /* Move text closer to top edge */
+        left: 0px; /* Increased left padding */
+        font-size: 10pt;
+        font-weight: bold;
+        line-height: 1.3;
+        color: #000;
+        white-space: pre-line;
+    }
+    
+    /* Company Header - Top Right */
+    .print-header-section::after {
+        content: "บริษัท เอส พี วี ไอ จำกัด (มหาชน)\A 1550/5 อาคารธนิยะ พลาซ่า ชั้น 12A ถนนเพลินจิต\A แขวงลุมพินี เขตปทุมวัน กรุงเทพมหานคร 10330\A โทร. 0-2658-8881 แฟกซ์ 0-2658-8870\A";
+        position: absolute;
+        top: 5px; /* Move text closer to top edge */
+        right: 0px; /* Increased right padding */
+        font-size: 8pt;
+        line-height: 1.3;
+        white-space: pre-line;
+        text-align: right;
+        font-weight: normal;
+        max-width: 300px;
+        color: #000;
+    }
+    
+    /* Remove body padding since header is now in document flow */
+    body {
+        padding-top: 0 !important;
+    }
+}
+
+@media screen {
+    /* Hide header section on screen */
+    .print-header-section {
+        display: none !important;
+    }
+}

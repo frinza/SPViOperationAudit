@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="th">
-<head>
+<html l        .comparison-removed { background-color: #fee2e2; }
+
+        /* Enhanced collision fix is now in global print-legal.css */
+    </style>d>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เครื่องมือเปรียบเทียบรายงาน</title>
@@ -16,14 +18,32 @@
     
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="../styles/spvi-main.css">
+    <link rel="stylesheet" href="../styles/print-legal.css">
+    <!-- Global Print Header -->
+    <link rel="stylesheet" href="../styles/print-header.css">
     <style>
         body { font-family: 'Sarabun', sans-serif; }
         .comparison-added { background-color: #dcfce7; }
         .comparison-removed { background-color: #fee2e2; }
         .comparison-changed { background-color: #fef3c7; }
+
+        /* Fix for top menu collision with user info bar */
+        body.logged-in {
+            padding-top: 4rem !important;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            body.logged-in {
+                padding-top: 5rem !important;
+            }
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-50 text-slate-800 logged-in">
+    <!-- Global Print Header Section -->
+    <div class="print-header-section"></div>
+    
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
             <h1 class="text-4xl font-bold text-slate-900">เครื่องมือเปรียบเทียบรายงาน</h1>
@@ -175,81 +195,60 @@
         resultsContainer.innerHTML = html;
     }
 
-    // Custom toast for shortcut blocking
-    function showDevtoolsToast(message) {
-        let toast = document.getElementById('devtools-toast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'devtools-toast';
-            toast.style.position = 'fixed';
-            toast.style.bottom = '2rem';
-            toast.style.left = '50%';
-            toast.style.transform = 'translateX(-50%)';
-            toast.style.background = '#222';
-            toast.style.color = '#fff';
-            toast.style.padding = '1rem 2rem';
-            toast.style.borderRadius = '8px';
-            toast.style.fontSize = '1rem';
-            toast.style.zIndex = '9999';
-            toast.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-            toast.style.fontFamily = "'Sarabun', 'Noto Sans Thai', sans-serif";
-            document.body.appendChild(toast);
-        }
-        toast.textContent = message;
-        toast.style.display = 'block';
-        clearTimeout(toast._timeout);
-        toast._timeout = setTimeout(() => { toast.style.display = 'none'; }, 2000);
-    }
-
-    // Disable right-click
-    document.addEventListener("contextmenu", function(event) {
-        event.preventDefault();
-        showDevtoolsToast("Right-click is disabled.");
-    });
-
-    // Disable specific keyboard shortcuts
-    document.addEventListener("keydown", function(event) {
-        // F12
-        if (event.key === "F12" || event.keyCode === 123) {
-            event.preventDefault();
-            showDevtoolsToast("Inspect Element is disabled.");
-        }
-        // Ctrl+Shift+I (Inspect), Ctrl+Shift+J (Console), Ctrl+U (View Source)
-        if (
-            (event.ctrlKey && event.shiftKey && (event.key.toUpperCase() === "I" || event.key.toUpperCase() === "J" || event.keyCode === 73 || event.keyCode === 74)) ||
-            (event.ctrlKey && (event.key.toUpperCase() === "U" || event.keyCode === 85))
-        ) {
-            event.preventDefault();
-            showDevtoolsToast("Developer tools access is disabled.");
-        }
-    });
-
-    // Navigation functions
-    function handleNavLogout() {
-        if (confirm('Are you sure you want to logout?')) {
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('userRole');
+    // Initialize authentication and devtools protection
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            // Initialize Firebase
+            await SPViAuth.initializeFirebase();
+            
+            // Check authentication - redirect to login if not authenticated
+            if (!SPViAuth.checkAuthentication()) {
+                window.location.href = '../index.html';
+                return;
+            }
+            
+            // Add user info to navigation
+            SPViAuth.addUserInfo();
+            
+            // Setup centralized devtools protection
+            SPViAuth.setupDevToolsProtection();
+        } catch (error) {
+            // Authentication error handled silently for production
+            // If authentication fails, redirect to login
             window.location.href = '../index.html';
         }
-    }
-
-    function updateUserDisplay() {
-        const currentUser = localStorage.getItem('currentUser');
-        const userRole = localStorage.getItem('userRole');
-        const userNameElement = document.getElementById('user-name');
-        
-        if (userNameElement && currentUser) {
-            const displayName = currentUser.includes('@') ? currentUser.split('@')[0] : currentUser;
-            const roleText = userRole === 'admin' ? ' (Admin)' : '';
-            userNameElement.textContent = `${displayName}${roleText}`;
-        }
-    }
-
-    // Initialize user display when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        updateUserDisplay();
     });
 </script>
+
+<!-- Legal Declaration and Signature Section (print only) -->
+<div class="print-legal-section">
+    <div class="legal-certification">
+        ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องตามที่ตรวจสอบและเป็นความจริงทุกประการ
+        <div class="english-text">
+            (I hereby certify that the information in this report is accurate and true to the best of my knowledge.)
+        </div>
+    </div>
+    
+    <div class="signature-section">
+        <div class="signature-container">
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <div class="signature-name">ลงชื่อ .................................................</div>
+                <div class="signature-title">(ผู้ตรวจสอบ / Auditor)</div>
+                <div class="signature-date">
+                    วันที่: <span class="signature-date-line"></span> / <span class="signature-date-line"></span> / <span class="signature-date-line"></span>
+                </div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <div class="signature-name">ลงชื่อ .................................................</div>
+                <div class="signature-title">(ผู้รับการตรวจสอบ / Auditee)</div>
+                <div class="signature-date">
+                    วันที่: <span class="signature-date-line"></span> / <span class="signature-date-line"></span> / <span class="signature-date-line"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

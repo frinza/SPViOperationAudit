@@ -16,6 +16,9 @@
     
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="../styles/spvi-main.css">
+    <link rel="stylesheet" href="../styles/print-legal.css">
+    <!-- Global Print Header -->
+    <link rel="stylesheet" href="../styles/print-header.css">
     <style>
         body { font-family: 'Sarabun', sans-serif; }
         .status-pass { border-left: 4px solid #22c55e; }
@@ -88,9 +91,14 @@
                 padding-bottom: 0.5rem !important;
             }
         }
+
+        /* Enhanced collision fix is now in global print-legal.css */
     </style>
 </head>
-<body class="bg-slate-50">
+<body class="bg-slate-50 logged-in">
+    <!-- Global Print Header Section -->
+    <div class="print-header-section"></div>
+    
     <div class="container mx-auto p-4 sm:p-6 md:p-8">
         <header class="text-center mb-6">
             <h1 class="text-4xl font-bold text-slate-800">ใบสรุปผลการตรวจสอบสาขา</h1>
@@ -172,25 +180,33 @@
             </button>
         </footer>
 
-        <!-- Legal Declaration (before Signature Section, print only) -->
-        <div class="print-only certification page-break" style="display:none;">
-            ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องตามที่ตรวจสอบและเป็นความจริงทุกประการ<br>
-            <span style="font-size:10pt; color:#444;">
-                (I hereby certify that the information in this report is accurate and true to the best of my knowledge.)
-            </span>
-        </div>
-
-        <div class="max-w-5xl mx-auto mt-12 pt-8 border-t-2 border-dashed border-gray-400 print-only signature-section">
-            <div class="grid grid-cols-2 gap-8 text-center" style="font-size: 11pt;">
-                <div>
-                    <p class="mb-2">ลงชื่อ .................................................</p>
-                    <p>(ผู้ตรวจสอบ / Auditor)</p>
-                    <p class="mt-4">วันที่: ........ / ................ / ............</p>
+        <!-- Legal Declaration and Signature Section (print only) -->
+        <div class="print-legal-section">
+            <div class="legal-certification">
+                ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องตามที่ตรวจสอบและเป็นความจริงทุกประการ
+                <div class="english-text">
+                    (I hereby certify that the information in this report is accurate and true to the best of my knowledge.)
                 </div>
-                <div>
-                    <p class="mb-2">ลงชื่อ .................................................</p>
-                    <p>(ผู้รับการตรวจสอบ / Auditee)</p>
-                    <p class="mt-4">วันที่: ........ / ................ / ............</p>
+            </div>
+            
+            <div class="signature-section">
+                <div class="signature-container">
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div class="signature-name">ลงชื่อ .................................................</div>
+                        <div class="signature-title">(ผู้ตรวจสอบ / Auditor)</div>
+                        <div class="signature-date">
+                            วันที่: <span class="signature-date-line"></span> / <span class="signature-date-line"></span> / <span class="signature-date-line"></span>
+                        </div>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div class="signature-name">ลงชื่อ .................................................</div>
+                        <div class="signature-title">(ผู้รับการตรวจสอบ / Auditee)</div>
+                        <div class="signature-date">
+                            วันที่: <span class="signature-date-line"></span> / <span class="signature-date-line"></span> / <span class="signature-date-line"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -449,76 +465,7 @@
             initialize();
         });
 
-        // Custom toast for shortcut blocking
-        function showDevtoolsToast(message) {
-            let toast = document.getElementById('devtools-toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'devtools-toast';
-                toast.style.position = 'fixed';
-                toast.style.bottom = '2rem';
-                toast.style.left = '50%';
-                toast.style.transform = 'translateX(-50%)';
-                toast.style.background = '#222';
-                toast.style.color = '#fff';
-                toast.style.padding = '1rem 2rem';
-                toast.style.borderRadius = '8px';
-                toast.style.fontSize = '1rem';
-                toast.style.zIndex = '9999';
-                toast.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-                toast.style.fontFamily = "'Sarabun', 'Noto Sans Thai', sans-serif";
-                document.body.appendChild(toast);
-            }
-            toast.textContent = message;
-            toast.style.display = 'block';
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(() => { toast.style.display = 'none'; }, 2000);
-        }
 
-        // Disable right-click
-        document.addEventListener("contextmenu", function(event) {
-            event.preventDefault();
-            showDevtoolsToast("Right-click is disabled.");
-        });
-
-        // Disable specific keyboard shortcuts
-        document.addEventListener("keydown", function(event) {
-            // F12
-            if (event.key === "F12" || event.keyCode === 123) {
-                event.preventDefault();
-                showDevtoolsToast("Inspect Element is disabled.");
-            }
-            // Ctrl+Shift+I (Inspect), Ctrl+Shift+J (Console), Ctrl+U (View Source)
-            if (
-                (event.ctrlKey && event.shiftKey && (event.key.toUpperCase() === "I" || event.key.toUpperCase() === "J" || event.keyCode === 73 || event.keyCode === 74)) ||
-                (event.ctrlKey && (event.key.toUpperCase() === "U" || event.keyCode === 85))
-            ) {
-                event.preventDefault();
-                showDevtoolsToast("Developer tools access is disabled.");
-            }
-        });
-
-        // Navigation functions
-        function handleNavLogout() {
-            if (confirm('Are you sure you want to logout?')) {
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('userRole');
-                window.location.href = '../login.html';
-            }
-        }
-
-        function updateUserDisplay() {
-            const currentUser = localStorage.getItem('currentUser');
-            const userRole = localStorage.getItem('userRole');
-            const userNameElement = document.getElementById('user-name');
-            
-            if (userNameElement && currentUser) {
-                const displayName = currentUser.includes('@') ? currentUser.split('@')[0] : currentUser;
-                const roleText = userRole === 'admin' ? ' (Admin)' : '';
-                userNameElement.textContent = `${displayName}${roleText}`;
-            }
-        }
 
         // Initialize user display when page loads
         document.addEventListener('DOMContentLoaded', async function() {
@@ -535,10 +482,10 @@
                 // Add user info to navigation
                 SPViAuth.addUserInfo();
                 
-                // Update local user display
-                updateUserDisplay();
+                // Setup centralized devtools protection
+                SPViAuth.setupDevToolsProtection();
             } catch (error) {
-                console.error('Authentication error:', error);
+                // Authentication error handled silently for production
                 // If authentication fails, redirect to login
                 window.location.href = '../index.html';
             }

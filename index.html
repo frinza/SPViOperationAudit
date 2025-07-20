@@ -440,39 +440,16 @@
                 await SPViAuth.initializeFirebase();
                 await SPViAuth.initializeDefaultAdmin();
                 
-
-                
                 // Clear any corrupted auth state first
                 clearCorruptedAuthState();
                 
                 // Then check if user is properly authenticated
                 checkAuth();
+                
+                // Setup centralized devtools protection
+                SPViAuth.setupDevToolsProtection();
             } catch (error) {
                 showToast('Firebase initialization failed. Please check configuration.', 'error');
-            }
-        });
-
-        // Disable dev tools
-        function showDevtoolsToast(message) {
-            showToast(message, 'warning');
-        }
-
-        document.addEventListener("contextmenu", function(event) {
-            event.preventDefault();
-            showDevtoolsToast("Right-click is disabled.");
-        });
-
-        document.addEventListener("keydown", function(event) {
-            if (event.key === "F12" || event.keyCode === 123) {
-                event.preventDefault();
-                showDevtoolsToast("Inspect Element is disabled.");
-            }
-            if (
-                (event.ctrlKey && event.shiftKey && (event.key.toUpperCase() === "I" || event.key.toUpperCase() === "J" || event.keyCode === 73 || event.keyCode === 74)) ||
-                (event.ctrlKey && (event.key.toUpperCase() === "U" || event.keyCode === 85))
-            ) {
-                event.preventDefault();
-                showDevtoolsToast("Developer tools access is disabled.");
             }
         });
     </script>

@@ -70,6 +70,45 @@
         return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
+    function showDevtoolsToast(message) {
+        let toast = document.getElementById('devtools-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'devtools-toast';
+            toast.style.cssText = `
+                position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+                background: #222; color: #fff; padding: 1rem 2rem; border-radius: 8px;
+                font-size: 1rem; z-index: 9999; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
+            `;
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.style.display = 'block';
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => { toast.style.display = 'none'; }, 2000);
+    }
+
+    // Setup dev tools protection
+    function setupDevToolsProtection() {
+        document.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            showDevtoolsToast("Right-click is disabled.");
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "F12" || e.keyCode === 123) {
+                e.preventDefault();
+                showDevtoolsToast("Inspect Element is disabled.");
+            }
+            if ((e.ctrlKey && e.shiftKey && (e.key.toUpperCase() === "I" || e.key.toUpperCase() === "J")) ||
+                (e.ctrlKey && e.key.toUpperCase() === "U")) {
+                e.preventDefault();
+                showDevtoolsToast("Developer tools access is disabled.");
+            }
+        });
+    }
+
     function hashPassword(password) {
         // Simple hash for demo - in production, use proper server-side hashing
         let hash = 0;
@@ -467,6 +506,9 @@
 
         document.body.insertBefore(userInfoBar, document.body.firstChild);
         document.body.style.paddingTop = '3rem';
+        
+        // Add logged-in class for proper CSS styling
+        document.body.classList.add('logged-in');
 
         // Add event listeners
         document.getElementById('spvi-logout-btn').addEventListener('click', function() {
@@ -511,6 +553,8 @@
         checkAuthentication: checkAuth, // Alias for compatibility
         logout: function() {
             clearCurrentUser();
+            // Remove logged-in class when logging out
+            document.body.classList.remove('logged-in');
             redirectToLogin();
         },
 
@@ -532,6 +576,10 @@
         
         // UI functions
         addUserInfo,
+        
+        // Utility functions
+        showDevtoolsToast,
+        setupDevToolsProtection,
 
         // Firebase config management
         setFirebaseConfig: function(config) {

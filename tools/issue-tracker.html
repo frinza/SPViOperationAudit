@@ -16,6 +16,9 @@
     
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="../styles/spvi-main.css">
+    <link rel="stylesheet" href="../styles/print-legal.css">
+    <!-- Global Print Header -->
+    <link rel="stylesheet" href="../styles/print-header.css">
     <style>
         body { font-family: 'Sarabun', sans-serif; }
         .modal-backdrop {
@@ -29,9 +32,39 @@
         }
         tr.is-new { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { background-color: #eff6ff; } to { background-color: white; } }
+
+        /* Status-based row colors */
+        .status-pending {
+            background-color: #fef2f2; /* red-50 */
+            border-left: 4px solid #ef4444; /* red-500 */
+        }
+        .status-pending:hover {
+            background-color: #fecaca; /* red-100 */
+        }
+        
+        .status-in-progress {
+            background-color: #fefce8; /* yellow-50 */
+            border-left: 4px solid #eab308; /* yellow-500 */
+        }
+        .status-in-progress:hover {
+            background-color: #fef3c7; /* yellow-100 */
+        }
+        
+        .status-completed {
+            background-color: #f0fdf4; /* green-50 */
+            border-left: 4px solid #22c55e; /* green-500 */
+        }
+        .status-completed:hover {
+            background-color: #dcfce7; /* green-100 */
+        }
+
+        /* Enhanced collision fix is now in global print-legal.css */
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800">  
+<body class="bg-slate-50 text-slate-800 logged-in">  
+    <!-- Global Print Header Section -->
+    <div class="print-header-section"></div>
+    
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
             <h1 class="text-4xl font-bold text-slate-900">ระบบติดตามประเด็น (Issue Tracker)</h1>
@@ -129,7 +162,7 @@
                 renderIssues();
                 showStatus('Data loaded successfully.', false);
             } catch (error) {
-                console.error('Error loading data:', error);
+                // Error loading data handled silently for production
                 issueListEl.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500">Failed to load data: ${error.message}</td></tr>`;
                 showStatus(`Load failed: ${error.message}`, true);
             }
@@ -177,7 +210,24 @@
             }
             filteredIssues.forEach(issue => {
                 const row = document.createElement('tr');
-                row.className = issue.isNew ? "hover:bg-slate-50 is-new" : "hover:bg-slate-50";
+                
+                // Determine status class for row coloring
+                let statusClass = '';
+                switch(issue.status) {
+                    case 'รอดำเนินการ':
+                        statusClass = 'status-pending';
+                        break;
+                    case 'กำลังแก้ไข':
+                        statusClass = 'status-in-progress';
+                        break;
+                    case 'เสร็จสิ้น':
+                        statusClass = 'status-completed';
+                        break;
+                }
+                
+                // Apply base classes and status-specific class
+                const baseClasses = issue.isNew ? "hover:bg-slate-50 is-new" : "hover:bg-slate-50";
+                row.className = `${baseClasses} ${statusClass}`.trim();
                 delete issue.isNew;
                 row.innerHTML = `
                     <td class="px-4 py-4 whitespace-nowrap font-medium text-slate-800">${issue.branch || ''}</td>
@@ -282,6 +332,30 @@
                 const field = target.dataset.field || (target.classList.contains('status-select') ? 'status' : null);
                 if(field) {
                   issue[field] = target.value;
+                  
+                  // Update row styling immediately when status changes
+                  if(field === 'status') {
+                      const row = target.closest('tr');
+                      // Remove existing status classes
+                      row.classList.remove('status-pending', 'status-in-progress', 'status-completed');
+                      
+                      // Add new status class
+                      let statusClass = '';
+                      switch(target.value) {
+                          case 'รอดำเนินการ':
+                              statusClass = 'status-pending';
+                              break;
+                          case 'กำลังแก้ไข':
+                              statusClass = 'status-in-progress';
+                              break;
+                          case 'เสร็จสิ้น':
+                              statusClass = 'status-completed';
+                              break;
+                      }
+                      if(statusClass) {
+                          row.classList.add(statusClass);
+                      }
+                  }
                 }
             }
             clearTimeout(debounceTimer);
@@ -309,76 +383,7 @@
         });
     </script>
     <script>
-        // Custom toast for shortcut blocking
-        function showDevtoolsToast(message) {
-            let toast = document.getElementById('devtools-toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'devtools-toast';
-                toast.style.position = 'fixed';
-                toast.style.bottom = '2rem';
-                toast.style.left = '50%';
-                toast.style.transform = 'translateX(-50%)';
-                toast.style.background = '#222';
-                toast.style.color = '#fff';
-                toast.style.padding = '1rem 2rem';
-                toast.style.borderRadius = '8px';
-                toast.style.fontSize = '1rem';
-                toast.style.zIndex = '9999';
-                toast.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-                toast.style.fontFamily = "'Sarabun', 'Noto Sans Thai', sans-serif";
-                document.body.appendChild(toast);
-            }
-            toast.textContent = message;
-            toast.style.display = 'block';
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(() => { toast.style.display = 'none'; }, 2000);
-        }
 
-        // Disable right-click
-        document.addEventListener("contextmenu", function(event) {
-            event.preventDefault();
-            showDevtoolsToast("Right-click is disabled.");
-        });
-
-        // Disable specific keyboard shortcuts
-        document.addEventListener("keydown", function(event) {
-            // F12
-            if (event.key === "F12" || event.keyCode === 123) {
-                event.preventDefault();
-                showDevtoolsToast("Inspect Element is disabled.");
-            }
-            // Ctrl+Shift+I (Inspect), Ctrl+Shift+J (Console), Ctrl+U (View Source)
-            if (
-                (event.ctrlKey && event.shiftKey && (event.key.toUpperCase() === "I" || event.key.toUpperCase() === "J" || event.keyCode === 73 || event.keyCode === 74)) ||
-                (event.ctrlKey && (event.key.toUpperCase() === "U" || event.keyCode === 85))
-            ) {
-                event.preventDefault();
-                showDevtoolsToast("Developer tools access is disabled.");
-            }
-        });
-
-        // Navigation functions
-        function handleNavLogout() {
-            if (confirm('Are you sure you want to logout?')) {
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('userRole');
-                window.location.href = '../login.html';
-            }
-        }
-
-        function updateUserDisplay() {
-            const currentUser = localStorage.getItem('currentUser');
-            const userRole = localStorage.getItem('userRole');
-            const userNameElement = document.getElementById('user-name');
-            
-            if (userNameElement && currentUser) {
-                const displayName = currentUser.includes('@') ? currentUser.split('@')[0] : currentUser;
-                const roleText = userRole === 'admin' ? ' (Admin)' : '';
-                userNameElement.textContent = `${displayName}${roleText}`;
-            }
-        }
 
         // Initialize user display when page loads
         document.addEventListener('DOMContentLoaded', async function() {
@@ -395,14 +400,45 @@
                 // Add user info to navigation
                 SPViAuth.addUserInfo();
                 
-                // Update local user display
-                updateUserDisplay();
+                // Setup centralized devtools protection
+                SPViAuth.setupDevToolsProtection();
             } catch (error) {
-                console.error('Authentication error:', error);
+                // Authentication error handled silently for production
                 // If authentication fails, redirect to login
                 window.location.href = '../index.html';
             }
         });
     </script>
+
+    <!-- Legal Declaration and Signature Section (print only) -->
+    <div class="print-legal-section">
+        <div class="legal-certification">
+            ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องตามที่ตรวจสอบและเป็นความจริงทุกประการ
+            <div class="english-text">
+                (I hereby certify that the information in this report is accurate and true to the best of my knowledge.)
+            </div>
+        </div>
+        
+        <div class="signature-section">
+            <div class="signature-container">
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-name">ลงชื่อ .................................................</div>
+                    <div class="signature-title">(ผู้ตรวจสอบ / Auditor)</div>
+                    <div class="signature-date">
+                        วันที่: <span class="signature-date-line"></span> / <span class="signature-date-line"></span> / <span class="signature-date-line"></span>
+                    </div>
+                </div>
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-name">ลงชื่อ .................................................</div>
+                    <div class="signature-title">(ผู้รับการตรวจสอบ / Auditee)</div>
+                    <div class="signature-date">
+                        วันที่: <span class="signature-date-line"></span> / <span class="signature-date-line"></span> / <span class="signature-date-line"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
