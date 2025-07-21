@@ -76,7 +76,6 @@ SPViOperationAudit/
 ├── 📄 dashboard.html                   # 🏠 Main dashboard
 ├── 📄 user-management.html             # 👥 Admin user management
 ├── 📄 firebase-auth.js                 # 🔐 Core authentication system
-├── 📄 sample_master.csv               # 📋 Sample data file for testing
 │
 ├── 📁 styles/
 │   ├── 📄 spvi-main.css               # 🎨 Centralized stylesheet
