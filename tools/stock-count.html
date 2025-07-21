@@ -763,8 +763,8 @@
         </div>
 
         <div id="upload-container" class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 mb-8 no-print">
-             <h2 class="text-2xl font-semibold mb-2 text-slate-800">ขั้นตอนที่ 1: อัปโหลดไฟล์ SOH</h2>
-            <p class="mb-6 text-slate-500">อัปโหลดไฟล์ Stock on Hand (.xlsx หรือ .csv).</p>
+             <h2 class="text-2xl font-semibold mb-2 text-slate-800">ขั้นตอนที่ 1: อัพโหลดไฟล์ SOH</h2>
+            <p class="mb-6 text-slate-500">อัพโหลดไฟล์ Stock on Hand (.xlsx หรือ .csv).</p>
             <label for="initialSohFile" class="custom-file-input w-full rounded-xl flex flex-col items-center justify-center text-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-slate-400 mb-2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -881,14 +881,39 @@
                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                                  ดาวน์โหลด Master.csv
                              </button>
-                         </div>
-                         <div id="wf-step2" class="workflow-step hidden">
+                         </div>                         <div id="wf-step2" class="workflow-step hidden">
                              <h3 class="text-lg font-semibold text-slate-700">กระทบยอดรอบที่ 1</h3>
-                             <p class="text-slate-500 mb-4">อัปโหลด Logfile จากสแกนเนอร์ (ข้อมูล DEMO จะถูกรวมอัตโนมัติ)</p>
-                             <div>
+                             <p class="text-slate-500 mb-4">อัพโหลด Logfile จากสแกนเนอร์ หรือ Master.csv (ข้อมูล DEMO จะถูกรวมอัตโนมัติ)</p>
+                             
+                             <!-- File Type Selection -->
+                             <div class="mb-4">
+                                 <label class="block text-sm font-medium text-slate-700 mb-2">เลือกประเภทไฟล์:</label>
+                                 <div class="flex gap-4">
+                                     <label class="flex items-center">
+                                         <input type="radio" name="countFileType" value="logfile" checked class="mr-2" />
+                                         <span>Logfile (จากสแกนเนอร์)</span>
+                                     </label>
+                                     <label class="flex items-center">
+                                         <input type="radio" name="countFileType" value="master" class="mr-2" />
+                                         <span>Master.csv</span>
+                                     </label>
+                                 </div>
+                             </div>
+
+                             <!-- Logfile Upload (default) -->
+                             <div id="logfile-upload" class="mb-4">
                                  <label for="firstScanLogfile" class="block mb-2 font-medium text-slate-700">Logfile (จากสแกนเนอร์)</label>
                                  <input type="file" id="firstScanLogfile" accept=".csv" multiple class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100 border border-slate-300 rounded-lg" />
+                                 <p class="text-xs text-slate-500 mt-1">รูปแบบ: คอลัมน์ 3=Part No., คอลัมน์ 5=จำนวน</p>
                              </div>
+
+                             <!-- Master.csv Upload -->
+                             <div id="master-upload" class="mb-4 hidden">
+                                 <label for="firstMasterFile" class="block mb-2 font-medium text-slate-700">Master.csv</label>
+                                 <input type="file" id="firstMasterFile" accept=".csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-blue-300 rounded-lg" />
+                                 <p class="text-xs text-slate-500 mt-1">รูปแบบ: คอลัมน์ 1=Part No., คอลัมน์ 2=Name, คอลัมน์ 6=Actual Qty (เฉพาะรายการที่ qty > 0 เท่านั้น)</p>
+                             </div>
+
                              <button id="processFirstCount" class="inline-flex items-center gap-2 mt-4 bg-violet-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-violet-700 transition-colors shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed" disabled>
                                  ประมวลผลต่าง
                              </button>
@@ -896,20 +921,38 @@
                                  <h4 class="font-semibold text-slate-700 mb-4">สรุปผลการนับรอบที่ 1:</h4>
                                  <div id="netdiff-summary-container"></div>
                              </div>
-                         </div>
-                         <div id="wf-step3" class="workflow-step hidden">
+                         </div>                         <div id="wf-step3" class="workflow-step hidden">
                              <h3 class="text-lg font-semibold text-slate-700">สรุปผลและดำเนินการต่อ</h3>
                              <p class="text-slate-500 mb-4">สรุปผลทันที หรือนับซ้ำรายการที่ไม่ได้ตรวจนับ</p>
+                             
+                             <!-- Sales Data Upload Section -->
+                             <div class="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                                 <h4 class="text-md font-semibold text-orange-800 mb-2">🔄 อัพโหลดข้อมูลยอดขายระหว่างการนับ (Optional)</h4>                                 <p class="text-sm text-orange-700 mb-3">
+                                     อัพโหลดไฟล์ยอดขายที่เกิดขึ้นระหว่างการนับสต็อกเพื่อติดตามและบันทึกการขายในช่วงนั้น
+                                 </p>
+                                 <div class="space-y-3">
+                                     <div>
+                                         <label for="salesDataFile" class="block mb-2 text-sm font-medium text-orange-800">Sales Data (.xlsx)</label>
+                                         <input type="file" id="salesDataFile" accept=".xlsx,.xls" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-100 file:text-orange-800 hover:file:bg-orange-200 border border-orange-300 rounded-lg" />
+                                         <p class="text-xs text-orange-600 mt-1">รูปแบบ: นำเข้าไฟล์ RD020.. เพื่ออัพเดทยอดขาย</p>
+                                     </div>
+                                     <button id="processSalesData" class="bg-orange-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors shadow-sm text-sm disabled:bg-slate-400 disabled:cursor-not-allowed" disabled>
+                                         ประมวลผลข้อมูลยอดขาย
+                                     </button>
+                                     <div id="sales-processing-results" class="hidden mt-4 p-3 bg-white border border-orange-200 rounded text-sm"></div>
+                                 </div>
+                             </div>
+
                              <button id="finalizeFromFirstCount" class="w-full inline-flex items-center justify-center gap-2 bg-teal-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-teal-700 transition-colors shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed">
                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
                                  </svg>
-                                 แสดงรายงานสรุป (จากยอดนับรอบที่ 1)
+                                 แสดงรายงานสรุป (ตรวจนับรอบที่ 1)
                              </button>
                              <div class="mt-6 pt-6 border-t border-slate-200">
                                  <h4 class="text-md font-semibold text-slate-600">หรือ (Optional) ทำการนับซ้ำ</h4>
                                  <p class="text-slate-500 mb-4 text-sm">
-                                     หากมีการขายสินค้าระหว่างการนับ ให้อัปเดต SOH ล่าสุดก่อนสร้างไฟล์นับซ้ำ เพื่อความแม่นยำ
+                                     หากมีการขายสินค้าระหว่างการนับ ให้อัพเดต SOH ล่าสุดก่อนสร้างไฟล์นับซ้ำ
                                  </p>
 
                                  <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg mb-4">
@@ -923,7 +966,7 @@
                                      สร้าง Master File สำหรับนับซ้ำ
                                  </button>
                                  <div>
-                                     <label for="secondScanLogfile" class="block mb-2 text-sm font-medium text-slate-700">อัปโหลด Logfile จากการนับซ้ำ</label>
+                                     <label for="secondScanLogfile" class="block mb-2 text-sm font-medium text-slate-700">อัพโหลด Logfile จากการนับซ้ำ</label>
                                      <input type="file" id="secondScanLogfile" accept=".csv" multiple class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100 border border-slate-300 rounded-lg" />
                                  </div>
                                  <button id="processSecondCount" class="inline-flex items-center gap-2 mt-4 bg-sky-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-sky-700 transition-colors shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed">
@@ -989,7 +1032,7 @@
                             </select>
                         </div>
                         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 mb-8 no-print">
-                            <h3 class="text-xl font-semibold text-slate-800 mb-4">Scan to Search in Final Report</h3>
+                            <h3 class="text-xl font-semibold text-slate-800 mb-4">เปิดกล้องเพื่อสแกนสินค้า</h3>
                             <div class="flex flex-col md:flex-row gap-4">
                                 <div class="relative flex-1">
                                     <button id="final-openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm mb-2">
@@ -2369,22 +2412,125 @@ def calculate_serial_sku_score(text, pattern_type):
                 } else {
                     getEl('info-box-container').classList.add('hidden');
                 }
-            }
-
-            function resetAppState() {
+            }            function resetAppState() {
+                // Destroy existing charts
                 Object.values(state.charts).forEach(chart => chart?.destroy());
+                
+                // Reset application state
                 state = getInitialState();
                 hasUnsavedChanges = false;
-            }
-
-            function resetUI() {
+                finalSummaryData = {};
+                
+                // Reset scanner-related variables
+                lastScannedText = null;
+                scanHistory = [];
+                currentScannerMode = 'barcode';
+                currentScannerContext = 'demo';
+                floatingOcrStreaming = false;
+                
+                // Clear OCR streaming if active
+                if (floatingOcrStreamInterval) {
+                    clearInterval(floatingOcrStreamInterval);
+                    floatingOcrStreamInterval = null;
+                }
+                
+                // Reset floating scanner settings
+                floatingOcrSettings = {
+                    confidence: 60,
+                    preprocessing: 'enhanced',
+                    speed: 800
+                };
+            }function resetUI() {
+                // Hide/show main containers
                 getEl('workspace-container').classList.add('hidden');
                 getEl('final-report-container').classList.add('hidden');
                 getEl('upload-container').classList.remove('hidden');
-                ['initialSohFile', 'firstScanLogfile', 'secondScanLogfile', 'latestSohFile'].forEach(id => getEl(id).value = '');
+                
+                // Clear all file inputs
+                ['initialSohFile', 'firstScanLogfile', 'secondScanLogfile', 'latestSohFile', 'salesDataFile', 'firstMasterFile'].forEach(id => {
+                    const el = getEl(id);
+                    if (el) el.value = '';
+                });
+                
+                // Reset file name displays
                 getEl('initialSohFileName').textContent = '(.xlsx, .csv)';
                 getEl('latestSohFileName').textContent = '';
+                
+                // Hide info box and result containers
                 getEl('info-box-container').classList.add('hidden');
+                getEl('step2-results').classList.add('hidden');
+                getEl('sales-processing-results').classList.add('hidden');                // Clear result container contents
+                getEl('netdiff-summary-container').innerHTML = '';
+                getEl('demo-count-container').innerHTML = '';
+                getEl('demo-summary').innerHTML = '';
+                getEl('final-report-table-container').innerHTML = '';
+                getEl('final-summary').innerHTML = '';
+                
+                // Clear floating scanner results
+                const floatingResults = getEl('floating-scanner-results');
+                if (floatingResults) floatingResults.innerHTML = '';
+                
+                // Close floating scanner if open
+                const floatingScanner = getEl('floating-scanner');
+                if (floatingScanner && floatingScanner.classList.contains('active')) {
+                    closeFloatingScanner();
+                }
+                
+                // Reset button states
+                getEl('downloadMasterForScan').disabled = true;
+                getEl('processFirstCount').disabled = true;
+                getEl('finalizeFromFirstCount').disabled = true;
+                getEl('generateRecountMasterFile').disabled = true;
+                getEl('processSecondCount').disabled = true;
+                getEl('processSalesData').disabled = true;
+                getEl('latestSohFile').disabled = true;
+                
+                // Reset radio button selections
+                const logfileRadio = document.querySelector('input[name="countFileType"][value="logfile"]');
+                if (logfileRadio) logfileRadio.checked = true;
+                
+                // Show/hide upload sections based on default radio selection
+                getEl('logfile-upload').classList.remove('hidden');
+                getEl('master-upload').classList.add('hidden');
+                
+                // Reset search inputs
+                const demoSearchInput = getEl('demoSearchInput');
+                if (demoSearchInput) demoSearchInput.value = '';
+                const finalSearchInput = getEl('finalSearchInput');
+                if (finalSearchInput) finalSearchInput.value = '';
+                
+                // Reset filter selects
+                const demoFilterSelect = getEl('demoFilterSelect');
+                if (demoFilterSelect) demoFilterSelect.value = 'all';
+                const finalFilterSelect = getEl('finalFilterSelect');
+                if (finalFilterSelect) finalFilterSelect.value = 'all';
+                
+                // Reset main tabs to demo view
+                const demoTab = getEl('main-tab-demo');
+                const workflowTab = getEl('main-tab-workflow');
+                if (demoTab && workflowTab) {
+                    demoTab.classList.add('active');
+                    workflowTab.classList.remove('active');
+                    getEl('main-panel-demo').classList.remove('hidden');
+                    getEl('main-panel-workflow').classList.add('hidden');
+                }
+                  // Reset workflow step tabs to step 1
+                document.querySelectorAll('#wf-step-tabs .tab-button').forEach(btn => btn.classList.remove('active'));
+                getEl('wf-tab-btn-1').classList.add('active');
+                document.querySelectorAll('.workflow-step').forEach(div => div.classList.add('hidden'));
+                getEl('wf-step1').classList.remove('hidden');
+                
+                // Reset OCR controls to default values
+                const confidenceSlider = getEl('floating-confidence-slider');
+                const confidenceValue = getEl('floating-confidence-value');
+                const preprocessingSelect = getEl('floating-preprocessing-select');
+                if (confidenceSlider) {
+                    confidenceSlider.value = '60';
+                    if (confidenceValue) confidenceValue.textContent = '60%';
+                }
+                if (preprocessingSelect) {
+                    preprocessingSelect.value = 'enhanced';
+                }
             }
             
             function setUnsavedChanges(status){
@@ -2465,8 +2611,7 @@ def calculate_serial_sku_score(text, pattern_type):
                 reader.readAsText(file);
                 e.target.value = '';
             }
-            
-            function parseExcelFile(file) {
+              function parseExcelFile(file) {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = (e) => {
@@ -2474,6 +2619,79 @@ def calculate_serial_sku_score(text, pattern_type):
                             const workbook = XLSX.read(e.target.result, { type: 'array' });
                             resolve(XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]));
                         } catch (err) { reject(err); }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsArrayBuffer(file);
+                });
+            }            function parseSalesExcelFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const workbook = XLSX.read(e.target.result, { 
+                                type: 'array',
+                                cellStyles: false,
+                                cellNF: false,
+                                cellDates: false
+                            });
+                            
+                            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                            
+                            // Step 1: Unmerge all cells by expanding merged cell values
+                            // Get the range of the worksheet
+                            const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
+                            
+                            // Process merged cells if they exist
+                            if (worksheet['!merges']) {
+                                worksheet['!merges'].forEach(merge => {
+                                    // Get the value from the top-left cell of the merged range
+                                    const topLeftCell = XLSX.utils.encode_cell({r: merge.s.r, c: merge.s.c});
+                                    const mergedValue = worksheet[topLeftCell] ? worksheet[topLeftCell].v : '';
+                                    
+                                    // Fill all cells in the merged range with the same value
+                                    for (let row = merge.s.r; row <= merge.e.r; row++) {
+                                        for (let col = merge.s.c; col <= merge.e.c; col++) {
+                                            const cellAddr = XLSX.utils.encode_cell({r: row, c: col});
+                                            if (!worksheet[cellAddr]) {
+                                                worksheet[cellAddr] = { t: 's', v: mergedValue };
+                                            }
+                                        }
+                                    }
+                                });
+                                // Remove merge information
+                                delete worksheet['!merges'];
+                            }
+                            
+                            // Step 2: Convert to JSON array (this gives us all rows)
+                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+                                header: 1, // Use array format instead of object format
+                                defval: '', // Default value for empty cells
+                                raw: false // Convert values to strings
+                            });
+                            
+                            // Step 3: Remove top 5 rows
+                            const dataAfterTopRemoval = jsonData.slice(5);
+                            
+                            // Step 4: Remove blank rows from bottom
+                            // Find the last row that has meaningful content
+                            let lastMeaningfulRowIndex = -1;
+                            for (let i = dataAfterTopRemoval.length - 1; i >= 0; i--) {
+                                const row = dataAfterTopRemoval[i];
+                                if (row && row.some(cell => cell && String(cell).trim() !== '')) {
+                                    lastMeaningfulRowIndex = i;
+                                    break;
+                                }
+                            }
+                            
+                            // Trim the array to remove blank rows from bottom
+                            const cleanedData = lastMeaningfulRowIndex >= 0 
+                                ? dataAfterTopRemoval.slice(0, lastMeaningfulRowIndex + 1)
+                                : [];
+                            
+                            resolve(cleanedData);
+                        } catch (err) { 
+                            reject(err); 
+                        }
                     };
                     reader.onerror = reject;
                     reader.readAsArrayBuffer(file);
@@ -2748,15 +2966,70 @@ def calculate_serial_sku_score(text, pattern_type):
                 const rowsForCsv = scanRows.map(item => [item.SKU, item.Description, item.Price, item.Age, item.SOH]);
                 downloadFile(Papa.unparse(rowsForCsv, { header: false }), 'Master_for_Scan.csv');
             }
-            
-            async function processFirstCount() {
+              async function processFirstCount() {
                 showLoader('Processing First Count...');
                 try {
-                    const logFiles = getEl('firstScanLogfile').files;
-                    if (!state.sohData.length || !logFiles.length) throw new Error("Please upload SOH and Logfile(s).");
-                    const scanCounts = await (async function(files){ const p = Array.from(files).map(f => new Promise((res, rej) => { Papa.parse(f, { skipEmptyLines: true, complete: r => { const d = r.data.map(row => { if(!row || row.length < 3 || !row[2]) return null; const sku = String(row[2]).trim(); const qty = parseInt(String(row[4] ?? 1).replace(/,/g,''), 10); return {sku, qty: isNaN(qty) ? 1: qty};}).filter(Boolean); res(d); }, error: rej}); })); return Promise.all(p).then(r => r.flat()); })(logFiles);
+                    const fileType = document.querySelector('input[name="countFileType"]:checked').value;
+                    let scanCounts = [];
+
+                    if (fileType === 'logfile') {
+                        // Process logfile format (existing logic)
+                        const logFiles = getEl('firstScanLogfile').files;
+                        if (!state.sohData.length || !logFiles.length) throw new Error("Please upload SOH and Logfile(s).");
+                        scanCounts = await (async function(files){ 
+                            const p = Array.from(files).map(f => new Promise((res, rej) => { 
+                                Papa.parse(f, { 
+                                    skipEmptyLines: true, 
+                                    complete: r => { 
+                                        const d = r.data.map(row => { 
+                                            if(!row || row.length < 3 || !row[2]) return null; 
+                                            const sku = String(row[2]).trim(); 
+                                            const qty = parseInt(String(row[4] ?? 1).replace(/,/g,''), 10); 
+                                            return {sku, qty: isNaN(qty) ? 1: qty};
+                                        }).filter(Boolean); 
+                                        res(d); 
+                                    }, 
+                                    error: rej
+                                }); 
+                            })); 
+                            return Promise.all(p).then(r => r.flat()); 
+                        })(logFiles);
+                    } else if (fileType === 'master') {
+                        // Process master.csv format (new logic)
+                        const masterFile = getEl('firstMasterFile').files[0];
+                        if (!state.sohData.length || !masterFile) throw new Error("Please upload SOH and Master.csv file.");
+                        scanCounts = await new Promise((resolve, reject) => {
+                            Papa.parse(masterFile, {
+                                skipEmptyLines: true,
+                                complete: result => {                                    try {                                        const data = result.data.map(row => {
+                                            if (!row || row.length < 6 || !row[0]) return null;
+                                            const sku = String(row[0]).trim(); // Column 1: Part No.
+                                            const qty = parseInt(String(row[5] || '0').replace(/,/g, ''), 10); // Column 6: Actual Qty
+                                            // Only include items that were actually counted (qty > 0)
+                                            if (isNaN(qty) || qty <= 0) return null;
+                                            return { sku, qty };
+                                        }).filter(Boolean);
+                                        resolve(data);
+                                    } catch (error) {
+                                        reject(error);
+                                    }
+                                },
+                                error: reject
+                            });
+                        });
+                    }
+
                     const processedCounts = {};
-                    for(const item of scanCounts){ const {sku, qty} = item; const isSerial = state.sohLookup[sku] ? state.sohLookup[sku].isSerialControlled : false; if(isSerial){ if(!processedCounts[sku]) processedCounts[sku] = {qty: 1, reason: 'Scanned Serial'};} else { const currentQty = processedCounts[sku] ? processedCounts[sku].qty : 0; processedCounts[sku] = {qty: currentQty + qty, reason: 'Scanned SKU'};}}
+                    for(const item of scanCounts){ 
+                        const {sku, qty} = item; 
+                        const isSerial = state.sohLookup[sku] ? state.sohLookup[sku].isSerialControlled : false; 
+                        if(isSerial){ 
+                            if(!processedCounts[sku]) processedCounts[sku] = {qty: 1, reason: fileType === 'master' ? 'Master Count' : 'Scanned Serial'};
+                        } else { 
+                            const currentQty = processedCounts[sku] ? processedCounts[sku].qty : 0; 
+                            processedCounts[sku] = {qty: currentQty + qty, reason: fileType === 'master' ? 'Master Count' : 'Scanned SKU'};
+                        }
+                    }
                     const combinedCounts = { ...processedCounts, ...state.demoCounts };
                     const netDiffMap = new Map(Object.values(state.sohLookup).filter(item => item.SOH > 0).map(item => [item.SKU, { ...item, Scan1: 0, Reason1: '' }]));
                     for (const [sku, data] of Object.entries(combinedCounts)) {
@@ -2778,7 +3051,7 @@ def calculate_serial_sku_score(text, pattern_type):
                     getEl('generateRecountMasterFile').disabled = false;
                     getEl('latestSohFile').disabled = false;
                     setUnsavedChanges(true);
-                    showModal("Success", "First count processed successfully.");
+                    showModal("Success", `First count processed successfully using ${fileType === 'master' ? 'Master.csv' : 'Logfile'} format.`);
                 } catch (error) {
                     showModal("Error", `Processing failed: ${error.message}`);
                 } finally {
@@ -2790,9 +3063,7 @@ def calculate_serial_sku_score(text, pattern_type):
                 const summary = state.netDiffData.reduce((acc, item) => { acc.totalSOH += item.SOH; if (item.Scan1 !== 0 || item.Reason1) acc.countedSOH += item.SOH; return acc; }, { totalSOH: 0, countedSOH: 0 });
                 const uncountedSOH = summary.totalSOH - summary.countedSOH;
                 getEl('netdiff-summary-container').innerHTML = `<div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center"><div class="p-4 bg-blue-100 rounded-lg"><p class="font-medium text-blue-800">Total SOH</p><p class="text-3xl font-bold text-blue-600 mt-1">${formatNumber(summary.totalSOH)}</p></div><div class="p-4 bg-green-100 rounded-lg"><p class="font-medium text-green-800">Counted SOH</p><p class="text-3xl font-bold text-green-600 mt-1">${formatNumber(summary.countedSOH)}</p></div><div class="p-4 bg-red-100 rounded-lg"><p class="font-medium text-red-800">Uncounted SOH</p><p class="text-3xl font-bold text-red-600 mt-1">${formatNumber(uncountedSOH)}</p></div></div>`;
-            }
-
-            function finalizeFromFirstCount() {
+            }            function finalizeFromFirstCount() {
                 if (!state.netDiffData.length) return showModal("Warning", "Please process the first count (Step 2).");
                 // --- Patch: Sync latest DEMO counts before finalizing ---
                 state.netDiffData.forEach(item => {
@@ -2815,6 +3086,292 @@ def calculate_serial_sku_score(text, pattern_type):
                 getEl('final-report-container').classList.remove('hidden');
                 getEl('final-report-container').scrollIntoView({ behavior: 'smooth' });
                 setUnsavedChanges(true);
+            }            async function processSalesData() {
+                showLoader('Processing Sales Data...');
+                try {
+                    const salesFile = getEl('salesDataFile').files[0];
+                    if (!salesFile) throw new Error("Please select a sales data file.");
+
+                    const salesData = await parseSalesExcelFile(salesFile);
+                    if (!salesData?.length) throw new Error("Sales data file is empty or invalid after processing.");                    // Filter out completely empty rows (already cleaned by parseSalesExcelFile)
+                    const cleanedData = salesData.filter(row => {
+                        // Row is now an array, check if it has meaningful data
+                        return Array.isArray(row) && row.some(cell => cell && String(cell).trim() !== '');
+                    });
+
+                    if (!cleanedData.length) throw new Error("No valid sales data found after cleaning.");
+
+                    // Process sales data - extract relevant columns
+                    const processedSales = [];
+                    const salesMap = new Map(); // For aggregating by SKU
+                      cleanedData.forEach((row, index) => {
+                        try {
+                            // Row is now an array, access columns directly by index (0-based)
+                            const serial = row[53] || null; // Column 54 (Serial) -> index 53
+                            const productName = row[19] || null; // Column 20 (Product Name) -> index 19
+                            const qty = row[26] || null; // Column 27 (QTY) -> index 26
+                            const billNo = row[9] || null; // Column 10 (Bill No) -> index 9
+
+                            if (serial && qty && !isNaN(parseFloat(qty))) {
+                                // Apply the same SKU transformation as SOH processing
+                                const sku = String(serial).replace(/\./g, ' ').trim().toUpperCase();
+                                const quantity = Math.abs(parseFloat(qty)); // Use absolute value
+                                const product = String(productName || '').trim();
+                                const bill = String(billNo || '').trim();
+
+                                // Use enhanced matching to find the item in sohLookup
+                                const allSohItems = Object.values(state.sohLookup);
+                                const matchedItem = findItemByScannedText(allSohItems, sku);
+                                
+                                // Use the matched SKU if found, otherwise use the original
+                                const finalSku = matchedItem ? matchedItem.SKU : sku;
+
+                                if (salesMap.has(finalSku)) {
+                                    const existing = salesMap.get(finalSku);
+                                    existing.totalQty += quantity;
+                                    existing.bills.push(bill);
+                                } else {
+                                    salesMap.set(finalSku, {
+                                        sku: finalSku,
+                                        productName: product,
+                                        totalQty: quantity,
+                                        bills: [bill],
+                                        originalSerial: sku, // Keep track of original for debugging
+                                        matched: !!matchedItem
+                                    });
+                                }
+                            }
+                        } catch (rowError) {
+                            // Skip problematic rows silently
+                        }
+                    });
+
+                    const salesSummary = Array.from(salesMap.values());
+
+                    // Calculate matching statistics for debugging
+                    const matchedCount = salesSummary.filter(sale => sale.matched).length;
+                    const unmatchedCount = salesSummary.length - matchedCount;                    // Apply sales data to tracking - simplified approach
+                    let adjustedItems = 0;
+                    if (state.sohLookup && Object.keys(state.sohLookup).length > 0) {
+                        salesSummary.forEach(sale => {
+                            if (state.sohLookup[sale.sku]) {
+                                adjustedItems++;
+                                // Note: We no longer track SalesDuringCount in sohLookup 
+                                // as sales are directly added to final count in the processing above
+                            }
+                        });                        // Update netDiffData if it exists - enhanced sales integration with new conditions
+                        if (state.netDiffData.length > 0) {
+                            state.netDiffData.forEach(item => {
+                                const sale = salesSummary.find(s => s.sku === item.SKU);
+                                if (sale) {
+                                    const billNumbers = sale.bills.filter(bill => bill.trim() !== '').join(', ');
+                                      // Check if this item already has any count (manual, first count, or recount)
+                                    const hasExistingCount = (
+                                        // Has been manually counted
+                                        (item.ReasonFinal && (item.ReasonFinal.includes('Manual') || item.ReasonFinal.includes('Recount'))) ||
+                                        // Has been counted in first count (Scan1 > 0 or has Reason1)
+                                        (item.Scan1 > 0 || (item.Reason1 && item.Reason1.trim() !== '')) ||
+                                        // Has been recounted (Recount different from initial and not due to previous sales)
+                                        (item.Recount !== item.Scan1 && !item.ReasonFinal?.includes('Sales:')) ||
+                                        // Has any counting reason that's not sales-related
+                                        (item.ReasonFinal && !item.ReasonFinal.includes('Sales:') && item.ReasonFinal.trim() !== '')
+                                    );
+                                    
+                                    if (hasExistingCount) {
+                                        // Skip updating count, only add "sold now" to remark
+                                        const soldNowText = `sold now: ${billNumbers}`;
+                                        if (item.Remark && item.Remark.trim() !== '') {
+                                            // Remove any previous "sold now" entries before adding new one
+                                            item.Remark = item.Remark.replace(/\s*\|\s*sold now:[^|]*/g, '');
+                                            item.Remark += ` | ${soldNowText}`;
+                                        } else {
+                                            item.Remark = soldNowText;
+                                        }
+                                    } else {
+                                        // Check if this is a re-processing of sales data (overwrite mode)
+                                        const hasPreviousSales = item.ReasonFinal && item.ReasonFinal.includes('Sales:');
+                                        
+                                        if (hasPreviousSales) {
+                                            // Overwrite previous sales data instead of adding up
+                                            // First, remove previous sales count addition
+                                            const previousSalesMatch = item.ReasonFinal.match(/Sales: (\d+) units added/);
+                                            if (previousSalesMatch) {
+                                                const previousSalesQty = parseInt(previousSalesMatch[1], 10);
+                                                item.Recount = Math.max(0, item.Recount - previousSalesQty);
+                                            }
+                                            
+                                            // Remove previous sales bill numbers from remarks
+                                            if (item.Remark) {
+                                                item.Remark = item.Remark.replace(/\s*\|\s*Bills:[^|]*/g, '');
+                                                item.Remark = item.Remark.replace(/^Bills:[^|]*\s*\|\s*/, '');
+                                                item.Remark = item.Remark.replace(/^Bills:[^|]*$/, '');
+                                            }
+                                        }
+                                        
+                                        // Apply new sales data
+                                        item.Recount = (item.Recount || 0) + sale.totalQty;
+                                        item.FinalDiff = item.Recount - item.SOH;
+                                        
+                                        // Update reason to indicate sales during count
+                                        item.ReasonFinal = `Sales: ${sale.totalQty} units added`;
+                                        
+                                        // Add bill numbers to remarks
+                                        if (billNumbers) {
+                                            if (item.Remark && item.Remark.trim() !== '') {
+                                                item.Remark += ` | Bills: ${billNumbers}`;
+                                            } else {
+                                                item.Remark = `Bills: ${billNumbers}`;
+                                            }
+                                        }
+                                    }
+                                }
+                            });                        }// Update reconciledData if it exists - enhanced sales integration with same conditions
+                        if (state.reconciledData.length > 0) {
+                            state.reconciledData.forEach(item => {
+                                const sale = salesSummary.find(s => s.sku === item.SKU);
+                                if (sale) {
+                                    const billNumbers = sale.bills.filter(bill => bill.trim() !== '').join(', ');
+                                    
+                                    // Check if this item already has any count (manual, first count, or recount)
+                                    const hasExistingCount = (
+                                        // Has been manually counted
+                                        (item.ReasonFinal && (item.ReasonFinal.includes('Manual') || item.ReasonFinal.includes('Recount'))) ||
+                                        // Has been counted in first count (Scan1 > 0 or has Reason1)
+                                        (item.Scan1 > 0 || (item.Reason1 && item.Reason1.trim() !== '')) ||
+                                        // Has been recounted (Recount different from initial and not due to previous sales)
+                                        (item.Recount !== item.Scan1 && !item.ReasonFinal?.includes('Sales:')) ||
+                                        // Has any counting reason that's not sales-related
+                                        (item.ReasonFinal && !item.ReasonFinal.includes('Sales:') && item.ReasonFinal.trim() !== '')
+                                    );
+                                    
+                                    if (hasExistingCount) {
+                                        // Skip updating count, only add "sold now" to remark
+                                        const soldNowText = `sold now: ${billNumbers}`;
+                                        if (item.Remark && item.Remark.trim() !== '') {
+                                            // Remove any previous "sold now" entries before adding new one
+                                            item.Remark = item.Remark.replace(/\s*\|\s*sold now:[^|]*/g, '');
+                                            item.Remark += ` | ${soldNowText}`;
+                                        } else {
+                                            item.Remark = soldNowText;
+                                        }
+                                    } else {
+                                        // Check if this is a re-processing of sales data (overwrite mode)
+                                        const hasPreviousSales = item.ReasonFinal && item.ReasonFinal.includes('Sales:');
+                                        
+                                        if (hasPreviousSales) {
+                                            // Overwrite previous sales data instead of adding up
+                                            // First, remove previous sales count addition
+                                            const previousSalesMatch = item.ReasonFinal.match(/Sales: (\d+) units added/);
+                                            if (previousSalesMatch) {
+                                                const previousSalesQty = parseInt(previousSalesMatch[1], 10);
+                                                item.Recount = Math.max(0, item.Recount - previousSalesQty);
+                                            }
+                                            
+                                            // Remove previous sales bill numbers from remarks
+                                            if (item.Remark) {
+                                                item.Remark = item.Remark.replace(/\s*\|\s*Bills:[^|]*/g, '');
+                                                item.Remark = item.Remark.replace(/^Bills:[^|]*\s*\|\s*/, '');
+                                                item.Remark = item.Remark.replace(/^Bills:[^|]*$/, '');
+                                            }
+                                        }
+                                        
+                                        // Add sales count directly to final count (not reducing SOH)
+                                        item.Recount = (item.Recount || 0) + sale.totalQty;
+                                        item.FinalDiff = item.Recount - item.SOH;
+                                          // Update reason to indicate sales during count
+                                        item.ReasonFinal = `Sales: ${sale.totalQty} units added`;
+                                        
+                                        // Add bill numbers to remarks
+                                        if (billNumbers) {
+                                            if (item.Remark && item.Remark.trim() !== '') {
+                                                item.Remark += ` | Bills: ${billNumbers}`;
+                                            } else {
+                                                item.Remark = `Bills: ${billNumbers}`;
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                            applyFinalReportView();
+                            renderFinalReportCharts();
+                        }
+                    }                    // Display results
+                    const resultsEl = getEl('sales-processing-results');
+                    
+                    // Create matched sales table
+                    const matchedSales = salesSummary.filter(sale => sale.matched);
+                    const matchedSalesTable = matchedSales.length > 0 ? `
+                        <div class="mt-4">
+                            <h5 class="font-medium text-slate-700 mb-2">📋 Matched Sales Records</h5>
+                            <div class="max-h-64 overflow-y-auto border border-slate-200 rounded-lg">
+                                <table class="w-full text-xs">
+                                    <thead class="bg-slate-50 sticky top-0">
+                                        <tr>
+                                            <th class="p-2 text-left font-medium text-slate-600">SKU</th>
+                                            <th class="p-2 text-center font-medium text-slate-600">Qty</th>
+                                            <th class="p-2 text-left font-medium text-slate-600">Bill Numbers</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${matchedSales.map(sale => `
+                                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                                <td class="p-2 font-mono text-slate-700">${sale.sku}</td>
+                                                <td class="p-2 text-center text-orange-600 font-medium">${sale.totalQty}</td>
+                                                <td class="p-2 text-slate-600 text-xs">${sale.bills.filter(bill => bill.trim() !== '').join(', ') || 'N/A'}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ` : '';
+                    
+                    resultsEl.innerHTML = `
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span>📊 Total Sales Records:</span>
+                                <span class="font-bold text-blue-600">${salesSummary.length}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>✅ SKUs Matched:</span>
+                                <span class="font-bold text-green-600">${matchedCount}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>❌ SKUs Not Matched:</span>
+                                <span class="font-bold text-orange-600">${unmatchedCount}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>🔄 Items with Sales Data:</span>
+                                <span class="font-bold text-green-600">${adjustedItems}</span>
+                            </div>
+                            ${matchedSalesTable}
+                            ${unmatchedCount > 0 ? `
+                            <div class="mt-3 text-xs text-slate-600">
+                                <details class="cursor-pointer">
+                                    <summary class="font-medium text-orange-600">Debug: Unmatched SKUs (Top 5)</summary>
+                                    <div class="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                                        ${salesSummary.filter(sale => !sale.matched).slice(0, 5).map(sale => 
+                                            `<div class="text-xs text-orange-600">
+                                                <div>Original: "${sale.originalSerial}"</div>
+                                                <div>Processed: "${sale.sku}"</div>
+                                                <div class="text-slate-400 mb-1">---</div>
+                                            </div>`
+                                        ).join('')}
+                                    </div>
+                                </details>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    resultsEl.classList.remove('hidden');
+
+                    setUnsavedChanges(true);
+                    showModal("Success", `Sales data processed successfully. ${adjustedItems} items now have sales tracking data and bill number references added to remarks.`);
+                } catch (error) {
+                    showModal("Error", `Sales data processing failed: ${error.message}`);
+                } finally {
+                    hideLoader();
+                }
             }
               function generateRecountMasterFile() {
                 // Include items that need recounting:
@@ -2973,9 +3530,7 @@ def calculate_serial_sku_score(text, pattern_type):
                 container.innerHTML = `<table class="w-full text-sm">${headers}${body}</tbody></table>`;
                 const sortingTh = container.querySelector(`th[data-sort-by="${state.finalReportSort.column}"]`);
                 if (sortingTh) { sortingTh.querySelector('.sort-indicator').textContent = state.finalReportSort.direction === 'asc' ? '▲' : '▼'; }
-            }
-
-            function renderFinalReportRow(item, idx) {
+            }            function renderFinalReportRow(item, idx) {
                 const { rowClass, statusDotColor } = getRowVisuals(item.FinalDiff, item.isDemo);
                 return `<tr class="border-b border-slate-200 ${rowClass}" data-sku="${item.SKU}">
                     <td class="p-3 text-center">${idx + 1}</td>
@@ -3004,8 +3559,7 @@ def calculate_serial_sku_score(text, pattern_type):
                 const newCount = value === '' ? 0 : parseInt(value, 10);
                 item.Recount = isNaN(newCount) ? 0 : newCount;
                 item.FinalDiff = item.Recount - item.SOH; item.ReasonFinal = 'Manual Edit';
-                const row = getEl('final-report-table-container').querySelector(`tr[data-sku="${sku}"]`);
-                if(row) {
+                const row = getEl('final-report-table-container').querySelector(`tr[data-sku="${sku}"]`);                if(row) {
                     // Update Final Count column (index 5) with the new count value
                     row.cells[5].querySelector('input[type="number"]').value = item.Recount;
                     // Update Final Diff column (index 6) with the calculated difference
@@ -3548,7 +4102,7 @@ def calculate_serial_sku_score(text, pattern_type):
             const scanCooldown = {};
             const onBarcodeDetected = (result) => {
                 const code = result.codeResult.code.trim();
-                const now = Date.now(); if (scanCooldown[code] && now - scanCooldown[code] < 5000) return;
+                const now = Date.now(); if (scanCooldown[code] && now - scanCooldown[code] < 10000) return;
                 scanCooldown[code] = now;
                 processScannedCode(code, 'Barcode');
             };
@@ -3636,10 +4190,44 @@ def calculate_serial_sku_score(text, pattern_type):
                 addListener('finalSearchInput', 'keyup', applyFinalReportView);
                 addListener('finalFilterSelect', 'change', applyFinalReportView);
                 addListener('load-progress-file', 'change', handleLoadProgressFromFile);
-                addListener('initialSohFile', 'change', handleSohFileUpload);
-                addListener('firstScanLogfile', 'change', () => getEl('processFirstCount').disabled = getEl('firstScanLogfile').files.length === 0);
+                addListener('initialSohFile', 'change', handleSohFileUpload);                addListener('firstScanLogfile', 'change', () => updateFirstCountButton());
+                addListener('firstMasterFile', 'change', () => updateFirstCountButton());
+                addListener('salesDataFile', 'change', () => getEl('processSalesData').disabled = getEl('salesDataFile').files.length === 0);
+                addListener('processSalesData', 'click', processSalesData);
                 addListener('latestSohFile', 'change', handleLatestSohUpload);
                 addListener('secondScanLogfile', 'change', () => getEl('secondScanLogfile').files.length === 0);
+
+                // Add event listeners for file type selection
+                document.querySelectorAll('input[name="countFileType"]').forEach(radio => {
+                    radio.addEventListener('change', handleFileTypeChange);
+                });
+
+                function updateFirstCountButton() {
+                    const fileType = document.querySelector('input[name="countFileType"]:checked').value;
+                    let hasFiles = false;
+                    
+                    if (fileType === 'logfile') {
+                        hasFiles = getEl('firstScanLogfile').files.length > 0;
+                    } else if (fileType === 'master') {
+                        hasFiles = getEl('firstMasterFile').files.length > 0;
+                    }
+                    
+                    getEl('processFirstCount').disabled = !hasFiles;
+                }
+
+                function handleFileTypeChange() {
+                    const fileType = document.querySelector('input[name="countFileType"]:checked').value;
+                    
+                    if (fileType === 'logfile') {
+                        getEl('logfile-upload').classList.remove('hidden');
+                        getEl('master-upload').classList.add('hidden');
+                    } else if (fileType === 'master') {
+                        getEl('logfile-upload').classList.add('hidden');
+                        getEl('master-upload').classList.remove('hidden');
+                    }
+                    
+                    updateFirstCountButton();
+                }
 
                 addListener('wf-step-tabs', 'click', e => { if (e.target.id.startsWith('wf-tab-btn-')) changeWorkflowTab(e.target.id.slice(-1)); });
                 addListener('demo-count-container', 'click', e => { const header = e.target.closest('th[data-sort-by]'); if (header) handleSort('demoSort', header.dataset.sortBy, applyDemoView); });
@@ -3731,7 +4319,7 @@ def calculate_serial_sku_score(text, pattern_type):
             function finalOnBarcodeDetected(result) {
                 const code = result.codeResult.code.trim();
                 const now = Date.now();
-                if (finalScanCooldown[code] && now - finalScanCooldown[code] < 5000) return;
+                if (finalScanCooldown[code] && now - finalScanCooldown[code] < 10000) return;
                 finalScanCooldown[code] = now;
                 processFinalScannedCode(code, 'Barcode');
             }            function processFinalScannedCode(code, reason) {

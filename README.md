@@ -40,6 +40,15 @@ The SPVi Operations Audit Toolkit is a modern, responsive web application for op
 
 ## 🆕 Recent Updates
 
+### Stock Count Tool Major Bug Fix (July 2025)
+**✅ Critical Input Update Fix**
+
+- **🔧 Fixed Final Count Input Bug**: Resolved issue where final count input fields were not updating underlying data
+- **📊 Sales Column Removal**: Eliminated problematic Sales column that was causing column index shifting
+- **🧮 Simplified Sales Integration**: Sales data now adds directly to final count with clear audit trail
+- **📝 Enhanced Audit Trail**: Bill numbers and sales reasons now appear in remarks and reason fields
+- **⚡ Improved Performance**: Streamlined table structure for better performance and maintainability
+
 ### Print System Enhancements (July 2025)
 **✅ Complete Print CSS Overhaul**
 
@@ -50,13 +59,14 @@ The SPVi Operations Audit Toolkit is a modern, responsive web application for op
 - **📄 Cross-Browser Compatibility**: Consistent print output in Chrome, Safari, and Firefox
 - **⚡ Zero Performance Impact**: Print optimizations only affect print output, not screen performance
 
-### Key Print Improvements:
-- ✅ Eliminated excessive blank space in print layouts
-- ✅ Fixed table header repetition on multi-page reports  
-- ✅ Resolved header collision issues with content
-- ✅ Standardized table borders to professional 1px consistency
-- ✅ Enhanced page break handling for table rows
-- ✅ Professional spacing optimization (reduced from 100px+ to 50px top margin)
+### Key Improvements:
+- ✅ **Stock Count Fix**: Final count inputs now properly update data model and calculations
+- ✅ **Sales Data Integration**: Simplified approach with direct final count adjustment
+- ✅ **Column Structure**: Stable 9-column layout without problematic Sales column
+- ✅ **Event Delegation**: Proper input event handling for table updates
+- ✅ **Print System**: Eliminated excessive blank space and enhanced professional formatting
+- ✅ **Table Headers**: Fixed repetition on multi-page reports with consistent borders
+- ✅ **Professional Spacing**: Optimized margins and page break handling
 
 ## 📁 Project Structure
 
@@ -66,6 +76,7 @@ SPViOperationAudit/
 ├── 📄 dashboard.html                   # 🏠 Main dashboard
 ├── 📄 user-management.html             # 👥 Admin user management
 ├── 📄 firebase-auth.js                 # 🔐 Core authentication system
+├── 📄 sample_master.csv               # 📋 Sample data file for testing
 │
 ├── 📁 styles/
 │   ├── 📄 spvi-main.css               # 🎨 Centralized stylesheet
@@ -83,6 +94,8 @@ SPViOperationAudit/
 │
 └── 📄 README.md                       # 📚 This guide
 ```
+
+> 🧹 **Clean Project Structure**: All test files, debug scripts, and temporary documentation have been removed for a clean, production-ready codebase.
 
 ## 🚀 Getting Started
 
@@ -233,10 +246,13 @@ const firebaseConfig = {
 ## 🛠️ Available Tools
 
 ### 1. 📦 Stock Count Tool
-- Physical inventory counting
-- System data reconciliation
-- Variance reporting
-- Barcode/OCR scanning support
+- **Physical inventory counting** with barcode/OCR scanning support
+- **System data reconciliation** with automatic variance detection
+- **Sales data integration** during count periods with bill number tracking
+- **Excel import/export** for SOH data and count results
+- **Fixed input functionality** - Final count fields now properly update calculations
+- **Professional reporting** with print-optimized layouts
+- **Multi-format support** - Logfile or Master.csv input methods
 
 ### 2. 💰 Cash Control Tool
 - End-of-day cash reconciliation
@@ -413,10 +429,12 @@ For technical support:
 © 2025 SPVi Operations Audit. All Rights Reserved.
 
 **System Status**: ✅ Production Ready  
-**Version**: 2.1 (Print System Enhanced)  
+**Version**: 2.2 (Stock Count Bug Fix + Print System Enhanced)  
 **Last Updated**: July 2025
 
 ### Recent Enhancements
+- 🔧 **Stock Count Input Fix** - Resolved critical bug where final count inputs weren't updating data
+- 📊 **Sales Integration Improvement** - Simplified sales data handling with better audit trail
 - 🖨️ **Complete Print System Overhaul** - Professional print layouts for all tools
 - 📋 **Enhanced Table Formatting** - Headers repeat, consistent borders, intelligent page breaks
 - 🏢 **Global Print Headers** - Standardized company branding across all printed reports
