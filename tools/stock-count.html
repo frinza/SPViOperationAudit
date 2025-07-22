@@ -416,16 +416,18 @@
             /* Center align specific columns (numbers, counts, etc.) */
             td:nth-child(1), /* NO. */
             td:nth-child(4), /* SRP */
-            td:nth-child(5), /* SOH */
-            td:nth-child(6), /* Final Count / Counted */
-            td:nth-child(7), /* Final Diff / Diff */
+            td:nth-child(5), /* Age */
+            td:nth-child(6), /* SOH */
+            td:nth-child(7), /* Final Count / Counted */
+            td:nth-child(8), /* Final Diff / Diff */
             th:nth-child(1),
             th:nth-child(4),
             th:nth-child(5),
             th:nth-child(6),
-            th:nth-child(7) {
+            th:nth-child(7),
+            th:nth-child(8) {
                 text-align: center !important;
-            }            
+            }
             /* STRENGTHENED row break controls - Keep rows together */
             tr {
                 page-break-inside: avoid !important; /* Prevent row from splitting */
@@ -769,13 +771,13 @@
             <button id="exportSohExcelBtn" class="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors shadow-sm text-sm">
                 Export SOH Excel (SKU, Description, Age, SRP, SOH, FAMILY)
             </button>
-        </div>
-
-        <div id="info-box-container" class="hidden bg-sky-100 border border-sky-300 text-sky-800 px-4 py-3 rounded-lg relative mb-8 text-sm" role="alert">
+        </div>        <div id="info-box-container" class="hidden bg-sky-100 border border-sky-300 text-sky-800 px-4 py-3 rounded-lg relative mb-8 text-sm" role="alert">
             <div class="flex justify-between items-center flex-col md:flex-row gap-2">
                 <div>
                     <strong class="font-bold">Branch:</strong>
-                    <span id="info-branch-name" class="ml-2 font-mono"></span>
+                    <span id="info-branch-code" class="ml-2 font-mono"></span>
+                    <span class="ml-1">-</span>
+                    <span id="info-branch-name" class="ml-1 font-mono"></span>
                 </div>
                 <div>
                     <strong class="font-bold">Count Date:</strong>
@@ -1871,7 +1873,7 @@ def calculate_serial_sku_score(text, pattern_type):
                                     </div>
                                 `);
                                 
-                                processFloatingScannedCode(finalText, 'Enhanced Text Scan');
+                                processFloatingScannedCode(finalText, 'DEMO-Enhanced Text Scan');
                                 stopFloatingOcrStreaming();
                                 return;
                             }
@@ -1923,7 +1925,7 @@ def calculate_serial_sku_score(text, pattern_type):
                   if (isValidAppleSerial && confidence >= floatingOcrSettings.confidence) {
                     const finalText = appleSerialMatch[0];
                     updateFloatingResults(`<p>Serial/SKU: <b>${finalText}</b></p>`);
-                    processFloatingScannedCode(finalText, 'Text Scan');
+                    processFloatingScannedCode(finalText, 'DEMO-Text Scan');
                     stopFloatingOcrStreaming();
                 } else {
                     updateFloatingResults(`<p class='text-blue-500'>Scanning... (${confidence.toFixed(1)}%)</p>`);
@@ -2028,7 +2030,7 @@ def calculate_serial_sku_score(text, pattern_type):
                 const now = Date.now();
                 if (floatingScanCooldown[code] && now - floatingScanCooldown[code] < 2000) return;
                 floatingScanCooldown[code] = now;
-                processFloatingScannedCode(code, 'Barcode');
+                processFloatingScannedCode(code, 'DEMO-Barcode');
             }            
             function openFloatingScanner(context = 'demo') {
                 currentScannerContext = context;
@@ -2406,15 +2408,14 @@ def calculate_serial_sku_score(text, pattern_type):
                 }
 
                 return item;
-            }
-
-            function getInitialState() {
+            }            function getInitialState() {
                 return {
                     sohData: [], sohLookup: {}, scannerMaster: [], demoMaster: [],
                     demoCounts: {}, demoSort: { column: 'SKU', direction: 'asc' },
                     netDiffData: [], reconciledData: [], finalReportSort: { column: 'SKU', direction: 'asc' },
                     charts: { cost: null, qty: null, category: null },
-                    branchName: null, countDate: null,
+                    branchName: null, branchCode: null, countDate: null,
+                    sohUpdatedSkus: new Set(), // Track SKUs that had SOH updated
                 };
             }
             
@@ -2457,16 +2458,16 @@ def calculate_serial_sku_score(text, pattern_type):
                     saveStatusTimeout = setTimeout(() => statusEl.classList.add('opacity-0'), 3000);
                 }
             }
-            
             function updateInfoBox() {
                 if (state.branchName) {
+                    getEl('info-branch-code').textContent = state.branchCode || '';
                     getEl('info-branch-name').textContent = state.branchName;
                     getEl('info-count-date').textContent = state.countDate;
                     getEl('info-box-container').classList.remove('hidden');
                 } else {
                     getEl('info-box-container').classList.add('hidden');
                 }
-            }            
+            }
             function resetAppState() {
                 // Destroy existing charts
                 Object.values(state.charts).forEach(chart => chart?.destroy());
@@ -2599,7 +2600,6 @@ def calculate_serial_sku_score(text, pattern_type):
                     cancelText: 'Cancel'
                 });
             }
-
             async function handleSohFileUpload(e) {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -2610,14 +2610,27 @@ def calculate_serial_sku_score(text, pattern_type):
                     const data = await parseExcelFile(file);
                     if (!data?.length) throw new Error("File is empty or invalid.");
                     if (!data[0]?.BRANCH_NAME) throw new Error("'BRANCH_NAME' column is missing.");
+                    
+                    // Extract branch information
                     state.branchName = data[0].BRANCH_NAME;
+                    
+                    // Extract BRANCH_CODE if available
+                    if (data[0]?.BRANCH_CODE) {
+                        state.branchCode = data[0].BRANCH_CODE;
+                    } else {
+                        // If BRANCH_CODE column doesn't exist, try to extract from BRANCH_NAME
+                        // Assume format like "001 - Branch Name" or similar
+                        const branchNameMatch = state.branchName.match(/^(\d+)/);
+                        state.branchCode = branchNameMatch ? branchNameMatch[1] : 'UNK';
+                    }
+                    
                     state.countDate = new Date().toLocaleDateString('en-CA');
                     const { forScan, forDemo, lookup } = processAndSeparateSoh(data);
                     if (Object.keys(lookup).length === 0) throw new Error("No valid stock items found. Check SKU/AVAILABLE_QTY columns.");
                     state.sohData = data;
                     state.sohLookup = lookup;
                     state.scannerMaster = forScan;
-                    state.demoMaster = forDemo.map(item => ({ ...item, counted: null, reason: 'Manual' }));
+                    state.demoMaster = forDemo.map(item => ({ ...item, counted: null, reason: 'DEMO-Manual' }));
                     rebuildUiFromState();
                     setUnsavedChanges(true); 
                 } catch (error) {
@@ -2627,15 +2640,19 @@ def calculate_serial_sku_score(text, pattern_type):
                 } finally {
                     hideLoader();
                 }
-            }
-
-            function handleSaveProgressToFile() {
+            }            function handleSaveProgressToFile() {
                 if (!state.sohData.length) {
                     return showModal("Info", "There is no progress to save.");
                 }
-                const stateToSave = { ...state, charts: {} };
+                const stateToSave = { 
+                    ...state, 
+                    charts: {},
+                    // Convert Set to Array for JSON serialization
+                    sohUpdatedSkus: state.sohUpdatedSkus ? Array.from(state.sohUpdatedSkus) : []
+                };
                 const blob = new Blob([JSON.stringify(stateToSave, null, 2)], { type: 'application/json' });
-                const fileName = `stock_count_${state.branchName.replace(/\s+/g, '_')}_${state.countDate}.json`;
+                const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
+                const fileName = `${state.countDate}_stock_count_${branchInfo}.json`;
                 downloadFile(blob, fileName);
                 hasUnsavedChanges = false;
                 showSaveStatus("Progress saved to file", false);
@@ -2748,38 +2765,43 @@ def calculate_serial_sku_score(text, pattern_type):
             function processAndSeparateSoh(sohData) {
                 const forScan = [], forDemo = [], lookup = {};
                 const targetWhCode = sohData.find(row => row.WH_CODE)?.WH_CODE;
-                if (!targetWhCode) throw new Error("Could not determine warehouse code (WH_CODE).");
+                if (!targetWhCode) throw new Error("Could not determine warehouse code (WH_CODE).");                
                 sohData.filter(row => row.WH_CODE === targetWhCode).forEach(row => {
+                    // Extract basic info first
+                    const desc = String(row.DESCRIPTION || '').toUpperCase();
+                    const family = String(row.FAMILY || '').toUpperCase();
+                    const originalSku = String(row.SKU || '').trim().toUpperCase();
+                    
+                    // DEMO detection logic - matches Excel conditions on ORIGINAL SKU column:
+                    // 1. LEFT(SKU,1)="D" 
+                    // 2. ISNUMBER(SEARCH("DEMO",SKU))
+                    // 3. ISNUMBER(SEARCH("DEMO",Description))
+                    // 4. Family="DEMO"
+                    const isDemo = (
+                        !originalSku.startsWith('DLCGZ') && (
+                            originalSku.startsWith('D') ||           // Condition 1: First character is 'D'
+                            originalSku.includes('DEMO') ||          // Condition 2: SKU contains "DEMO" anywhere
+                            desc.includes('DEMO') ||                 // Condition 3: Description contains "DEMO"
+                            family === 'DEMO'                       // Condition 4: Family equals "DEMO"
+                        )
+                    );
+                    
+                    // NOW do serial/SKU combination logic
                     const isSerial = !!row.SERIAL_NO;
                     const sku = String(isSerial ? row.SERIAL_NO : row.SKU || '').replace(/\./g, ' ').trim().toUpperCase();
                     if (!sku) return;
                     const isSerialControlled = row.SERIAL_CONTROL === 'Y' || isSerial;
-                    const qty = parseInt(String(row.AVAILABLE_QTY ?? 0).replace(/,/g, ''), 10);
+                    const qty = parseInt(String(row.AVAILABLE_QTY ?? 0).replace(/,/g, ''), 10);                    
                     const srpRaw = row.SRP_AMT_INC_VAT;
                     const srp = srpRaw === null || srpRaw === undefined || srpRaw === '' ? 0 : parseFloat(String(srpRaw).replace(/,/g, ''));
-                    const desc = String(row.DESCRIPTION || '').toUpperCase();
-                    const family = String(row.FAMILY || '').toUpperCase();
-                    // DEMO detection logic
-                    const isDemo = (
-                        !sku.startsWith('DLCGZ') && (
-                            sku.startsWith('D') ||
-                            sku.startsWith('DEMO-') ||
-                            sku.endsWith('-D') ||
-                            desc.includes('DEMO') ||
-                            family === 'DEMO'
-                        )
-                    );
-                    // NONE Family flag
-                    const isNoneFamily = family === 'NONE';
                     if (lookup[sku] && !isSerialControlled) {
                         const existing = lookup[sku];
                         const newTotalQty = existing.SOH + qty;
                         const newTotalSrpValue = (existing.SOH * existing.Price) + (qty * srp);
                         existing.SOH = newTotalQty;
                         existing.Price = newTotalQty > 0 ? newTotalSrpValue / newTotalQty : 0;
-                        // Update flags if any instance is DEMO or NONE Family
+                        // Update flags if any instance is DEMO
                         existing.isDemo = existing.isDemo || isDemo;
-                        existing.isNoneFamily = existing.isNoneFamily || isNoneFamily;
                     } else if (!lookup[sku]) {
                         lookup[sku] = {
                             SKU: sku,
@@ -2790,8 +2812,7 @@ def calculate_serial_sku_score(text, pattern_type):
                             CLASS_NAME: row.CLASS_NAME || 'UNCATEGORIZED',
                             FAMILY: row.FAMILY || '',
                             isSerialControlled,
-                            isDemo,
-                            isNoneFamily
+                            isDemo
                         };
                     }
                 });
@@ -2799,18 +2820,27 @@ def calculate_serial_sku_score(text, pattern_type):
                     if (item.SOH > 0) (item.isDemo ? forDemo : forScan).push(item);
                 });
                 return { forScan, forDemo, lookup };
-            }
-
-            function restoreState(loadedState) {
+            }            function restoreState(loadedState) {
                 resetAppState();
                 state = { ...state, ...loadedState, charts: getInitialState().charts };
+                
+                // Handle SOH updated SKUs - convert array back to Set if needed
+                if (loadedState.sohUpdatedSkus) {
+                    if (Array.isArray(loadedState.sohUpdatedSkus)) {
+                        state.sohUpdatedSkus = new Set(loadedState.sohUpdatedSkus);
+                    } else if (loadedState.sohUpdatedSkus instanceof Set) {
+                        state.sohUpdatedSkus = loadedState.sohUpdatedSkus;
+                    }
+                } else {
+                    state.sohUpdatedSkus = new Set();
+                }
+                
                 const { forScan, forDemo, lookup } = processAndSeparateSoh(state.sohData);
                 state.sohLookup = lookup;
-                state.scannerMaster = forScan;
-                state.demoMaster = forDemo.map(item => ({ 
+                state.scannerMaster = forScan;                state.demoMaster = forDemo.map(item => ({ 
                     ...item, 
                     counted: state.demoCounts[item.SKU]?.qty ?? null,
-                    reason: state.demoCounts[item.SKU]?.reason ?? 'Manual' 
+                    reason: state.demoCounts[item.SKU]?.reason ?? 'DEMO-Manual' 
                 }));
                 rebuildUiFromState();
             }
@@ -2881,8 +2911,7 @@ def calculate_serial_sku_score(text, pattern_type):
                 if (diff < 0) return 'text-red-600 font-bold';
                 if (diff > 0) return 'text-yellow-500 font-bold';
                 return 'text-green-600 font-bold';
-            }
-
+            }            
             function applyDemoView() {
                 if (state.demoMaster.length === 0) {
                     getEl('demo-count-container').innerHTML = '<p class="p-6 text-center text-slate-500">No DEMO items found.</p>';
@@ -2901,34 +2930,57 @@ def calculate_serial_sku_score(text, pattern_type):
                 });
                 const { column, direction } = state.demoSort;
                 dataView.sort((a, b) => {
-                    let valA = a[column]; let valB = b[column];
+                    let valA, valB;
+                    
+                    // Handle special calculated field "diff"
+                    if (column === 'diff') {
+                        valA = (a.counted === null) ? null : a.counted - a.SOH;
+                        valB = (b.counted === null) ? null : b.counted - b.SOH;
+                    } else if (column === 'counted') {
+                        valA = a.counted;
+                        valB = b.counted;
+                    } else {
+                        valA = a[column];
+                        valB = b[column];
+                    }
+                    
+                    // Handle null/undefined values
                     if (valA === null || valA === undefined) return 1;
                     if (valB === null || valB === undefined) return -1;
-                    if (typeof valA === 'string') return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                    
+                    // Sort by data type
+                    if (typeof valA === 'string') {
+                        return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                    }
                     return direction === 'asc' ? valA - valB : valB - valA;
                 });
                 renderDemoCountTable(dataView);
                 updateDemoSummary();
-            }
-
+            }            
             function renderDemoCountTable(data) {
                 const container = getEl('demo-count-container');
                 // Responsive table styling
                 const headers = `<thead><tr>
                     <th class="p-3 text-center w-12">NO.</th>
-                    <th class="p-3 text-left">SKU</th>
-                    <th class="p-3 text-left">Description</th>
-                    <th class="p-3 text-center">SRP</th>
-                    <th class="p-3 text-center">SOH</th>
-                    <th class="p-3 text-center">Counted</th>
-                    <th class="p-3 text-center">Diff</th>
-                    <th class="p-3 text-center">Remark</th>
+                    <th class="p-3 text-left" data-sort-by="SKU">SKU<span class="sort-indicator"></span></th>
+                    <th class="p-3 text-left" data-sort-by="Description">Description<span class="sort-indicator"></span></th>
+                    <th class="p-3 text-center" data-sort-by="Price">SRP<span class="sort-indicator"></span></th>
+                    <th class="p-3 text-center" data-sort-by="Age">Age<span class="sort-indicator"></span></th>
+                    <th class="p-3 text-center" data-sort-by="SOH">SOH<span class="sort-indicator"></span></th>
+                    <th class="p-3 text-center" data-sort-by="counted">Counted<span class="sort-indicator"></span></th>
+                    <th class="p-3 text-center" data-sort-by="diff">Diff<span class="sort-indicator"></span></th>
+                    <th class="p-3 text-center" data-sort-by="remark">Remark<span class="sort-indicator"></span></th>
                 </tr></thead>`;
-                const body = data.length > 0 ? data.map((item, idx) => renderDemoTableRow(item, idx)).join('') : `<tr><td colspan="8" class="text-center p-6 text-slate-500">No items match filter.</td></tr>`;
+                const body = data.length > 0 ? data.map((item, idx) => renderDemoTableRow(item, idx)).join('') : `<tr><td colspan="9" class="text-center p-6 text-slate-500">No items match filter.</td></tr>`;
                 container.innerHTML = `<table class="w-full text-sm">${headers}<tbody>${body}</tbody></table>`;
+                
+                // Update sort indicators with colors
                 const sortingTh = container.querySelector(`th[data-sort-by="${state.demoSort.column}"]`);
                 if (sortingTh) {
-                    sortingTh.querySelector('.sort-indicator').textContent = state.demoSort.direction === 'asc' ? '▲' : '▼';
+                    const indicator = sortingTh.querySelector('.sort-indicator');
+                    indicator.textContent = state.demoSort.direction === 'asc' ? '▲' : '▼';
+                    // Add color: green for ascending, red for descending
+                    indicator.style.color = state.demoSort.direction === 'asc' ? '#22c55e' : '#ef4444';
                 }
             }
 
@@ -2941,6 +2993,7 @@ def calculate_serial_sku_score(text, pattern_type):
                     <td class="p-3 font-medium text-slate-700">${item.SKU}</td>
                     <td class="p-3 text-slate-600">${item.Description}</td>
                     <td class="p-3 text-center text-slate-600">${item.Price ?? 0}</td>
+                    <td class="p-3 text-center text-slate-600">${item.Age || 'N/A'}</td>
                     <td class="p-3 text-center text-slate-600">${item.SOH}</td>
                     <td class="p-3 text-center text-slate-600"><input type="number" value="${item.counted ?? ''}" class="w-full text-center p-1.5 border border-slate-300 rounded-md bg-white"/></td>
                     <td class="p-3 text-center font-bold diff-cell ${getDiffColorClass(diff)}">${diffText}</td>
@@ -2976,15 +3029,15 @@ def calculate_serial_sku_score(text, pattern_type):
                 const item = state.demoMaster.find(i => i.SKU === sku);
                 if (!item) return;
                 const intValue = value === '' ? null : parseInt(value, 10);
-                item.counted = isNaN(intValue) ? null : intValue;
-                if (intValue === null) delete state.demoCounts[sku];
-                else state.demoCounts[sku] = { qty: intValue, reason: 'Manual' };
+                item.counted = isNaN(intValue) ? null : intValue;                if (intValue === null) delete state.demoCounts[sku];
+                else state.demoCounts[sku] = { qty: intValue, reason: 'DEMO-Manual' };
                 if (state.reconciledData.length > 0) {
                     const reportItem = state.reconciledData.find(i => i.SKU === sku);
                     if (reportItem) {
+                        const wasSohUpdated = state.sohUpdatedSkus && state.sohUpdatedSkus.has(sku);
                         reportItem.Recount = intValue ?? 0;
                         reportItem.FinalDiff = reportItem.Recount - reportItem.SOH;
-                        reportItem.ReasonFinal = 'Manual';
+                        reportItem.ReasonFinal = wasSohUpdated ? 'SOHupdated-DEMO-Manual' : 'DEMO-Manual';
                         applyFinalReportView();
                         renderFinalReportCharts();
                     }
@@ -3000,19 +3053,32 @@ def calculate_serial_sku_score(text, pattern_type):
                 updateFinalReportSummary();
                 setUnsavedChanges(true);
             }
-            
-            function exportDemoTable() {
-                const dataToExport = state.demoMaster.map((item, idx) => ({ NO: idx + 1, SKU: item.SKU, Description: item.Description, Age: item.Age, SRP: item.Price, SOH: item.SOH, Counted: item.counted, Diff: item.counted === null ? '' : item.counted - item.SOH }));
+              function exportDemoTable() {
+                const dataToExport = state.demoMaster.map((item, idx) => ({ 
+                    NO: idx + 1, 
+                    SKU: item.SKU, 
+                    Description: item.Description, 
+                    SRP: item.Price, 
+                    Age: item.Age, 
+                    SOH: item.SOH, 
+                    Counted: item.counted, 
+                    Diff: item.counted === null ? '' : item.counted - item.SOH,
+                    Flag: item.isDemo ? 'DEMO' : 'NONE'
+                }));
                 const csv = Papa.unparse(dataToExport, { header: true });
-                downloadFile(csv, `DEMO_Count_${state.branchName.replace(/\s+/g, '_')}_${state.countDate}.csv`);
+                const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
+                downloadFile(csv, `${state.countDate}_DEMO_Count_${branchInfo}.csv`);
             }
-
             function downloadMasterForScan() {
                 // Exclude DEMO items using processed flags
                 const scanRows = Object.values(state.sohLookup).filter(item => !item.isDemo && item.SOH > 0);
                 const rowsForCsv = scanRows.map(item => [item.SKU, item.Description, item.Price, item.Age, item.SOH]);
-                downloadFile(Papa.unparse(rowsForCsv, { header: false }), 'Master_for_Scan.csv');
-            }            
+                
+                // Use new file naming convention: Master_branchcode_date.csv
+                const branchInfo = state.branchCode ? `${state.branchCode}_${state.countDate}` : `${state.branchName.replace(/\s+/g, '_')}_${state.countDate}`;
+                const fileName = `Master_${branchInfo}.csv`;
+                downloadFile(Papa.unparse(rowsForCsv, { header: false }), fileName);
+            }
             
             async function processFirstCount() {
                 showLoader('Processing First Count...');
@@ -3077,17 +3143,15 @@ def calculate_serial_sku_score(text, pattern_type):
                             });
                         });
                         scanCounts = scanCounts.concat(masterData);
-                    }
-
-                    const processedCounts = {};
+                    }                    const processedCounts = {};
                     for(const item of scanCounts){ 
                         const {sku, qty} = item; 
                         const isSerial = state.sohLookup[sku] ? state.sohLookup[sku].isSerialControlled : false; 
                         if(isSerial){ 
-                            if(!processedCounts[sku]) processedCounts[sku] = {qty: 1, reason: 'Mixed Count'};
+                            if(!processedCounts[sku]) processedCounts[sku] = {qty: 1, reason: 'Scan'};
                         } else { 
                             const currentQty = processedCounts[sku] ? processedCounts[sku].qty : 0; 
-                            processedCounts[sku] = {qty: currentQty + qty, reason: 'Mixed Count'};
+                            processedCounts[sku] = {qty: currentQty + qty, reason: 'Scan'};
                         }
                     }
                     const combinedCounts = { ...processedCounts, ...state.demoCounts };
@@ -3095,16 +3159,40 @@ def calculate_serial_sku_score(text, pattern_type):
                     for (const [sku, data] of Object.entries(combinedCounts)) {
                         const entry = netDiffMap.get(sku);
                         if (entry) { entry.Scan1 = data.qty; entry.Reason1 = data.reason; }
-                    }
-                    state.netDiffData = Array.from(netDiffMap.values()).map(item => ({ 
-                        ...item, 
-                        Counted1: item.Scan1,
-                        Diff1: item.Scan1 - item.SOH, 
-                        Recount: item.Scan1, 
-                        FinalDiff: item.Scan1 - item.SOH, 
-                        ReasonFinal: item.Reason1, 
-                        Remark: '' 
-                    }));
+                    }                    state.netDiffData = Array.from(netDiffMap.values()).map(item => {
+                        // Check if this item already has sales data in reconciledData
+                        const existingReconciledItem = state.reconciledData.find(r => r.SKU === item.SKU);
+                        const hasSalesData = existingReconciledItem && 
+                            existingReconciledItem.ReasonFinal && 
+                            existingReconciledItem.ReasonFinal.includes('Sales:');
+                        
+                        if (hasSalesData) {
+                            // Preserve sales data and add first count on top
+                            const salesMatch = existingReconciledItem.ReasonFinal.match(/Sales: (\d+) units added/);
+                            const salesQty = salesMatch ? parseInt(salesMatch[1], 10) : 0;
+                            
+                            return {
+                                ...item, 
+                                Counted1: item.Scan1,
+                                Diff1: item.Scan1 - item.SOH, 
+                                Recount: item.Scan1 + salesQty, 
+                                FinalDiff: (item.Scan1 + salesQty) - item.SOH, 
+                                ReasonFinal: item.Reason1 ? `${item.Reason1} + ${existingReconciledItem.ReasonFinal}` : existingReconciledItem.ReasonFinal, 
+                                Remark: existingReconciledItem.Remark || ''
+                            };
+                        } else {
+                            // Normal processing without existing sales data
+                            return {
+                                ...item, 
+                                Counted1: item.Scan1,
+                                Diff1: item.Scan1 - item.SOH, 
+                                Recount: item.Scan1, 
+                                FinalDiff: item.Scan1 - item.SOH, 
+                                ReasonFinal: item.Reason1, 
+                                Remark: '' 
+                            };
+                        }
+                    });
                     renderFirstCountSummary();
                     getEl('step2-results').classList.remove('hidden');
                     getEl('finalizeFromFirstCount').disabled = false;
@@ -3143,21 +3231,40 @@ def calculate_serial_sku_score(text, pattern_type):
                         if (hasManualEdit) {
                             // Skip updating - preserve manual edit
                             return;
-                        }
-                        
+                        }                        
                         const demoCount = state.demoCounts[item.SKU];
-                        if (demoCount && typeof demoCount.qty === 'number') {
+                        const wasSohUpdated = state.sohUpdatedSkus && state.sohUpdatedSkus.has(item.SKU);                        if (demoCount && typeof demoCount.qty === 'number') {
                             item.Recount = demoCount.qty;
                             item.FinalDiff = demoCount.qty - item.SOH;
-                            item.ReasonFinal = demoCount.reason || 'Manual';
-                        } else {
+                            const baseReason = demoCount.reason || 'DEMO-Manual';
+                            item.ReasonFinal = wasSohUpdated ? `SOHupdated-${baseReason}` : baseReason;                        } else {
                             item.Recount = 0;
                             item.FinalDiff = -item.SOH;
-                            item.ReasonFinal = 'Not Counted';
+                            item.ReasonFinal = wasSohUpdated ? 'SOHupdated-DEMO-N/A' : 'DEMO-N/A';
                         }
                     }
                 });
-                state.reconciledData = state.netDiffData.map(item => ({...item}));
+                state.reconciledData = state.netDiffData.map(item => {
+                    // Check if item already has sales data in reconciledData
+                    const existingReconciledItem = state.reconciledData.find(r => r.SKU === item.SKU);
+                    const hasSalesData = existingReconciledItem && 
+                        existingReconciledItem.ReasonFinal && 
+                        existingReconciledItem.ReasonFinal.includes('Sales:');
+                    
+                    if (hasSalesData) {
+                        // Preserve sales data from existing reconciledData
+                        return {
+                            ...item,
+                            Recount: existingReconciledItem.Recount,
+                            FinalDiff: existingReconciledItem.FinalDiff,
+                            ReasonFinal: item.ReasonFinal ? `${item.ReasonFinal} + ${existingReconciledItem.ReasonFinal}` : existingReconciledItem.ReasonFinal,
+                            Remark: existingReconciledItem.Remark || ''
+                        };
+                    } else {
+                        // No existing sales data - use item as is
+                        return {...item};
+                    }
+                });
                 applyFinalReportView();
                 renderFinalReportCharts();
                 getEl('final-report-container').classList.remove('hidden');
@@ -3236,8 +3343,7 @@ def calculate_serial_sku_score(text, pattern_type):
                                 // Note: We no longer track SalesDuringCount in sohLookup 
                                 // as sales are directly added to final count in the processing above
                             }
-                        });                        
-                        // Update netDiffData if it exists - enhanced sales integration with new conditions
+                        });                          // Update netDiffData if it exists - enhanced sales integration with new conditions
                         if (state.netDiffData.length > 0) {
                             state.netDiffData.forEach(item => {
                                 const sale = salesSummary.find(s => s.sku === item.SKU);
@@ -3246,21 +3352,21 @@ def calculate_serial_sku_score(text, pattern_type):
                                       // Check if this item already has any count (manual, first count, or recount)
                                     const hasExistingCount = (
                                         // Has been manually counted
-                                        (item.ReasonFinal && (item.ReasonFinal.includes('Manual') || item.ReasonFinal.includes('Recount'))) ||
+                                        (item.ReasonFinal && (item.ReasonFinal.includes('Manual') || item.ReasonFinal.includes('Re-Scan') || item.ReasonFinal.includes('Scan'))) ||
                                         // Has been counted in first count (Scan1 > 0 or has Reason1)
                                         (item.Scan1 > 0 || (item.Reason1 && item.Reason1.trim() !== '')) ||
                                         // Has been recounted (Recount different from initial and not due to previous sales)
                                         (item.Recount !== item.Scan1 && !item.ReasonFinal?.includes('Sales:')) ||
-                                        // Has any counting reason that's not sales-related
-                                        (item.ReasonFinal && !item.ReasonFinal.includes('Sales:') && item.ReasonFinal.trim() !== '')
+                                        // Has any counting reason that's not sales-related (excluding uncounted items)
+                                        (item.ReasonFinal && !item.ReasonFinal.includes('Sales:') && item.ReasonFinal.trim() !== '' && item.ReasonFinal !== 'DEMO-N/A' && !item.ReasonFinal.includes('N/A'))
                                     );
                                     
                                     if (hasExistingCount) {
                                         // Skip updating count, only add "sold now" to remark
-                                        const soldNowText = `sold now: ${billNumbers}`;
+                                        const soldNowText = `Sold now: ${billNumbers}`;
                                         if (item.Remark && item.Remark.trim() !== '') {
                                             // Remove any previous "sold now" entries before adding new one
-                                            item.Remark = item.Remark.replace(/\s*\|\s*sold now:[^|]*/g, '');
+                                            item.Remark = item.Remark.replace(/\s*\|\s*Sold now:[^|]*/g, '');
                                             item.Remark += ` | ${soldNowText}`;
                                         } else {
                                             item.Remark = soldNowText;
@@ -3285,13 +3391,14 @@ def calculate_serial_sku_score(text, pattern_type):
                                                 item.Remark = item.Remark.replace(/^Bills:[^|]*$/, '');
                                             }
                                         }
-                                        
-                                        // Apply new sales data
+                                          // Apply new sales data
                                         item.Recount = (item.Recount || 0) + sale.totalQty;
                                         item.FinalDiff = item.Recount - item.SOH;
                                         
-                                        // Update reason to indicate sales during count
-                                        item.ReasonFinal = `Sales: ${sale.totalQty} units added`;
+                                        // Update reason to indicate sales during count with SOH tracking
+                                        const wasSohUpdated = state.sohUpdatedSkus && state.sohUpdatedSkus.has(item.SKU);
+                                        const salesReason = `Sales: ${sale.totalQty} units added`;
+                                        item.ReasonFinal = wasSohUpdated ? `SOHupdated-${salesReason}` : salesReason;
                                         
                                         // Add bill numbers to remarks
                                         if (billNumbers) {
@@ -3304,8 +3411,7 @@ def calculate_serial_sku_score(text, pattern_type):
                                     }
                                 }
                             });                        
-                        }
-                        // Update reconciledData if it exists - enhanced sales integration with same conditions
+                        }                        // Update reconciledData if it exists - enhanced sales integration with same conditions
                         if (state.reconciledData.length > 0) {
                             state.reconciledData.forEach(item => {
                                 const sale = salesSummary.find(s => s.sku === item.SKU);
@@ -3315,21 +3421,21 @@ def calculate_serial_sku_score(text, pattern_type):
                                     // Check if this item already has any count (manual, first count, or recount)
                                     const hasExistingCount = (
                                         // Has been manually counted
-                                        (item.ReasonFinal && (item.ReasonFinal.includes('Manual') || item.ReasonFinal.includes('Recount'))) ||
+                                        (item.ReasonFinal && (item.ReasonFinal.includes('Manual') || item.ReasonFinal.includes('Re-Scan') || item.ReasonFinal.includes('Scan'))) ||
                                         // Has been counted in first count (Scan1 > 0 or has Reason1)
                                         (item.Scan1 > 0 || (item.Reason1 && item.Reason1.trim() !== '')) ||
                                         // Has been recounted (Recount different from initial and not due to previous sales)
                                         (item.Recount !== item.Scan1 && !item.ReasonFinal?.includes('Sales:')) ||
-                                        // Has any counting reason that's not sales-related
-                                        (item.ReasonFinal && !item.ReasonFinal.includes('Sales:') && item.ReasonFinal.trim() !== '')
+                                        // Has any counting reason that's not sales-related (excluding uncounted items)
+                                        (item.ReasonFinal && !item.ReasonFinal.includes('Sales:') && item.ReasonFinal.trim() !== '' && item.ReasonFinal !== 'DEMO-N/A' && !item.ReasonFinal.includes('N/A'))
                                     );
                                     
                                     if (hasExistingCount) {
                                         // Skip updating count, only add "sold now" to remark
-                                        const soldNowText = `sold now: ${billNumbers}`;
+                                        const soldNowText = `Sold now: ${billNumbers}`;
                                         if (item.Remark && item.Remark.trim() !== '') {
                                             // Remove any previous "sold now" entries before adding new one
-                                            item.Remark = item.Remark.replace(/\s*\|\s*sold now:[^|]*/g, '');
+                                            item.Remark = item.Remark.replace(/\s*\|\s*Sold now:[^|]*/g, '');
                                             item.Remark += ` | ${soldNowText}`;
                                         } else {
                                             item.Remark = soldNowText;
@@ -3354,12 +3460,13 @@ def calculate_serial_sku_score(text, pattern_type):
                                                 item.Remark = item.Remark.replace(/^Bills:[^|]*$/, '');
                                             }
                                         }
-                                        
-                                        // Add sales count directly to final count (not reducing SOH)
+                                          // Add sales count directly to final count (not reducing SOH)
                                         item.Recount = (item.Recount || 0) + sale.totalQty;
                                         item.FinalDiff = item.Recount - item.SOH;
-                                          // Update reason to indicate sales during count
-                                        item.ReasonFinal = `Sales: ${sale.totalQty} units added`;
+                                          // Update reason to indicate sales during count with SOH tracking
+                                        const wasSohUpdated = state.sohUpdatedSkus && state.sohUpdatedSkus.has(item.SKU);
+                                        const salesReason = `Sales: ${sale.totalQty} units added`;
+                                        item.ReasonFinal = wasSohUpdated ? `SOHupdated-${salesReason}` : salesReason;
                                         
                                         // Add bill numbers to remarks
                                         if (billNumbers) {
@@ -3483,19 +3590,21 @@ def calculate_serial_sku_score(text, pattern_type):
                         </ul>
                     </div>
                 `;
-                  showModal("Generate Recount Master File", previewMessage, {
+                showModal("Generate Recount Master File", previewMessage, {
                     onConfirm: () => {
+                        // Use new file naming convention: Master_ReCount_branchcode_date.csv
+                        const branchInfo = state.branchCode ? `${state.branchCode}_${state.countDate}` : `${state.branchName.replace(/\s+/g, '_')}_${state.countDate}`;
+                        const fileName = `Master_ReCount_${branchInfo}.csv`;
+                        
                         const rowsForCsv = itemsToRecount.map(item => [item.SKU, item.Description, item.Price, item.Age, item.SOH]);
-                        downloadFile(Papa.unparse(rowsForCsv, { header: false }), 'Master_Recount.csv');
+                        downloadFile(Papa.unparse(rowsForCsv, { header: false }), fileName);
                         showModal("Success", `Recount master file generated with ${itemsToRecount.length} items.`);
                     },
                     onCancel: () => {},
                     confirmText: "Generate File",
                     cancelText: "Cancel"
                 });
-            }
-
-            async function handleLatestSohUpload(e) {
+            }            async function handleLatestSohUpload(e) {
                 const file = e.target.files[0]; if (!file) return;
                 getEl('latestSohFileName').textContent = file.name;
                 showLoader("Updating SOH...");
@@ -3504,23 +3613,61 @@ def calculate_serial_sku_score(text, pattern_type):
                     if (!latestSohRaw?.length) throw new Error("Latest SOH file is empty or invalid.");
                     const { lookup: latestSohProcessedLookup } = processAndSeparateSoh(latestSohRaw);
                     if (Object.keys(latestSohProcessedLookup).length === 0) throw new Error("No valid stock items found in the latest SOH file.");
+                    
+                    // Track SKUs with updated SOH
+                    const sohUpdatedSkus = new Set();
                     let updatedCount = 0;
+                    
                     state.netDiffData.forEach(item => {
                         if (latestSohProcessedLookup[item.SKU] !== undefined) {
                             const oldSoh = item.SOH;
                             const newSoh = latestSohProcessedLookup[item.SKU].SOH;
-                            if (oldSoh !== newSoh) { item.SOH = newSoh; item.Diff1 = item.Scan1 - item.SOH; updatedCount++; }
+                            if (oldSoh !== newSoh) { 
+                                item.SOH = newSoh; 
+                                item.Diff1 = item.Scan1 - item.SOH; 
+                                sohUpdatedSkus.add(item.SKU);
+                                updatedCount++; 
+                            }
                         }
                     });
                     Object.values(state.sohLookup).forEach(item => {
-                        if (latestSohProcessedLookup[item.SKU] !== undefined) item.SOH = latestSohProcessedLookup[item.SKU].SOH;
+                        if (latestSohProcessedLookup[item.SKU] !== undefined) {
+                            const oldSoh = item.SOH;
+                            const newSoh = latestSohProcessedLookup[item.SKU].SOH;
+                            if (oldSoh !== newSoh) {
+                                item.SOH = newSoh;
+                                sohUpdatedSkus.add(item.SKU);
+                            }
+                        }
                     });
                     if (state.reconciledData.length > 0) {
                         state.reconciledData.forEach(item => {
-                            if (latestSohProcessedLookup[item.SKU] !== undefined) { item.SOH = latestSohProcessedLookup[item.SKU].SOH; item.FinalDiff = item.Recount - item.SOH; }
+                            if (latestSohProcessedLookup[item.SKU] !== undefined) { 
+                                const oldSoh = item.SOH;
+                                const newSoh = latestSohProcessedLookup[item.SKU].SOH;
+                                if (oldSoh !== newSoh) {
+                                    item.SOH = newSoh; 
+                                    item.FinalDiff = item.Recount - item.SOH;
+                                    sohUpdatedSkus.add(item.SKU);
+                                      // Update reason to include SOHupdated
+                                    if (!item.ReasonFinal || item.ReasonFinal === 'DEMO-N/A' || item.ReasonFinal === 'N/A Re-Scan') {
+                                        item.ReasonFinal = 'SOHupdated';
+                                    } else if (!item.ReasonFinal.includes('SOHupdated')) {
+                                        item.ReasonFinal = `SOHupdated-${item.ReasonFinal}`;
+                                    }
+                                } else {
+                                    item.SOH = newSoh; 
+                                    item.FinalDiff = item.Recount - item.SOH;
+                                }
+                            }
                         });
                         applyFinalReportView(); renderFinalReportCharts();
                     }
+                    
+                    // Store SOH updated SKUs for future reference
+                    if (!state.sohUpdatedSkus) state.sohUpdatedSkus = new Set();
+                    sohUpdatedSkus.forEach(sku => state.sohUpdatedSkus.add(sku));
+                    
                     showModal("Success", `SOH updated for ${updatedCount} items. You can now generate a new recount file or finalize the report.`);
                     setUnsavedChanges(true);
                 } catch (error) { showModal("Error Updating SOH", error.message);
@@ -3596,47 +3743,83 @@ def calculate_serial_sku_score(text, pattern_type):
                         } else {
                             recountCounts[item.sku] = item.qty;
                         }
-                    });
-
-                    state.reconciledData = state.netDiffData.map(item => {
+                    });                    state.reconciledData = state.netDiffData.map(item => {
                         const newItem = {...item};
                         
                         // Check if item has been manually edited in final table
                         const existingReconciledItem = state.reconciledData.find(r => r.SKU === item.SKU);
-                        const hasManualEdit = existingReconciledItem && existingReconciledItem.ReasonFinal === 'Manual Edit';
+                        const hasManualEdit = existingReconciledItem && (
+                            existingReconciledItem.ReasonFinal === 'Manual Edit' ||
+                            existingReconciledItem.ReasonFinal === 'SOHupdated-Manual Edit'
+                        );
                         
                         if (hasManualEdit) {
                             // Skip updating - preserve manual edit
                             return existingReconciledItem;
                         }
                         
-                        // Initialize Recount and ReasonFinal for all items
-                        if (!newItem.isDemo && newItem.Diff1 !== 0) {
-                            // Items that need recounting
-                            if (recountCounts[newItem.SKU] !== undefined) { 
-                                newItem.Recount = recountCounts[newItem.SKU]; 
-                                newItem.ReasonFinal = 'Recount'; 
-                            } else { 
-                                newItem.Recount = 0; 
-                                newItem.ReasonFinal = 'Not Found on Recount'; 
-                            }
-                        } else if (newItem.isDemo) {
-                            // Demo items: get current count from demo panel
-                            const demoCount = state.demoCounts[newItem.SKU];
-                            if (demoCount && typeof demoCount.qty === 'number') {
-                                newItem.Recount = demoCount.qty;
-                                newItem.ReasonFinal = demoCount.reason || 'Manual';
+                        // Check if item has existing sales data that should be preserved
+                        const hasSalesData = existingReconciledItem && 
+                            existingReconciledItem.ReasonFinal && 
+                            existingReconciledItem.ReasonFinal.includes('Sales:');
+                        
+                        if (hasSalesData) {
+                            // Preserve existing sales data and only update if this item was recounted
+                            if (recountCounts[newItem.SKU] !== undefined) {
+                                // Item was recounted - add recount data to existing sales count
+                                const salesMatch = existingReconciledItem.ReasonFinal.match(/Sales: (\d+) units added/);
+                                const salesQty = salesMatch ? parseInt(salesMatch[1], 10) : 0;
+                                
+                                // Set base count from recount, then add sales on top
+                                newItem.Recount = recountCounts[newItem.SKU] + salesQty;
+                                newItem.FinalDiff = newItem.Recount - newItem.SOH;
+                                
+                                // Update reason to combine recount and sales info
+                                const wasSohUpdated = state.sohUpdatedSkus && state.sohUpdatedSkus.has(newItem.SKU);
+                                const baseRecountReason = wasSohUpdated ? 'SOHupdated-Re-Scan' : 'Re-Scan';
+                                newItem.ReasonFinal = `${baseRecountReason} + ${existingReconciledItem.ReasonFinal}`;
+                                
+                                // Preserve existing remarks (which contain bill numbers)
+                                newItem.Remark = existingReconciledItem.Remark || '';
                             } else {
-                                newItem.Recount = 0;
-                                newItem.ReasonFinal = 'Not Counted';
+                                // Item was not recounted - preserve all existing sales data
+                                return existingReconciledItem;
                             }
                         } else {
-                            // Items that don't need recounting (items with no difference)
-                            newItem.Recount = newItem.Counted1 || 0;
-                            newItem.ReasonFinal = 'No Recount Needed';
+                            // No existing sales data - proceed with normal recount logic
+                            // Initialize Recount and ReasonFinal for all items
+                            if (!newItem.isDemo && newItem.Diff1 !== 0) {
+                                // Items that need recounting
+                                const wasSohUpdated = state.sohUpdatedSkus && state.sohUpdatedSkus.has(newItem.SKU);                            
+                                if (recountCounts[newItem.SKU] !== undefined) { 
+                                    newItem.Recount = recountCounts[newItem.SKU]; 
+                                    newItem.ReasonFinal = wasSohUpdated ? 'SOHupdated-Re-Scan' : 'Re-Scan';                            
+                                } else { 
+                                    newItem.Recount = 0; 
+                                    newItem.ReasonFinal = wasSohUpdated ? 'SOHupdated-N/A Re-Scan' : 'N/A Re-Scan'; 
+                                }
+                            } else if (newItem.isDemo) {
+                                // Demo items: get current count from demo panel
+                                const demoCount = state.demoCounts[newItem.SKU];
+                                const wasSohUpdated = state.sohUpdatedSkus && state.sohUpdatedSkus.has(newItem.SKU);                            
+                                if (demoCount && typeof demoCount.qty === 'number') {
+                                    newItem.Recount = demoCount.qty;
+                                    const baseReason = demoCount.reason || 'DEMO-Manual';
+                                    newItem.ReasonFinal = wasSohUpdated ? `SOHupdated-${baseReason}` : baseReason;                            
+                                } else {
+                                    const wasSohUpdated = state.sohUpdatedSkus && state.sohUpdatedSkus.has(newItem.SKU);
+                                    newItem.Recount = 0;
+                                    newItem.ReasonFinal = wasSohUpdated ? 'SOHupdated-DEMO-N/A' : 'DEMO-N/A';
+                                }} else {
+                                // Items that don't need recounting (items with no difference)
+                                newItem.Recount = newItem.Counted1 || 0;
+                                // Keep the original reason for items that don't need recounting
+                                // Don't change to "No Recount Needed" - preserve the original counting reason
+                            }
+                            
+                            newItem.FinalDiff = newItem.Recount - newItem.SOH;
                         }
                         
-                        newItem.FinalDiff = newItem.Recount - newItem.SOH;
                         return newItem;
                     });
 
@@ -3670,33 +3853,54 @@ def calculate_serial_sku_score(text, pattern_type):
                     if (filterValue === 'demo') return item.isDemo;
                     if (filterValue === 'normal') return !item.isDemo;
                     return true;
-                });
-                const { column, direction } = state.finalReportSort;
-                dataView.sort((a, b) => {
+                });                const { column, direction } = state.finalReportSort;                dataView.sort((a, b) => {
                     let valA = column === 'FinalDiff' ? Math.abs(a[column]) : a[column];
                     let valB = column === 'FinalDiff' ? Math.abs(b[column]) : b[column];
+                    
+                    // Handle field name mapping for certain columns
+                    if (column === 'SRP') {
+                        valA = a.Price || 0;
+                        valB = b.Price || 0;
+                    } else if (column === 'FinalCount') {
+                        valA = a.Recount || 0;
+                        valB = b.Recount || 0;
+                    }
+                    
+                    // Handle null/undefined values for string columns
+                    if (column === 'ReasonFinal' || column === 'Remark') {
+                        valA = valA || '';
+                        valB = valB || '';
+                    }
+                    
                     if (typeof valA === 'string') return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
                     return direction === 'asc' ? valA - valB : valB - valA;
                 });
                 renderFinalReportTable(dataView);
                 updateFinalReportSummary();
-            }
-
-            function renderFinalReportTable(data) {
+            }            function renderFinalReportTable(data) {
                 const container = getEl('final-report-table-container');
                 if (!data.length) { container.innerHTML = '<p class="text-center p-10 text-slate-500">No data matches the current filter.</p>'; return; }
-                const headers = `<thead><tr><th class="p-3 text-center w-12">NO.</th><th class="p-3 text-left" data-sort-by="SKU">SKU<span class="sort-indicator"></span></th><th class="p-3 text-left" data-sort-by="Description">Description<span class="sort-indicator"></span></th><th class="p-3 text-center">SRP</th><th class="p-3 text-center" data-sort-by="SOH">SOH<span class="sort-indicator"></span></th><th class="p-3 text-center">Final Count</th><th class="p-3 text-center" data-sort-by="FinalDiff">Final Diff<span class="sort-indicator"></span></th><th class="p-3 text-left">Reason</th><th class="p-3 text-left">Remark</th></tr></thead>`;
+                const headers = `<thead><tr><th class="p-3 text-center w-12">NO.</th><th class="p-3 text-left" data-sort-by="SKU">SKU<span class="sort-indicator"></span></th><th class="p-3 text-left" data-sort-by="Description">Description<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="SRP">SRP<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="Age">Age<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="SOH">SOH<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="FinalCount">Final Count<span class="sort-indicator"></span></th><th class="p-3 text-center" data-sort-by="FinalDiff">Final Diff<span class="sort-indicator"></span></th><th class="p-3 text-left" data-sort-by="ReasonFinal">Reason<span class="sort-indicator"></span></th><th class="p-3 text-left" data-sort-by="Remark">Remark<span class="sort-indicator"></span></th></tr></thead>`;
                 const body = `<tbody>${data.map((item, idx) => renderFinalReportRow(item, idx)).join('')}</tbody>`;
                 container.innerHTML = `<table class="w-full text-sm">${headers}${body}</tbody></table>`;
+                
+                // Update sort indicators with colors
                 const sortingTh = container.querySelector(`th[data-sort-by="${state.finalReportSort.column}"]`);
-                if (sortingTh) { sortingTh.querySelector('.sort-indicator').textContent = state.finalReportSort.direction === 'asc' ? '▲' : '▼'; }
-            }            function renderFinalReportRow(item, idx) {
+                if (sortingTh) { 
+                    const indicator = sortingTh.querySelector('.sort-indicator');
+                    indicator.textContent = state.finalReportSort.direction === 'asc' ? '▲' : '▼'; 
+                    // Add color: green for ascending, red for descending
+                    indicator.style.color = state.finalReportSort.direction === 'asc' ? '#22c55e' : '#ef4444';
+                }
+            }
+            function renderFinalReportRow(item, idx) {
                 const { rowClass, statusDotColor } = getRowVisuals(item.FinalDiff, item.isDemo);
                 return `<tr class="border-b border-slate-200 ${rowClass}" data-sku="${item.SKU}">
                     <td class="p-3 text-center">${idx + 1}</td>
                     <td class="p-3 font-medium text-slate-800">${item.SKU}</td>
                     <td class="p-3 text-slate-600">${item.Description}</td>
                     <td class="p-3 text-center">${item.Price ?? 0}</td>
+                    <td class="p-3 text-center text-slate-600">${item.Age || 'N/A'}</td>
                     <td class="p-3 text-center">${item.SOH}</td>
                     <td class="p-3 text-center w-24"><input type="number" value="${item.Recount}" class="w-full text-center p-1.5 border border-slate-300 rounded-md"/></td>
                     <td class="p-3 font-bold text-center ${getDiffColorClass(item.FinalDiff)}">${item.FinalDiff > 0 ? '+' : ''}${item.FinalDiff}</td>
@@ -3713,32 +3917,46 @@ def calculate_serial_sku_score(text, pattern_type):
                 const { rowClass } = getRowVisuals(diff, isDemo);
                 row.className = `border-b border-slate-200 ${rowClass}`;
                 // Note: .status-dot element doesn't exist in table rows, so no need to update it
-            }
-              function updateFinalCount(sku, value) {
+            }              function updateFinalCount(sku, value) {
                 const item = state.reconciledData.find(i => i.SKU === sku); if (!item) return;
                 const newCount = value === '' ? 0 : parseInt(value, 10);
                 item.Recount = isNaN(newCount) ? 0 : newCount;
-                item.FinalDiff = item.Recount - item.SOH; item.ReasonFinal = 'Manual Edit';
+                item.FinalDiff = item.Recount - item.SOH; 
+                
+                // Handle SOH updated reason tracking
+                const wasSohUpdated = state.sohUpdatedSkus && state.sohUpdatedSkus.has(sku);
+                if (wasSohUpdated) {
+                    item.ReasonFinal = 'SOHupdated-Manual Edit';
+                } else {
+                    item.ReasonFinal = 'Manual Edit';
+                }
                 const row = getEl('final-report-table-container').querySelector(`tr[data-sku="${sku}"]`);                
                   if(row) {
-                    // Update Final Count column (index 5) with the new count value
-                    row.cells[5].querySelector('input[type="number"]').value = item.Recount;
-                    // Update Final Diff column (index 6) with the calculated difference
-                    row.cells[6].textContent = item.FinalDiff > 0 ? `+${item.FinalDiff}` : item.FinalDiff;
-                    row.cells[6].className = `p-3 font-bold text-center ${getDiffColorClass(item.FinalDiff)}`;
-                    // Update Reason column (index 7)
-                    row.cells[7].textContent = item.ReasonFinal;
+                    // Update Final Count column (index 6) with the new count value
+                    row.cells[6].querySelector('input[type="number"]').value = item.Recount;
+                    // Update Final Diff column (index 7) with the calculated difference
+                    row.cells[7].textContent = item.FinalDiff > 0 ? `+${item.FinalDiff}` : item.FinalDiff;
+                    row.cells[7].className = `p-3 font-bold text-center ${getDiffColorClass(item.FinalDiff)}`;
+                    // Update Reason column (index 8)
+                    row.cells[8].textContent = item.ReasonFinal;
                     updateTableRowVisuals(row, item.FinalDiff, item.isDemo);
                 }
                 updateFinalReportSummary();
                 updateDemoSummary();
                 renderFinalReportCharts();
                 setUnsavedChanges(true);
-            }
-
+            }            
             function updateRemark(sku, value) {
                 const item = state.reconciledData.find(i => i.SKU === sku); if (item) { 
                     item.Remark = value; setUnsavedChanges(true); 
+                }
+            }
+
+            function updateDemoRemark(sku, value) {
+                const item = state.demoMaster.find(i => i.SKU === sku);
+                if (item) {
+                    item.remark = value;
+                    setUnsavedChanges(true);
                 }
             }
 
@@ -3806,21 +4024,35 @@ def calculate_serial_sku_score(text, pattern_type):
                 const categoryData = Object.entries(summary.byCategory).sort(([,a],[,b]) => Math.abs(b) - Math.abs(a)).slice(0, 15);
                 state.charts.category = new Chart(getEl('categoryChart'), { type: 'bar', data: { labels: categoryData.map(([name]) => name.substring(0, 15)), datasets: [{ label: 'Net Qty Difference', data: categoryData.map(([, qty]) => qty), backgroundColor: categoryData.map(([, qty]) => qty > 0 ? 'rgba(34, 197, 94, 0.7)' : 'rgba(239, 68, 68, 0.7)'), }] }, options: { ...chartOptions, indexAxis: 'y', scales: { y: { beginAtZero: true } } } });
             }
-            
-            function exportFinalReport() {
+              function exportFinalReport() {
                 if (!state.reconciledData.length) return showModal("Info", "No data to export.");
-                const dataToExport = state.reconciledData.map((item, idx) => ({ NO: idx + 1, SKU: item.SKU, Description: item.Description, Age: item.Age, SRP: item.Price, SOH: item.SOH, Scan: item.Scan1, Recount: item.Recount, FinalDiff: item.FinalDiff, Remark: item.Remark || '', Reason: item.ReasonFinal, }));
-                downloadFile(Papa.unparse(dataToExport, { header: true }), `${state.countDate}_${state.branchName.replace(/\s+/g, '_')}_Report.csv`);
-            }            
+                const dataToExport = state.reconciledData.map((item, idx) => ({
+                    NO: idx + 1, 
+                    SKU: item.SKU, 
+                    Description: item.Description, 
+                    SRP: item.Price, 
+                    Age: item.Age, 
+                    SOH: item.SOH, 
+                    Scan: item.Scan1, 
+                    Recount: item.Recount, 
+                    FinalDiff: item.FinalDiff, 
+                    Remark: item.Remark || '', 
+                    Reason: item.ReasonFinal,
+                    Flag: item.isDemo ? 'DEMO' : 'NONE'
+                }));
+                const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
+                downloadFile(Papa.unparse(dataToExport, { header: true }), `${state.countDate}_Report_${branchInfo}.csv`);
+            }
             function exportStockCountToJSON() {
                 if (!state.reconciledData.length) {
                     alert('กรุณาประมวลผลข้อมูลให้ถึงขั้นตอนสุดท้ายก่อนทำการ Export');
                     return;
                 }
-                 const exportData = {
+                const exportData = {
                     tool: 'stock-count',
                     details: {
                         branch: state.branchName,
+                        branchCode: state.branchCode,
                         date: state.countDate,
                     },
                     summary: finalSummaryData,
@@ -3831,7 +4063,8 @@ def calculate_serial_sku_score(text, pattern_type):
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `Stock-Count_${state.branchName}_${state.countDate}.json`;
+                const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
+                a.download = `${state.countDate}_Stock-Count_${branchInfo}.json`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -3992,7 +4225,7 @@ def calculate_serial_sku_score(text, pattern_type):
                     if (match) {
                         recognizedText = match[0];
                         scannerResultsEl.innerHTML = `<p>Found text: ${recognizedText}</p>`;
-                        processScannedCode(recognizedText, 'Text Scan');
+                        processScannedCode(recognizedText, 'DEMO-Text Scan');
                     } else {
                         scannerResultsEl.innerHTML = `<p class="text-red-500">ไม่พบตัวอักษรที่ชัดเจน</p>`;
                     }
@@ -4053,7 +4286,7 @@ def calculate_serial_sku_score(text, pattern_type):
                     
                     if (cachedResult.text && cachedResult.text.match(/[A-Z0-9\-]{8,}/)) {
                         scannerResultsEl.innerHTML = `<p>Serial Number: <b>${cachedResult.text}</b> (cached)</p>`;
-                        processScannedCode(cachedResult.text, 'Text Scan');
+                        processScannedCode(cachedResult.text, 'DEMO-Text Scan');
                         stopOcrStreaming();
                         return;
                     }
@@ -4215,7 +4448,7 @@ def calculate_serial_sku_score(text, pattern_type):
                         
                         
                         scannerResultsEl.innerHTML = `<p>Apple Serial: <b>${finalText}</b></p>`;
-                        processScannedCode(finalText, 'Text Scan');
+                        processScannedCode(finalText, 'DEMO-Text Scan');
                         stopOcrStreaming();
                     } else {
                         scannerResultsEl.innerHTML = `<p class='text-blue-500'>Scanning Apple products... (${confidence.toFixed(1)}%)</p>`;
@@ -4286,7 +4519,7 @@ def calculate_serial_sku_score(text, pattern_type):
                 const code = result.codeResult.code.trim();
                 const now = Date.now(); if (scanCooldown[code] && now - scanCooldown[code] < 10000) return;
                 scanCooldown[code] = now;
-                processScannedCode(code, 'Barcode');
+                processScannedCode(code, 'DEMO-Barcode');
             };
               function initializeAppListeners() {
                 function addListener(id, event, handler) {
@@ -4308,36 +4541,24 @@ def calculate_serial_sku_score(text, pattern_type):
 
                         // Sort by SKU for consistency
                         allItems.sort((a, b) => a.SKU.localeCompare(b.SKU));
-                        
-                        // Prepare data for export
+                          // Prepare data for export - use existing isDemo flag
                         const rows = allItems.map(item => {
-                            const sku = String(item.SKU || '').toUpperCase();
-                            const desc = String(item.Description || '').toUpperCase();
-                            const family = String(item.FAMILY || '').toUpperCase();
-                            // Opt-out for USB-C to Lightning Adapter SKUs
-                            const isDemo = (
-                                !sku.startsWith('DLCGZ') && (
-                                    sku.startsWith('D') ||
-                                    sku.startsWith('DEMO-') ||
-                                    sku.endsWith('-D') ||
-                                    desc.includes('DEMO') ||
-                                    family === 'DEMO'
-                                )
-                            );
                             return {
                                 SKU: item.SKU,
                                 Description: item.Description,
                                 SRP: item.Price,
                                 Age: item.Age,
                                 SOH: item.SOH,
-                                FAMILY: isDemo ? 'DEMO' : 'NONE'
+                                FAMILY: item.isDemo ? 'DEMO' : 'NONE'
                             };
                         });
-                        
                         const ws = XLSX.utils.json_to_sheet(rows);
                         const wb = XLSX.utils.book_new();
                         XLSX.utils.book_append_sheet(wb, ws, "SOH Export");
-                        const filename = `SOH_Export_${state.branchName || 'Branch'}_${state.countDate || new Date().toISOString().split('T')[0]}.xlsx`;
+                        
+                        // Use new file naming convention: countdate_function_branchcode_branchname
+                        const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
+                        const filename = `${state.countDate || new Date().toISOString().split('T')[0]}_SOH_Export_${branchInfo}.xlsx`;
                         XLSX.writeFile(wb, filename);
                           showModal("Success", `Successfully exported ${allItems.length} items to ${filename}`);
                     } catch (error) {
@@ -4396,7 +4617,7 @@ def calculate_serial_sku_score(text, pattern_type):
 
                 addListener('wf-step-tabs', 'click', e => { if (e.target.id.startsWith('wf-tab-btn-')) changeWorkflowTab(e.target.id.slice(-1)); });
                 addListener('demo-count-container', 'click', e => { const header = e.target.closest('th[data-sort-by]'); if (header) handleSort('demoSort', header.dataset.sortBy, applyDemoView); });
-                addListener('demo-count-container', 'input', e => { if (e.target.matches('input[type="number"]')) updateDemoCount(e.target.closest('tr').dataset.sku, e.target.value); });
+                addListener('demo-count-container', 'input', e => { const { target: input } = e; const sku = input.closest('tr').dataset.sku; if (input.matches('input[type="number"]')) updateDemoCount(sku, input.value); else if (input.matches('input[type="text"]')) updateDemoRemark(sku, input.value); });
                 addListener('final-report-table-container', 'click', e => { const header = e.target.closest('th[data-sort-by]'); if (header) handleSort('finalReportSort', header.dataset.sortBy, applyFinalReportView); });
                 addListener('final-report-table-container', 'input', e => { const { target: input } = e; const sku = input.closest('tr').dataset.sku; if (input.matches('input[type="number"]')) updateFinalCount(sku, input.value); else if (input.matches('input[type="text"]')) updateRemark(sku, input.value); });
                   const handleEnter = (event) => { if (event.key === 'Enter') { const allInputs = Array.from(event.currentTarget.querySelectorAll('input[type="number"], input[type="text"]')); const currentIndex = allInputs.indexOf(event.target); if (currentIndex > -1 && currentIndex < allInputs.length - 1) allInputs[currentIndex + 1].focus(); } };
