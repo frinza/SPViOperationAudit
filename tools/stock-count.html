@@ -826,6 +826,9 @@
                                  </svg>
                                  <input type="text" id="demoSearchInput" placeholder="ค้นหาด้วย SKU หรือ Description..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                              </div>
+                             <button id="openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm whitespace-nowrap">
+                                Scan
+                             </button>
                              <select id="demoFilterSelect" class="w-full md:w-auto p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                  <option value="all">แสดงทั้งหมด</option>
                                  <option value="uncounted">แสดงรายการที่ยังไม่ได้นับ</option>
@@ -833,12 +836,8 @@
                                  <option value="matched">แสดงรายการที่นับตรง</option>
                              </select>
                          </div>
-                         <div id="demo-count-container" class="table-container border rounded-lg"></div>
-                         <button id="exportDemoCsvButton" class="bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm text-sm mt-2">
+                         <div id="demo-count-container" class="table-container border rounded-lg"></div>                         <button id="exportDemoCsvButton" class="bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm text-sm mt-2">
                              Export DEMO Table as CSV
-                         </button>                         
-                         <button id="openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm mt-2">
-                             Scan
                          </button>
                      </div>
                 </div>
@@ -1067,22 +1066,15 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                 <input type="text" id="finalSearchInput" placeholder="ค้นหารายงาน..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                             </div>
+                            <button id="final-openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm whitespace-nowrap">
+                                Scan
+                            </button>
                             <select id="finalFilterSelect" class="w-full md:w-auto p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="all">แสดงทั้งหมด</option>
                                 <option value="discrepancy">เฉพาะรายการที่ผลต่างไม่เท่ากับ 0</option>
                                 <option value="demo">เฉพาะสินค้า DEMO</option>
                                 <option value="normal">เฉพาะสินค้าปกติ</option>
                             </select>
-                        </div>
-                        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 mb-8 no-print">
-                            <h3 class="text-xl font-semibold text-slate-800 mb-4">เปิดกล้องเพื่อสแกนสินค้า</h3>
-                            <div class="flex flex-col md:flex-row gap-4">
-                                <div class="relative flex-1">
-                                    <button id="final-openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm mb-2">
-                                        Scan                                    
-                                    </button>
-                                </div>
-                            </div>
                         </div>
                         <div id="final-report-table-container" class="table-container border border-slate-200 rounded-lg"></div>
                         <div class="mt-4 flex flex-col sm:flex-row gap-4 no-print">                            
@@ -3015,13 +3007,15 @@ def calculate_serial_sku_score(text, pattern_type):
                 }, 0);
                 const diffItems = state.demoMaster.filter(item => { const countInfo = state.demoCounts[item.SKU]; return countInfo && countInfo.qty !== null && countInfo.qty !== item.SOH; }).length;
                 getEl('demo-summary').innerHTML = `
-                    <div class="flex justify-between gap-4"><span>Total DEMO SOH:</span><span class="font-bold">${formatNumber(totalSOH)}</span></div>
-                    <div class="flex justify-between gap-4"><span>Total DEMO SOH Value:</span><span class="font-bold text-blue-600">${formatNumber(totalSOHPrice)}</span></div>
-                    <div class="flex justify-between gap-4"><span>Counted DEMO SOH:</span><span class="font-bold text-green-600">${formatNumber(countedSOH)}</span></div>
-                    <div class="flex justify-between gap-4"><span>Counted DEMO SOH Value:</span><span class="font-bold text-green-600">${formatNumber(countedSOHValue)}</span></div>
-                    <div class="flex justify-between gap-4"><span>Total DEMO SKUs:</span><span class="font-bold">${formatNumber(state.demoMaster.length)}</span></div>
-                    <div class="flex justify-between gap-4"><span>Counted SKUs:</span><span class="font-bold text-green-600">${countedSKUs}</span></div>
-                    <div class="flex justify-between gap-4"><span>Discrepancies:</span><span class="font-bold text-red-600">${diffItems}</span></div>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <div class="flex justify-between gap-2"><span>Total DEMO SOH:</span><span class="font-bold">${formatNumber(totalSOH)}</span></div>
+                        <div class="flex justify-between gap-2"><span>Total DEMO SOH Value:</span><span class="font-bold text-blue-600">${formatNumber(totalSOHPrice)}</span></div>
+                        <div class="flex justify-between gap-2"><span>Counted DEMO SOH:</span><span class="font-bold text-green-600">${formatNumber(countedSOH)}</span></div>
+                        <div class="flex justify-between gap-2"><span>Counted DEMO SOH Value:</span><span class="font-bold text-green-600">${formatNumber(countedSOHValue)}</span></div>
+                        <div class="flex justify-between gap-2"><span>Total DEMO SKUs:</span><span class="font-bold">${formatNumber(state.demoMaster.length)}</span></div>
+                        <div class="flex justify-between gap-2"><span>Counted SKUs:</span><span class="font-bold text-green-600">${countedSKUs}</span></div>
+                        <div class="flex justify-between gap-2 col-span-2"><span>Discrepancies:</span><span class="font-bold text-red-600">${diffItems}</span></div>
+                    </div>
                 `;
             }
 
@@ -3983,22 +3977,32 @@ def calculate_serial_sku_score(text, pattern_type):
                 finalSummaryData = summary; // Save for JSON export
                 finalSummaryData.netDiffCost = summary.overCost + summary.shortCost;
 
+                // Calculate net diff values for dynamic coloring
+                const netDiffQty = summary.overQty + summary.shortQty;
+                const netDiffCost = finalSummaryData.netDiffCost;
+                
+                // Determine colors for Net Diff based on values
+                const getNetDiffColor = (value) => {
+                    if (value === 0) return 'text-green-600';
+                    if (value > 0) return 'text-yellow-600'; // dark yellow for positive differences
+                    return 'text-red-600'; // red for negative differences
+                };
+
                 summaryEl.innerHTML = `<h4 class="font-semibold text-center mb-1 text-slate-700">Report Summary</h4><div class="grid grid-cols-2 gap-x-4">
-                    <div class="text-green-600"><strong>Over Qty:</strong> ${formatNumber(summary.overQty)}</div>
-                    <div class="text-green-600"><strong>Over Cost:</strong> ${formatNumber(summary.overCost)}</div>
+                    <div class="text-yellow-600"><strong>Over Qty:</strong> ${formatNumber(summary.overQty)}</div>
+                    <div class="text-yellow-600"><strong>Over Cost:</strong> ${formatNumber(summary.overCost)}</div>
                     <div class="text-red-600"><strong>Short Qty:</strong> ${formatNumber(summary.shortQty)}</div>
                     <div class="text-red-600"><strong>Short Cost:</strong> ${formatNumber(summary.shortCost)}</div>
                     <div class="col-span-2 border-t pt-1 mt-1"></div>
-                    <div class="text-blue-600"><strong>Total SOH Qty:</strong> ${formatNumber(summary.totalSOHQty)}</div>
-                    <div class="text-blue-600"><strong>Total SOH Value:</strong> ${formatNumber(summary.totalSOHPrice)}</div>
+                    <div class="text-black"><strong>Total SOH Qty:</strong> ${formatNumber(summary.totalSOHQty)}</div>
+                    <div class="text-black"><strong>Total SOH Value:</strong> ${formatNumber(summary.totalSOHPrice)}</div>
                     <div class="text-blue-600"><strong>Total Counted Qty:</strong> ${formatNumber(summary.totalCountedQty)}</div>
                     <div class="text-blue-600"><strong>Total Counted Cost:</strong> ${formatNumber(summary.totalCountedCost)}</div>
                     <div class="font-bold col-span-2 border-t pt-1 mt-1"></div>
-                    <div class="font-bold"><strong>Net Diff Qty:</strong> ${formatNumber(summary.overQty + summary.shortQty)}</div>
-                    <div class="font-bold"><strong>Net Diff Cost:</strong> ${formatNumber(finalSummaryData.netDiffCost)}</div>
+                    <div class="font-bold ${getNetDiffColor(netDiffQty)}"><strong>Net Diff Qty:</strong> ${formatNumber(netDiffQty)}</div>
+                    <div class="font-bold ${getNetDiffColor(netDiffCost)}"><strong>Net Diff Cost:</strong> ${formatNumber(netDiffCost)}</div>
                 </div>`;
             }
-
             function renderFinalReportCharts() {
                 if (!state.reconciledData.length) return;
                 Object.values(state.charts).forEach(chart => chart?.destroy());
@@ -4010,19 +4014,85 @@ def calculate_serial_sku_score(text, pattern_type):
                         acc.shortCost += Math.abs(item.FinalDiff * item.Price); acc.shortQty += Math.abs(item.FinalDiff); 
                     }
                     if (item.FinalDiff !== 0) {
-                        const cat = item.CLASS_NAME || 'UNCATEGORIZED'; acc.byCategory[cat] = (acc.byCategory[cat] || 0) + item.FinalDiff; 
+                        const cat = item.CLASS_NAME || 'UNCATEGORIZED'; 
+                        if (!acc.byCategory[cat]) {
+                            acc.byCategory[cat] = { over: 0, short: 0 };
+                        }
+                        if (item.FinalDiff > 0) {
+                            acc.byCategory[cat].over += item.FinalDiff;
+                        } else {
+                            acc.byCategory[cat].short += Math.abs(item.FinalDiff);
+                        }
                     }
                     return acc;
                 }, { 
                     overCost: 0, shortCost: 0, overQty: 0, shortQty: 0, byCategory: {} 
                    });
-                const chartOptions = { 
+                   const chartOptions = {
                     responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } 
                 };
-                state.charts.cost = new Chart(getEl('costChart'), { type: 'doughnut', data: { labels: ['Over', 'Short'], datasets: [{ data: [summary.overCost, summary.shortCost], backgroundColor: ['#22c55e', '#ef4444'] }] }, options: chartOptions });
-                state.charts.qty = new Chart(getEl('qtyChart'), { type: 'doughnut', data: { labels: ['Over', 'Short'], datasets: [{ data: [summary.overQty, summary.shortQty], backgroundColor: ['#22c55e', '#ef4444'] }] }, options: chartOptions });
-                const categoryData = Object.entries(summary.byCategory).sort(([,a],[,b]) => Math.abs(b) - Math.abs(a)).slice(0, 15);
-                state.charts.category = new Chart(getEl('categoryChart'), { type: 'bar', data: { labels: categoryData.map(([name]) => name.substring(0, 15)), datasets: [{ label: 'Net Qty Difference', data: categoryData.map(([, qty]) => qty), backgroundColor: categoryData.map(([, qty]) => qty > 0 ? 'rgba(34, 197, 94, 0.7)' : 'rgba(239, 68, 68, 0.7)'), }] }, options: { ...chartOptions, indexAxis: 'y', scales: { y: { beginAtZero: true } } } });
+                state.charts.cost = new Chart(getEl('costChart'), { type: 'doughnut', data: { labels: ['Over', 'Short'], datasets: [{ data: [summary.overCost, summary.shortCost], backgroundColor: ['#d97706', '#ef4444'] }] }, options: chartOptions });
+                state.charts.qty = new Chart(getEl('qtyChart'), { type: 'doughnut', data: { labels: ['Over', 'Short'], datasets: [{ data: [summary.overQty, summary.shortQty], backgroundColor: ['#d97706', '#ef4444'] }] }, options: chartOptions });
+                
+                // Prepare category data with separate over/shortage values
+                const categoryEntries = Object.entries(summary.byCategory)
+                    .map(([name, data]) => [name, data.over + data.short, data]) // [name, totalDiff, {over, short}]
+                    .sort(([,a],[,b]) => b - a) // Sort by total difference
+                    .slice(0, 15);
+                
+                const categoryLabels = categoryEntries.map(([name]) => name.substring(0, 15));
+                const overageData = categoryEntries.map(([,, data]) => data.over);
+                const shortageData = categoryEntries.map(([,, data]) => data.short);
+                
+                state.charts.category = new Chart(getEl('categoryChart'), { 
+                    type: 'bar', 
+                    data: { 
+                        labels: categoryLabels, 
+                        datasets: [
+                            { 
+                                label: 'Overage', 
+                                data: overageData, 
+                                backgroundColor: 'rgba(217, 119, 6, 0.7)',
+                                borderColor: 'rgba(217, 119, 6, 1)',
+                                borderWidth: 1
+                            },
+                            { 
+                                label: 'Shortage', 
+                                data: shortageData, 
+                                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                                borderColor: 'rgba(239, 68, 68, 1)',
+                                borderWidth: 1
+                            }
+                        ] 
+                    }, 
+                    options: { 
+                        ...chartOptions, 
+                        indexAxis: 'y', 
+                        scales: { 
+                            x: { 
+                                beginAtZero: true,
+                                stacked: false 
+                            },
+                            y: {
+                                stacked: false
+                            }
+                        },
+                        plugins: {
+                            ...chartOptions.plugins,
+                            tooltip: {
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        const categoryIndex = context.dataIndex;
+                                        const categoryData = categoryEntries[categoryIndex][2];
+                                        const total = categoryData.over + categoryData.short;
+                                        const net = categoryData.over - categoryData.short;
+                                        return `Total: ${total}, Net: ${net > 0 ? '+' : ''}${net}`;
+                                    }
+                                }
+                            }
+                        }
+                    } 
+                });
             }
               function exportFinalReport() {
                 if (!state.reconciledData.length) return showModal("Info", "No data to export.");
