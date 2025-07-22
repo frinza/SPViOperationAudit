@@ -3073,6 +3073,15 @@ def calculate_serial_sku_score(text, pattern_type):
                 // --- Patch: Sync latest DEMO counts before finalizing ---
                 state.netDiffData.forEach(item => {
                     if (item.isDemo) {
+                        // Check if item has been manually edited in final table
+                        const existingReconciledItem = state.reconciledData.find(r => r.SKU === item.SKU);
+                        const hasManualEdit = existingReconciledItem && existingReconciledItem.ReasonFinal === 'Manual Edit';
+                        
+                        if (hasManualEdit) {
+                            // Skip updating - preserve manual edit
+                            return;
+                        }
+                        
                         const demoCount = state.demoCounts[item.SKU];
                         if (demoCount && typeof demoCount.qty === 'number') {
                             item.Recount = demoCount.qty;
@@ -3466,6 +3475,15 @@ def calculate_serial_sku_score(text, pattern_type):
                         }
                     });                    state.reconciledData = state.netDiffData.map(item => {
                         const newItem = {...item};
+                        
+                        // Check if item has been manually edited in final table
+                        const existingReconciledItem = state.reconciledData.find(r => r.SKU === item.SKU);
+                        const hasManualEdit = existingReconciledItem && existingReconciledItem.ReasonFinal === 'Manual Edit';
+                        
+                        if (hasManualEdit) {
+                            // Skip updating - preserve manual edit
+                            return existingReconciledItem;
+                        }
                         
                         // Initialize Recount and ReasonFinal for all items
                         if (!newItem.isDemo && newItem.Diff1 !== 0) {
