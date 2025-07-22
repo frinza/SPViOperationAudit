@@ -2761,11 +2761,11 @@ def calculate_serial_sku_score(text, pattern_type):
                     const family = String(row.FAMILY || '').toUpperCase();
                     // DEMO detection logic
                     const isDemo = (
-                        !sku.startsWith('DL') && 
-                        !sku.startsWith('DN') && 
-                        !sku.startsWith('DX') && 
-                        !sku.startsWith('DK') && 
-                        !sku.startsWith('DM') && 
+                        !sku.startsWith('DL') || 
+                        !sku.startsWith('DN') ||
+                        !sku.startsWith('DX') || 
+                        !sku.startsWith('DK') || 
+                        !sku.startsWith('DM') || 
                         !sku.startsWith('DT') && (
                             sku.startsWith('D') ||
                             sku.startsWith('DEMO-') ||
@@ -4321,7 +4321,12 @@ def calculate_serial_sku_score(text, pattern_type):
                             const family = String(item.FAMILY || '').toUpperCase();
                             // Opt-out for USB-C to Lightning Adapter SKUs
                             const isDemo = (
-                                !sku.startsWith('DLCGZ') && (
+                                !sku.startsWith('DL') || 
+                                !sku.startsWith('DN') ||
+                                !sku.startsWith('DX') || 
+                                !sku.startsWith('DK') || 
+                                !sku.startsWith('DM') || 
+                                !sku.startsWith('DT') && (
                                     sku.startsWith('D') ||
                                     sku.startsWith('DEMO-') ||
                                     sku.endsWith('-D') ||
