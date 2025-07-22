@@ -123,7 +123,8 @@
     <!-- OCR Libraries with Pyodide -->
     <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
-    <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">    
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="../styles/spvi-main.css">
@@ -162,14 +163,57 @@
              font-weight: 600;
              box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
         }
-        .table-container { max-height: 60vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #a0aec0 #e2e8f0; }
-        .table-container::-webkit-scrollbar { width: 6px; }
-        .table-container::-webkit-scrollbar-track { background: #e2e8f0; }
-        .table-container::-webkit-scrollbar-thumb { background-color: #a0aec0; border-radius: 6px; border: 3px solid #e2e8f0; }
-        th { position: sticky; top: 0; background-color: #f1f5f9; z-index: 10; cursor: pointer; user-select: none; }
-        th .sort-indicator { display: inline-block; margin-left: 5px; opacity: 0.5; font-size: 0.9em; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); z-index: 999; display: flex; justify-content: center; align-items: center; }
+        .table-container { 
+            max-height: 60vh; 
+            overflow-y: auto; 
+            scrollbar-width: thin; 
+            scrollbar-color: #a0aec0 #e2e8f0; 
+        }
+        .table-container::-webkit-scrollbar { 
+            width: 6px; 
+        }
+        .table-container::-webkit-scrollbar-track { 
+            background: #e2e8f0; 
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background-color: #a0aec0; 
+            border-radius: 6px; 
+            border: 3px solid #e2e8f0; 
+        }
+        th { 
+            position: sticky; 
+            top: 0; 
+            background-color: #f1f5f9; 
+            z-index: 10; 
+            cursor: pointer; 
+            user-select: none; 
+        }
+        th .sort-indicator { 
+            display: inline-block; 
+            margin-left: 5px; 
+            opacity: 0.5; 
+            font-size: 0.9em; 
+        }
+        .loader { 
+            border: 4px solid #f3f3f3; 
+            border-top: 4px solid #3b82f6; 
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px; 
+            animation: spin 1s linear infinite; 
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }        
+        .overlay { 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(255,255,255,0.8); 
+            backdrop-filter: blur(4px); 
+            z-index: 999; display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
         #save-status { transition: opacity 0.5s ease-in-out; }
         .status-dot {
             width: 10px;
@@ -177,7 +221,9 @@
             border-radius: 50%;
             display: inline-block;
             margin-right: 8px;
-        }          /* Floating Scanner Styles - Optimized for Compact View */        .floating-scanner {
+        }          
+        /* Floating Scanner Styles - Optimized for Compact View */        
+        .floating-scanner {
             position: fixed;
             top: 20px;
             right: 20px;
@@ -194,15 +240,13 @@
             visibility: hidden;
             opacity: 0;
             display: none;
-        }
-        
+        }        
         .floating-scanner.active {
             transform: translateY(0);
             visibility: visible;
             opacity: 1;
             display: block;
         }
-        
         .floating-scanner-header {
             background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             color: white;
@@ -213,7 +257,6 @@
             align-items: center;
             cursor: move;
         }
-        
         .floating-scanner-content {
             padding: 12px;
             max-height: calc(80vh - 60px);
@@ -253,7 +296,8 @@
             background: rgba(239, 68, 68, 0.7); /* red-500 */
             z-index: 21;
             pointer-events: none;
-        }        /* Print Styles */
+        }        
+        /* Print Styles */
         @media print {
             /* Fix top spacing issue - remove body padding and container margins */
             body {
@@ -263,7 +307,6 @@
                 padding-top: 0 !important; /* Remove logged-in class padding */
                 margin: 0 !important;
             }
-            
             /* Remove top spacing from main containers */
             .w-full, .container, .max-w-4xl, .mx-auto, .p-4, .md\:p-8 {
                 max-width: 100% !important;
@@ -285,10 +328,11 @@
                 background: transparent !important;
                 break-inside: auto !important;
             }
-              /* Add proper top margin to table for header clearance */
+            /* Add proper top margin to table for header clearance */
             .table-container table {
                 margin-top: 80px !important; /* Space for fixed header */
-            }            /* Enhanced table styling with consistent borders and reliable page breaks */
+            }            
+            /* Enhanced table styling with consistent borders and reliable page breaks */
             table {
                 width: 100% !important;
                 border-collapse: collapse !important;
@@ -299,7 +343,8 @@
                 /* Remove any constraints that prevent page breaking */
                 max-height: none !important;
                 height: auto !important;
-            }            /* Ensure table headers repeat on every page - Enhanced approach */
+            }            
+            /* Ensure table headers repeat on every page - Enhanced approach */
             thead {
                 display: table-header-group !important;
                 break-inside: avoid !important;
@@ -326,7 +371,6 @@
                 display: table-cell !important;
                 vertical-align: middle !important;
             }
-            
             /* Header row integrity */
             thead tr {
                 display: table-row !important;
@@ -335,7 +379,6 @@
                 -webkit-region-break-inside: avoid !important;
                 -webkit-column-break-inside: avoid !important;
             }
-            
             /* Override screen sticky headers in print mode */
             th {
                 position: static !important;
@@ -349,14 +392,14 @@
                 page-break-after: avoid !important;
                 cursor: default !important;
             }
-            
             tbody {
                 display: table-row-group !important;
                 page-break-inside: auto !important; /* Allow tbody to break */
                 /* Remove any height constraints */
                 max-height: none !important;
                 height: auto !important;
-            }              /* Consistent cell borders and spacing */
+            }              
+            /* Consistent cell borders and spacing */
             th, td {
                 border: 1px solid #000 !important;
                 padding: 4px 8px !important;
@@ -370,7 +413,7 @@
                 -webkit-region-break-inside: avoid !important;
                 -webkit-column-break-inside: avoid !important;
             }
-              /* Center align specific columns (numbers, counts, etc.) */
+            /* Center align specific columns (numbers, counts, etc.) */
             td:nth-child(1), /* NO. */
             td:nth-child(4), /* SRP */
             td:nth-child(5), /* SOH */
@@ -382,7 +425,8 @@
             th:nth-child(6),
             th:nth-child(7) {
                 text-align: center !important;
-            }            /* STRENGTHENED row break controls - Keep rows together */
+            }            
+            /* STRENGTHENED row break controls - Keep rows together */
             tr {
                 page-break-inside: avoid !important; /* Prevent row from splitting */
                 break-inside: avoid !important; /* CSS3 equivalent */
@@ -395,7 +439,6 @@
                 display: table-row !important;
                 vertical-align: baseline !important;
             }
-            
             /* Specific tbody row controls - FORCE rows to stay together */
             tbody tr {
                 /* CRITICAL: Keep entire row together - MAXIMUM STRENGTH */
@@ -406,7 +449,6 @@
                 /* Legacy browser support */
                 -moz-page-break-inside: avoid !important;
                 -o-page-break-inside: avoid !important;
-                
                 /* Allow breaks between rows but NOT inside rows */
                 page-break-after: auto !important;
                 page-break-before: auto !important;
@@ -416,17 +458,15 @@
                 -webkit-column-break-after: auto !important;
                 -webkit-region-break-before: auto !important;
                 -webkit-column-break-before: auto !important;
-                
                 /* Remove orphan/widow constraints that might force breaking */
                 orphans: unset !important;
                 widows: unset !important;
-                
                 /* Force structural integrity */
                 display: table-row !important;
                 position: relative !important;
                 z-index: 1 !important;
             }
-              /* Individual cell controls to support row integrity */
+            /* Individual cell controls to support row integrity */
             td {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
@@ -440,7 +480,6 @@
                 vertical-align: top !important;
                 position: relative !important;
             }
-            
             /* Header cells - ensure they stick with their table structure */
             th {
                 page-break-inside: avoid !important;
@@ -455,21 +494,20 @@
                 vertical-align: middle !important;
                 position: relative !important;
             }
-            
             /* Only keep first row with header to avoid orphaned headers */
             tbody tr:first-child {
                 break-before: avoid !important;
                 page-break-before: avoid !important;
             }
-              /* Ensure consistent table border all around */
+            /* Ensure consistent table border all around */
             table, table th, table td {
                 border-color: #000 !important;
                 border-style: solid !important;
-            }            /* Additional page break optimization for large tables */
+            }            
+            /* Additional page break optimization for large tables */
             table tbody tr:nth-child(10n) {
                 page-break-after: auto !important; /* Encourage breaks every 10 rows */
             }
-            
             /* Simplified cross-browser page break support - Table level only */
             table {
                 -webkit-region-break-inside: auto;
@@ -477,7 +515,6 @@
                 break-inside: auto;
                 page-break-inside: auto;
             }
-            
             /* Header group support */
             thead {
                 -webkit-region-break-inside: avoid;
@@ -486,14 +523,12 @@
                 page-break-inside: avoid;
                 display: table-header-group;
             }
-            
             /* Note: tbody tr rules are now handled above in the strengthened section */
-              /* Prevent very long tables from being forced to single page */
+                /* Prevent very long tables from being forced to single page */
             .table-container {
                 page-break-inside: auto !important;
                 break-inside: auto !important;
             }
-            
             /* Force all scrollable containers to flow naturally in print */
             div[style*="overflow"], 
             div[style*="max-height"],
@@ -529,7 +564,7 @@
             .font-bold, .font-semibold {
                 font-weight: bold !important;
             }
-              /* Clean up Dashboard สรุปผลการตรวจสอบ header */
+            /* Clean up Dashboard สรุปผลการตรวจสอบ header */
             h3.text-xl {
                 font-size: 16pt !important;
                 font-weight: bold !important;
@@ -537,7 +572,8 @@
                 text-align: center !important;
                 border-bottom: 1px solid #000 !important;
                 padding-bottom: 5pt !important;
-            }              /* รายการสรุปผลทั้งหมด header - Only show on first page */
+            }              
+            /* รายการสรุปผลทั้งหมด header - Only show on first page */
             h3.text-xl.font-semibold.text-slate-800:nth-of-type(2) {
                 position: fixed !important;
                 top: 55px !important; /* Aligned with reduced header height */
@@ -552,7 +588,8 @@
                 margin: 0 !important;
                 z-index: 999 !important;
                 page-break-after: avoid !important;
-            }            /* Enhanced table page break controls - PRIORITIZE row integrity */
+            }            
+            /* Enhanced table page break controls - PRIORITIZE row integrity */
             .table-container table {
                 page-break-before: auto !important;
                 page-break-after: auto !important;
@@ -566,7 +603,6 @@
                 max-height: none !important;
                 height: auto !important;
             }
-            
             /* Simplified tbody controls - SUPPORT row integrity */
             .table-container tbody {
                 page-break-inside: auto !important;
@@ -575,7 +611,6 @@
                 max-height: none !important;
                 height: auto !important;
             }
-            
             /* CRITICAL: Table container row controls - FORCE row integrity */
             .table-container tbody tr {
                 /* This reinforces the global tbody tr rules above */
@@ -583,12 +618,10 @@
                 break-inside: avoid !important;
                 -webkit-region-break-inside: avoid !important;
                 -webkit-column-break-inside: avoid !important;
-                
                 /* Allow natural breaks between complete rows */
                 page-break-after: auto !important;
                 page-break-before: auto !important;
             }
-            
             /* Keep header rows intact */
             .table-container thead,
             .table-container thead tr,
@@ -598,18 +631,17 @@
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
-              /* Ensure section breaks work properly */
+            /* Ensure section breaks work properly */
             .table-container + .bg-white {
                 page-break-before: always !important;
                 margin-top: 20pt !important;
             }
-            
             /* Consistent page margins with print-header.css */
             @page {
                 margin: 0mm 15mm 18mm 10mm !important;
                 size: A4 portrait !important;
             }
-              /* Hide elements from print - including charts and buttons */
+            /* Hide elements from print - including charts and buttons */
             .no-print, #loader-overlay, #modal-container, #camera-view-box, #file-ops-container, 
             #upload-container, #workspace-container > nav, #main-tab-demo, #main-tab-workflow, 
             #openScannerBtn, #closeScannerBtn, #barcode-scanner-tab, #text-scanner-tab, 
@@ -617,20 +649,19 @@
             #refreshChartsButton, #exportDemoCsvButton, #newJobButton, #main-panel-workflow, 
             canvas, button, input, select, textarea {
                 display: none !important;
-            }              /* Fix input values in print - hide inputs and show values with parent cell styling */
+            }              
+            /* Fix input values in print - hide inputs and show values with parent cell styling */
             #final-report-table-container input[type="number"],
             #final-report-table-container input[type="text"],
             #demo-count-container input[type="number"],
             #demo-count-container input[type="text"] {
                 display: none !important;
             }
-            
             /* Style the parent cells to show the data values */
             #final-report-table-container td[data-print-value]:not([data-print-value=""]),
             #demo-count-container td[data-print-value]:not([data-print-value=""]) {
                 position: relative !important;
             }
-            
             #final-report-table-container td[data-print-value]:not([data-print-value=""]):after,
             #demo-count-container td[data-print-value]:not([data-print-value=""]):after {
                 content: attr(data-print-value) !important;
@@ -641,12 +672,10 @@
                 text-align: center !important;
                 font-weight: bold !important;
             }
-            
             /* Hide chart containers but keep summary text */
             .bg-slate-50.rounded-lg.border.border-slate-200.flex.flex-col {
                 display: none !important;
             }
-            
             /* Show only summary data, hide visual charts */
             #final-summary {
                 display: block !important;
@@ -665,7 +694,6 @@
                 padding-bottom: 10pt !important;
                 font-size: 0 !important; /* Hide original text */
             }
-            
             /* Override the print title */
             h1::before {
                 content: "รายงานผลการตรวจนับสต็อกสินค้า (Stock Count Report)" !important;
@@ -687,7 +715,7 @@
                 display: block !important; 
                 page-break-before: always; 
             }
-              /* Ensure proper page margins - remove duplicate @page rule */
+            /* Ensure proper page margins - remove duplicate @page rule */
             .space-y-8 > *:not(:first-child), 
             .space-y-4 > *:not(:first-child) {
                 margin-top: 10pt !important;
@@ -695,8 +723,8 @@
         @media screen {
             .print-legal-section { display: none !important; }
         }
-        
-        /* Enhanced collision fix is now in global print-legal.css */    </style>
+        /* Enhanced collision fix is now in global print-legal.css */    
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 logged-in">
     <!-- Global Print Header Section -->
@@ -791,7 +819,9 @@
                          </div>
                          <div class="flex flex-col md:flex-row gap-4 my-4">
                              <div class="relative flex-grow">
-                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                 </svg>
                                  <input type="text" id="demoSearchInput" placeholder="ค้นหาด้วย SKU หรือ Description..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                              </div>
                              <select id="demoFilterSelect" class="w-full md:w-auto p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -804,18 +834,22 @@
                          <div id="demo-count-container" class="table-container border rounded-lg"></div>
                          <button id="exportDemoCsvButton" class="bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm text-sm mt-2">
                              Export DEMO Table as CSV
-                         </button>                         <button id="openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm mt-2">
+                         </button>                         
+                         <button id="openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm mt-2">
                              Scan
                          </button>
                      </div>
                 </div>
                 
                 <!-- Floating Scanner Component -->
-                <div id="floating-scanner" class="floating-scanner">                    <div class="floating-scanner-header" id="scanner-header">
-                        <h3 class="font-semibold">🔍 Serial/SKU Scanner</h3>                        <div class="flex items-center gap-2">
+                <div id="floating-scanner" class="floating-scanner">                    
+                    <div class="floating-scanner-header" id="scanner-header">
+                        <h3 class="font-semibold">🔍 Serial/SKU Scanner</h3>                        
+                        <div class="flex items-center gap-2">
                             <button id="close-floating-scanner" class="bg-white/20 hover:bg-white/30 px-2 py-1 rounded">✕</button>
                         </div>
-                    </div><div class="floating-scanner-content">                        <div class="flex gap-1 mb-3">
+                    </div><div class="floating-scanner-content">                        
+                        <div class="flex gap-1 mb-3">
                             <button id="floating-barcode-tab" class="scanner-tab-button active flex-1 text-sm">📱 Barcode</button>
                             <button id="floating-text-tab" class="scanner-tab-button flex-1 text-sm">🔍 Serial/SKU OCR</button>
                         </div>
@@ -830,12 +864,11 @@
                             <video id="floating-text-video" playsinline></video>
                             <div class="scan-box"></div>
                         </div>
-                        
                         <!-- Scanner Results -->
                         <div id="floating-scanner-results" class="mt-3 p-2 bg-slate-50 border border-slate-200 rounded text-center min-h-[50px] text-sm"></div>
-                        
                         <!-- OCR Preview Canvas -->
-                        <canvas id="floating-ocr-preview" class="mt-2 border border-blue-300 rounded w-full max-w-xs mx-auto hidden" style="background:#fff;"></canvas>                        <!-- OCR Controls - Enhanced Serial/SKU Optimized (Only visible in Text/OCR mode) -->
+                        <canvas id="floating-ocr-preview" class="mt-2 border border-blue-300 rounded w-full max-w-xs mx-auto hidden" style="background:#fff;"></canvas>                        
+                        <!-- OCR Controls - Enhanced Serial/SKU Optimized (Only visible in Text/OCR mode) -->
                         <div id="floating-ocr-controls" class="mt-3 p-2 bg-gray-50 border border-gray-200 rounded hidden">
                             <h4 class="text-xs font-semibold mb-2 text-gray-700">🔍 Serial/SKU OCR Settings</h4>
                             <div class="space-y-1">
@@ -859,11 +892,13 @@
                                         ⚡ Pyodide Enhanced: Pattern Recognition & Quality Analysis
                                     </span>
                                 </div>
-                            </div>                        </div>
-                    </div>                </div>
+                            </div>                        
                         </div>
-                    </div>
+                    </div>                
                 </div>
+            </div>
+        </div>
+      </div>
                 <div id="main-panel-workflow" class="hidden">
                      <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
                          <h2 class="text-2xl font-semibold mb-2 text-slate-800">ตรวจนับสินค้าขาย</h2>
@@ -878,12 +913,15 @@
                              <h3 class="text-lg font-semibold text-slate-700">สร้าง Master File</h3>
                              <p class="text-slate-500 mb-4">ดาวน์โหลดไฟล์สำหรับสแกน (เฉพาะสินค้าขาย)</p>
                              <button id="downloadMasterForScan" class="inline-flex items-center gap-2 bg-blue-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed" disabled>
-                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                 </svg>
                                  ดาวน์โหลด Master.csv
                              </button>
-                         </div>                         <div id="wf-step2" class="workflow-step hidden">
-                             <h3 class="text-lg font-semibold text-slate-700">กระทบยอดรอบที่ 1</h3>                             <p class="text-slate-500 mb-4">อัพโหลด Logfile จากสแกนเนอร์ และ/หรือ Master.csv (ข้อมูล DEMO จะถูกรวมอัตโนมัติ)</p>
-                             
+                         </div>                         
+                         <div id="wf-step2" class="workflow-step hidden">
+                             <h3 class="text-lg font-semibold text-slate-700">กระทบยอดรอบที่ 1</h3>                             
+                             <p class="text-slate-500 mb-4">อัพโหลด Logfile จากสแกนเนอร์ และ/หรือ Master.csv (ข้อมูล DEMO จะถูกรวมอัตโนมัติ)</p>
                              <!-- First Count File Uploads (both file types supported) -->
                              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                  <!-- Logfile Upload -->
@@ -892,7 +930,6 @@
                                      <input type="file" id="firstScanLogfile" accept=".csv" multiple class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100 border border-slate-300 rounded-lg" />
                                      <p class="text-xs text-slate-500 mt-1">รูปแบบ: คอลัมน์ 3=Part No., คอลัมน์ 5=จำนวน</p>
                                  </div>
-
                                  <!-- Master.csv Upload -->
                                  <div>
                                      <label for="firstMasterFile" class="block mb-2 text-sm font-medium text-slate-700">Master.csv</label>
@@ -900,9 +937,7 @@
                                      <p class="text-xs text-slate-500 mt-1">รูปแบบ: คอลัมน์ 1=Part No., คอลัมน์ 6=Actual Qty (เฉพาะรายการที่ qty > 0 เท่านั้น)</p>
                                  </div>
                              </div>
-                             
                              <p class="text-xs text-slate-500 mb-3">หมายเหตุ: สามารถอัพโหลดทั้ง Logfile และ Master.csv พร้อมกันได้ ระบบจะรวมข้อมูลจากทั้งสองไฟล์</p>
-
                              <button id="processFirstCount" class="inline-flex items-center gap-2 mt-4 bg-violet-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-violet-700 transition-colors shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed" disabled>
                                  ประมวลผลต่าง
                              </button>
@@ -1042,12 +1077,14 @@
                             <div class="flex flex-col md:flex-row gap-4">
                                 <div class="relative flex-1">
                                     <button id="final-openScannerBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm mb-2">
-                                        Scan                                    </button>
+                                        Scan                                    
+                                    </button>
                                 </div>
                             </div>
                         </div>
                         <div id="final-report-table-container" class="table-container border border-slate-200 rounded-lg"></div>
-                        <div class="mt-4 flex flex-col sm:flex-row gap-4 no-print">                            <button id="print-final-report-btn" class="flex-1 inline-flex items-center justify-center gap-2 bg-gray-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                        <div class="mt-4 flex flex-col sm:flex-row gap-4 no-print">                            
+                            <button id="print-final-report-btn" class="flex-1 inline-flex items-center justify-center gap-2 bg-gray-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
                                 <!-- Printer icon (Heroicons) -->
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -1125,11 +1162,12 @@
                     scannerResultsEl.innerHTML = `<p class="text-green-600">OpenCV is ready. Scanner refreshed.</p>`;
                 }
             }
-        }        document.addEventListener('DOMContentLoaded', () => {
+        }        
+        document.addEventListener('DOMContentLoaded', () => {
             const getEl = (id) => document.getElementById(id);
             let hasUnsavedChanges = false;
             let state = getInitialState();
-            let finalSummaryData = {};            // === Floating Scanner Variables ===
+            let finalSummaryData = {}; // === Floating Scanner Variables ===
             let floatingScanner = null;
             let floatingStream = null;
             let floatingOcrStreaming = false;
@@ -1150,14 +1188,13 @@
             };
 
             // === Initialize Pyodide for Enhanced OCR ===
-            async function initializePyodide() {                try {
+            async function initializePyodide() {                
+                try {
                     if (pyodideReady) return;
-                    
                     pyodide = await loadPyodide();
-                    
                     // Install required packages
                     await pyodide.loadPackage(['opencv-python', 'numpy', 'pillow']);
-                      // Load enhanced OCR processing script with optimized Serial/SKU processing
+                    // Load enhanced OCR processing script with optimized Serial/SKU processing
                     await pyodide.runPython(`
 import cv2
 import numpy as np
@@ -1427,7 +1464,8 @@ def calculate_serial_sku_score(text, pattern_type):
                       } catch (error) {
                     // Silent error handling for production
                 }
-            }            // === Floating Scanner Functions ===
+            }            
+            // === Floating Scanner Functions ===
             function initializeFloatingScanner() {
                 floatingScanner = document.getElementById('floating-scanner');
                 
@@ -1593,7 +1631,8 @@ def calculate_serial_sku_score(text, pattern_type):
                     };
                     
                     floatingStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    const video = document.getElementById('floating-text-video');                    video.srcObject = floatingStream;
+                    const video = document.getElementById('floating-text-video');                    
+                    video.srcObject = floatingStream;
                     video.play();
                 } catch (err) {
                     updateFloatingResults(`<p class="text-red-500">Camera error: ${err.message}</p>`);
@@ -1924,9 +1963,11 @@ def calculate_serial_sku_score(text, pattern_type):
                 } finally {
                     captureBtn.disabled = false;
                 }
-            }            function processFloatingScannedCode(code, reason) {
+            }            
+            
+            function processFloatingScannedCode(code, reason) {
                 const scannedText = code.toUpperCase();
-                  // Store latest scanned text and add to history
+                // Store latest scanned text and add to history
                 lastScannedText = scannedText;
                 scanHistory.unshift({ text: scannedText, timestamp: new Date().toLocaleTimeString(), reason });
                 if (scanHistory.length > 10) scanHistory.pop(); // Keep last 10 scans
@@ -1988,7 +2029,8 @@ def calculate_serial_sku_score(text, pattern_type):
                 if (floatingScanCooldown[code] && now - floatingScanCooldown[code] < 2000) return;
                 floatingScanCooldown[code] = now;
                 processFloatingScannedCode(code, 'Barcode');
-            }            function openFloatingScanner(context = 'demo') {
+            }            
+            function openFloatingScanner(context = 'demo') {
                 currentScannerContext = context;
                 currentScannerMode = 'barcode';
                   // Reset scanner state
@@ -2017,8 +2059,9 @@ def calculate_serial_sku_score(text, pattern_type):
                     initializePyodide();
                 }
                   updateFloatingResults('<p class="text-blue-500">Scanner ready</p>');
-            }function closeFloatingScanner() {                if (!floatingScanner) return;
-                
+            }
+            function closeFloatingScanner() {                
+                if (!floatingScanner) return;
                 // Stop all scanner activities first
                 stopFloatingTextScanner();
                 stopFloatingBarcodeScanner();
@@ -2026,7 +2069,8 @@ def calculate_serial_sku_score(text, pattern_type):
                 
                 // Clear all video streams
                 const video = document.getElementById('floating-text-video');
-                if (video && video.srcObject) {                    const tracks = video.srcObject.getTracks();
+                if (video && video.srcObject) {                    
+                    const tracks = video.srcObject.getTracks();
                     tracks.forEach(track => {
                         track.stop();
                     });
@@ -2034,9 +2078,11 @@ def calculate_serial_sku_score(text, pattern_type):
                 }
                 
                 // Force stop Quagga barcode scanner
-                if (typeof Quagga !== 'undefined' && Quagga.running) {                    try {
+                if (typeof Quagga !== 'undefined' && Quagga.running) {                    
+                    try {
                         Quagga.offDetected(onFloatingBarcodeDetected);
-                        Quagga.stop();                    } catch (err) {
+                        Quagga.stop();                    
+                    } catch (err) {
                         // Silent error handling for production
                     }
                 }
@@ -2045,7 +2091,8 @@ def calculate_serial_sku_score(text, pattern_type):
                 const barcodeView = document.getElementById('floating-barcode-view');
                 const quaggaVideo = barcodeView.querySelector('video');
                 if (quaggaVideo && quaggaVideo.srcObject) {
-                    const tracks = quaggaVideo.srcObject.getTracks();                tracks.forEach(track => track.stop());
+                    const tracks = quaggaVideo.srcObject.getTracks();                
+                    tracks.forEach(track => track.stop());
                     quaggaVideo.srcObject = null;
                 }
                 
@@ -2260,7 +2307,8 @@ def calculate_serial_sku_score(text, pattern_type):
                     const entries = Array.from(finalOcrResultsCache.entries());
                     entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
                     const toDelete = entries.slice(0, entries.length - maxCacheSize);
-                    toDelete.forEach(([key]) => finalOcrResultsCache.delete(key));                }
+                    toDelete.forEach(([key]) => finalOcrResultsCache.delete(key));                
+                }
             }
             
             function resetOcrStats() {
@@ -2418,7 +2466,8 @@ def calculate_serial_sku_score(text, pattern_type):
                 } else {
                     getEl('info-box-container').classList.add('hidden');
                 }
-            }            function resetAppState() {
+            }            
+            function resetAppState() {
                 // Destroy existing charts
                 Object.values(state.charts).forEach(chart => chart?.destroy());
                 
@@ -2446,7 +2495,8 @@ def calculate_serial_sku_score(text, pattern_type):
                     preprocessing: 'enhanced',
                     speed: 800
                 };
-            }function resetUI() {
+            }
+            function resetUI() {
                 // Hide/show main containers
                 getEl('workspace-container').classList.add('hidden');
                 getEl('final-report-container').classList.add('hidden');
@@ -3085,7 +3135,8 @@ def calculate_serial_sku_score(text, pattern_type):
                 const summary = state.netDiffData.reduce((acc, item) => { acc.totalSOH += item.SOH; if (item.Scan1 !== 0 || item.Reason1) acc.countedSOH += item.SOH; return acc; }, { totalSOH: 0, countedSOH: 0 });
                 const uncountedSOH = summary.totalSOH - summary.countedSOH;
                 getEl('netdiff-summary-container').innerHTML = `<div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center"><div class="p-4 bg-blue-100 rounded-lg"><p class="font-medium text-blue-800">Total SOH</p><p class="text-3xl font-bold text-blue-600 mt-1">${formatNumber(summary.totalSOH)}</p></div><div class="p-4 bg-green-100 rounded-lg"><p class="font-medium text-green-800">Counted SOH</p><p class="text-3xl font-bold text-green-600 mt-1">${formatNumber(summary.countedSOH)}</p></div><div class="p-4 bg-red-100 rounded-lg"><p class="font-medium text-red-800">Uncounted SOH</p><p class="text-3xl font-bold text-red-600 mt-1">${formatNumber(uncountedSOH)}</p></div></div>`;
-            }            function finalizeFromFirstCount() {
+            }            
+            function finalizeFromFirstCount() {
                 if (!state.netDiffData.length) return showModal("Warning", "Please process the first count (Step 2).");
                 // --- Patch: Sync latest DEMO counts before finalizing ---
                 state.netDiffData.forEach(item => {
@@ -3190,7 +3241,8 @@ def calculate_serial_sku_score(text, pattern_type):
                                 // Note: We no longer track SalesDuringCount in sohLookup 
                                 // as sales are directly added to final count in the processing above
                             }
-                        });                        // Update netDiffData if it exists - enhanced sales integration with new conditions
+                        });                        
+                        // Update netDiffData if it exists - enhanced sales integration with new conditions
                         if (state.netDiffData.length > 0) {
                             state.netDiffData.forEach(item => {
                                 const sale = salesSummary.find(s => s.sku === item.SKU);
@@ -3256,7 +3308,9 @@ def calculate_serial_sku_score(text, pattern_type):
                                         }
                                     }
                                 }
-                            });                        }// Update reconciledData if it exists - enhanced sales integration with same conditions
+                            });                        
+                        }
+                        // Update reconciledData if it exists - enhanced sales integration with same conditions
                         if (state.reconciledData.length > 0) {
                             state.reconciledData.forEach(item => {
                                 const sale = salesSummary.find(s => s.sku === item.SKU);
@@ -3326,7 +3380,8 @@ def calculate_serial_sku_score(text, pattern_type):
                             applyFinalReportView();
                             renderFinalReportCharts();
                         }
-                    }                    // Display results
+                    }                    
+                    // Display results
                     const resultsEl = getEl('sales-processing-results');
                     
                     // Create matched sales table
@@ -3669,7 +3724,8 @@ def calculate_serial_sku_score(text, pattern_type):
                 const newCount = value === '' ? 0 : parseInt(value, 10);
                 item.Recount = isNaN(newCount) ? 0 : newCount;
                 item.FinalDiff = item.Recount - item.SOH; item.ReasonFinal = 'Manual Edit';
-                const row = getEl('final-report-table-container').querySelector(`tr[data-sku="${sku}"]`);                if(row) {
+                const row = getEl('final-report-table-container').querySelector(`tr[data-sku="${sku}"]`);                
+                  if(row) {
                     // Update Final Count column (index 5) with the new count value
                     row.cells[5].querySelector('input[type="number"]').value = item.Recount;
                     // Update Final Diff column (index 6) with the calculated difference
@@ -3686,21 +3742,31 @@ def calculate_serial_sku_score(text, pattern_type):
             }
 
             function updateRemark(sku, value) {
-                const item = state.reconciledData.find(i => i.SKU === sku); if (item) { item.Remark = value; setUnsavedChanges(true); }
+                const item = state.reconciledData.find(i => i.SKU === sku); if (item) { 
+                    item.Remark = value; setUnsavedChanges(true); 
+                }
             }
 
             function updateFinalReportSummary() {
                 const summaryEl = getEl('final-summary');
-                if (!state.reconciledData.length) { summaryEl.innerHTML = ''; return; }
+                if (!state.reconciledData.length) {
+                    summaryEl.innerHTML = ''; return; 
+                }
                 const summary = state.reconciledData.reduce((acc, item) => {
                     const diffCost = item.FinalDiff * item.Price;
-                    if (item.FinalDiff > 0) { acc.overQty += item.FinalDiff; acc.overCost += diffCost; } 
-                    else if (item.FinalDiff < 0) { acc.shortQty += item.FinalDiff; acc.shortCost += diffCost; }
+                    if (item.FinalDiff > 0) {
+                        acc.overQty += item.FinalDiff; acc.overCost += diffCost; 
+                    } 
+                    else if (item.FinalDiff < 0) {
+                        acc.shortQty += item.FinalDiff; acc.shortCost += diffCost; 
+                    }
                     acc.totalCountedQty += item.Recount; acc.totalCountedCost += item.Recount * item.Price;
                     acc.totalSOHPrice += item.SOH * (item.Price ?? 0);
                     acc.totalSOHQty += item.SOH;
                     return acc;
-                }, { overQty: 0, overCost: 0, shortQty: 0, shortCost: 0, totalCountedQty: 0, totalCountedCost: 0, totalSOHPrice: 0, totalSOHQty: 0 });
+                }, { 
+                    overQty: 0, overCost: 0, shortQty: 0, shortCost: 0, totalCountedQty: 0, totalCountedCost: 0, totalSOHPrice: 0, totalSOHQty: 0 
+                });
                 finalSummaryData = summary; // Save for JSON export
                 finalSummaryData.netDiffCost = summary.overCost + summary.shortCost;
 
@@ -3724,12 +3790,22 @@ def calculate_serial_sku_score(text, pattern_type):
                 if (!state.reconciledData.length) return;
                 Object.values(state.charts).forEach(chart => chart?.destroy());
                 const summary = state.reconciledData.reduce((acc, item) => {
-                    if (item.FinalDiff > 0) { acc.overCost += item.FinalDiff * item.Price; acc.overQty += item.FinalDiff; } 
-                    else if (item.FinalDiff < 0) { acc.shortCost += Math.abs(item.FinalDiff * item.Price); acc.shortQty += Math.abs(item.FinalDiff); }
-                    if (item.FinalDiff !== 0) { const cat = item.CLASS_NAME || 'UNCATEGORIZED'; acc.byCategory[cat] = (acc.byCategory[cat] || 0) + item.FinalDiff; }
+                    if (item.FinalDiff > 0) {
+                        acc.overCost += item.FinalDiff * item.Price; acc.overQty += item.FinalDiff; 
+                    } 
+                    else if (item.FinalDiff < 0) {
+                        acc.shortCost += Math.abs(item.FinalDiff * item.Price); acc.shortQty += Math.abs(item.FinalDiff); 
+                    }
+                    if (item.FinalDiff !== 0) {
+                        const cat = item.CLASS_NAME || 'UNCATEGORIZED'; acc.byCategory[cat] = (acc.byCategory[cat] || 0) + item.FinalDiff; 
+                    }
                     return acc;
-                }, { overCost: 0, shortCost: 0, overQty: 0, shortQty: 0, byCategory: {} });
-                const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } };
+                }, { 
+                    overCost: 0, shortCost: 0, overQty: 0, shortQty: 0, byCategory: {} 
+                   });
+                const chartOptions = { 
+                    responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } 
+                };
                 state.charts.cost = new Chart(getEl('costChart'), { type: 'doughnut', data: { labels: ['Over', 'Short'], datasets: [{ data: [summary.overCost, summary.shortCost], backgroundColor: ['#22c55e', '#ef4444'] }] }, options: chartOptions });
                 state.charts.qty = new Chart(getEl('qtyChart'), { type: 'doughnut', data: { labels: ['Over', 'Short'], datasets: [{ data: [summary.overQty, summary.shortQty], backgroundColor: ['#22c55e', '#ef4444'] }] }, options: chartOptions });
                 const categoryData = Object.entries(summary.byCategory).sort(([,a],[,b]) => Math.abs(b) - Math.abs(a)).slice(0, 15);
@@ -3740,7 +3816,8 @@ def calculate_serial_sku_score(text, pattern_type):
                 if (!state.reconciledData.length) return showModal("Info", "No data to export.");
                 const dataToExport = state.reconciledData.map((item, idx) => ({ NO: idx + 1, SKU: item.SKU, Description: item.Description, Age: item.Age, SRP: item.Price, SOH: item.SOH, Scan: item.Scan1, Recount: item.Recount, FinalDiff: item.FinalDiff, Remark: item.Remark || '', Reason: item.ReasonFinal, }));
                 downloadFile(Papa.unparse(dataToExport, { header: true }), `${state.countDate}_${state.branchName.replace(/\s+/g, '_')}_Report.csv`);
-            }            function exportStockCountToJSON() {
+            }            
+            function exportStockCountToJSON() {
                 if (!state.reconciledData.length) {
                     alert('กรุณาประมวลผลข้อมูลให้ถึงขั้นตอนสุดท้ายก่อนทำการ Export');
                     return;
@@ -4305,7 +4382,8 @@ def calculate_serial_sku_score(text, pattern_type):
                 addListener('firstMasterFile', 'change', () => updateFirstCountButton());
                 addListener('salesDataFile', 'change', () => getEl('processSalesData').disabled = getEl('salesDataFile').files.length === 0);
                 addListener('processSalesData', 'click', processSalesData);
-                addListener('latestSohFile', 'change', handleLatestSohUpload);                addListener('secondScanLogfile', 'change', () => updateSecondCountButton());
+                addListener('latestSohFile', 'change', handleLatestSohUpload);                
+                addListener('secondScanLogfile', 'change', () => updateSecondCountButton());
                 addListener('secondMasterFile', 'change', () => updateSecondCountButton());
 
                 function updateSecondCountButton() {
