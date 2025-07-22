@@ -836,9 +836,18 @@
                                  <option value="matched">แสดงรายการที่นับตรง</option>
                              </select>
                          </div>
-                         <div id="demo-count-container" class="table-container border rounded-lg"></div>                         <button id="exportDemoCsvButton" class="bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm text-sm mt-2">
-                             Export DEMO Table as CSV
-                         </button>
+                         <div id="demo-count-container" class="table-container border rounded-lg"></div>                         
+                         <div class="flex gap-2 mt-2">
+                             <button id="exportDemoCsvButton" class="flex-1 bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm text-sm">
+                                 Export DEMO Table as CSV
+                             </button>
+                             <div class="flex-1">
+                                 <input type="file" id="importDemoCsvFile" accept=".csv" class="hidden" />
+                                 <button id="importDemoCsvButton" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm">
+                                     Import DEMO Count CSV
+                                 </button>
+                             </div>
+                         </div>
                      </div>
                 </div>
                 
@@ -949,9 +958,15 @@
                          </div>                         <div id="wf-step3" class="workflow-step hidden">
                              <h3 class="text-lg font-semibold text-slate-700">สรุปผลและดำเนินการต่อ</h3>
                              <p class="text-slate-500 mb-4">สรุปผลทันที หรือนับซ้ำรายการที่ไม่ได้ตรวจนับ</p>
+                             <button id="finalizeFromFirstCount" class="w-full inline-flex items-center justify-center gap-2 bg-teal-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-teal-700 transition-colors shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                 </svg>
+                                 แสดงรายงานสรุป (ตรวจนับรอบที่ 1)
+                             </button>
                              
                              <!-- Sales Data Upload Section -->
-                             <div class="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                             <div class="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                                  <h4 class="text-md font-semibold text-orange-800 mb-2">🔄 อัพโหลดข้อมูลยอดขายระหว่างการนับ (Optional)</h4>                                 
                                  <p class="text-sm text-orange-700 mb-3">
                                      อัพโหลดไฟล์ยอดขายที่เกิดขึ้นระหว่างการนับสต็อกเพื่อติดตามและบันทึกการขายในช่วงนั้น
@@ -968,13 +983,7 @@
                                      <div id="sales-processing-results" class="hidden mt-4 p-3 bg-white border border-orange-200 rounded text-sm"></div>
                                  </div>
                              </div>
-
-                             <button id="finalizeFromFirstCount" class="w-full inline-flex items-center justify-center gap-2 bg-teal-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-teal-700 transition-colors shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed">
-                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
-                                 </svg>
-                                 แสดงรายงานสรุป (ตรวจนับรอบที่ 1)
-                             </button>
+                             
                              <div class="mt-6 pt-6 border-t border-slate-200">
                                  <h4 class="text-md font-semibold text-slate-600">หรือ (Optional) ทำการนับซ้ำ</h4>
                                  <p class="text-slate-500 mb-4 text-sm">
@@ -2020,7 +2029,7 @@ def calculate_serial_sku_score(text, pattern_type):
             function onFloatingBarcodeDetected(result) {
                 const code = result.codeResult.code.trim();
                 const now = Date.now();
-                if (floatingScanCooldown[code] && now - floatingScanCooldown[code] < 2000) return;
+                if (floatingScanCooldown[code] && now - floatingScanCooldown[code] < 10000) return;
                 floatingScanCooldown[code] = now;
                 processFloatingScannedCode(code, 'DEMO-Barcode');
             }            
@@ -3047,7 +3056,7 @@ def calculate_serial_sku_score(text, pattern_type):
                 updateFinalReportSummary();
                 setUnsavedChanges(true);
             }
-              function exportDemoTable() {
+            function exportDemoTable() {
                 const dataToExport = state.demoMaster.map((item, idx) => ({ 
                     NO: idx + 1, 
                     SKU: item.SKU, 
@@ -3062,6 +3071,116 @@ def calculate_serial_sku_score(text, pattern_type):
                 const csv = Papa.unparse(dataToExport, { header: true });
                 const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
                 downloadFile(csv, `${state.countDate}_DEMO_Count_${branchInfo}.csv`);
+            }
+
+            async function importDemoCountCsv() {
+                const fileInput = getEl('importDemoCsvFile');
+                const file = fileInput.files[0];
+                if (!file) return;
+
+                showLoader('Importing DEMO Count CSV...');
+                try {
+                    const csvText = await file.text();
+                    const parsedData = Papa.parse(csvText, {
+                        header: true,
+                        skipEmptyLines: true,
+                        dynamicTyping: false // Keep as strings to handle properly
+                    });
+
+                    if (parsedData.errors.length > 0) {
+                        throw new Error(`CSV parsing error: ${parsedData.errors[0].message}`);
+                    }
+
+                    const csvData = parsedData.data;
+                    if (!csvData.length) {
+                        throw new Error("No data found in CSV file");
+                    }
+
+                    // Validate CSV structure - should match export format
+                    const requiredColumns = ['SKU', 'Counted'];
+                    const csvColumns = Object.keys(csvData[0]);
+                    const missingColumns = requiredColumns.filter(col => !csvColumns.includes(col));
+                    
+                    if (missingColumns.length > 0) {
+                        throw new Error(`Missing required columns: ${missingColumns.join(', ')}`);
+                    }
+
+                    let importedCount = 0;
+                    let skippedCount = 0;
+
+                    // Process each row from CSV
+                    csvData.forEach(row => {
+                        const sku = String(row.SKU || '').trim().toUpperCase();
+                        const countedValue = row.Counted;
+                        
+                        if (!sku) {
+                            skippedCount++;
+                            return;
+                        }
+
+                        // Find matching DEMO item
+                        const demoItem = state.demoMaster.find(item => item.SKU === sku);
+                        if (!demoItem) {
+                            skippedCount++;
+                            return;
+                        }
+
+                        // Parse counted value
+                        let counted = null;
+                        if (countedValue !== null && countedValue !== undefined && countedValue !== '') {
+                            const parsedCount = parseInt(String(countedValue).replace(/,/g, ''), 10);
+                            if (!isNaN(parsedCount) && parsedCount >= 0) {
+                                counted = parsedCount;
+                            }
+                        }
+
+                        // Update demo item
+                        demoItem.counted = counted;
+                        
+                        // Update state.demoCounts with DEMO-logfile reason
+                        if (counted !== null) {
+                            state.demoCounts[sku] = { qty: counted, reason: 'DEMO-logfile' };
+                        } else {
+                            delete state.demoCounts[sku];
+                        }
+
+                        // Update final report if it exists
+                        if (state.reconciledData.length > 0) {
+                            const reportItem = state.reconciledData.find(i => i.SKU === sku);
+                            if (reportItem && reportItem.isDemo) {
+                                const wasSohUpdated = state.sohUpdatedSkus && state.sohUpdatedSkus.has(sku);
+                                reportItem.Recount = counted ?? 0;
+                                reportItem.FinalDiff = reportItem.Recount - reportItem.SOH;
+                                reportItem.ReasonFinal = wasSohUpdated ? 'SOHupdated-DEMO-logfile' : 'DEMO-logfile';
+                            }
+                        }
+
+                        importedCount++;
+                    });
+
+                    // Refresh UI
+                    applyDemoView();
+                    updateDemoSummary();
+                    if (state.reconciledData.length > 0) {
+                        applyFinalReportView();
+                        updateFinalReportSummary();
+                        renderFinalReportCharts();
+                    }
+                    
+                    setUnsavedChanges(true);
+                    showModal("Import Successful", 
+                        `DEMO count data imported successfully!\n\n` +
+                        `• Imported: ${importedCount} items\n` +
+                        `• Skipped: ${skippedCount} items\n\n` +
+                        `All imported items are marked with reason "DEMO-logfile".`
+                    );
+
+                } catch (error) {
+                    showModal("Import Error", `Failed to import DEMO count CSV: ${error.message}`);
+                } finally {
+                    hideLoader();
+                    fileInput.value = ''; // Clear the file input
+                }
             }
             function downloadMasterForScan() {
                 // Exclude DEMO items using processed flags
@@ -3511,7 +3630,7 @@ def calculate_serial_sku_score(text, pattern_type):
                     resultsEl.innerHTML = `
                         <div class="space-y-2">
                             <div class="flex justify-between">
-                                <span>📊 Total Sales Records:</span>
+                                <span>🖥️ Total Sales Records:</span>
                                 <span class="font-bold text-blue-600">${salesSummary.length}</span>
                             </div>
                             <div class="flex justify-between">
@@ -3523,7 +3642,7 @@ def calculate_serial_sku_score(text, pattern_type):
                                 <span class="font-bold text-orange-600">${unmatchedCount}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span>🔄 Items with Sales Data:</span>
+                                <span>🔖 Items with Sales Data:</span>
                                 <span class="font-bold text-green-600">${adjustedItems}</span>
                             </div>
                             ${matchedSalesTable}
@@ -4648,8 +4767,9 @@ def calculate_serial_sku_score(text, pattern_type):
                 addListener('processSecondCount', 'click', processSecondCount);
                 addListener('exportCsvButton', 'click', exportFinalReport);
                 addListener('exportJsonButton', 'click', exportStockCountToJSON);
-                addListener('refreshChartsButton', 'click', renderFinalReportCharts);
-                addListener('exportDemoCsvButton', 'click', exportDemoTable);
+                addListener('refreshChartsButton', 'click', renderFinalReportCharts);                addListener('exportDemoCsvButton', 'click', exportDemoTable);
+                addListener('importDemoCsvButton', 'click', () => getEl('importDemoCsvFile').click());
+                addListener('importDemoCsvFile', 'change', importDemoCountCsv);
                 addListener('exportSohExcelBtn', 'click', exportSohExcel);
                 addListener('openScannerBtn', 'click', openScannerModal);
                 addListener('final-openScannerBtn', 'click', finalOpenScannerModal);
