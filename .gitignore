@@ -1,5 +1,5 @@
 # Setup files
-.sh
+setup.sh
 # Environment variables
 .env
 .env.local
