@@ -137,6 +137,23 @@
         localStorage.removeItem('spvi_current_user');
     }
 
+    // Update current user data and refresh UI
+    async function updateCurrentUserData(userId) {
+        try {
+            await initializeFirebase();
+            const doc = await db.collection('users').doc(userId).get();
+            if (doc.exists) {
+                const updatedUser = { id: doc.id, ...doc.data() };
+                setCurrentUser(updatedUser);
+                refreshUserInfo();
+                return updatedUser;
+            }
+        } catch (error) {
+            console.error('Error updating current user data:', error);
+        }
+        return null;
+    }
+
     // Firebase User Operations - Online Only
     const FirebaseUserManager = {
         async registerUser(userData) {
@@ -438,27 +455,11 @@
 
         const userInfoBar = document.createElement('div');
         userInfoBar.id = 'spvi-user-info';
-        userInfoBar.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(90deg, #1e40af, #3b82f6);
-            color: white;
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            font-family: 'Sarabun', sans-serif;
-        `;
 
         const userManagementButton = currentUser.role === 'admin' 
             ? `<button 
                 id="spvi-user-management-btn" 
-                style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; margin-right: 0.5rem;"
+                style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.4rem 0.65rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; min-width: fit-content;"
                 onmouseover="this.style.background='rgba(255,255,255,0.3)'"
                 onmouseout="this.style.background='rgba(255,255,255,0.2)'"
             >
@@ -472,40 +473,81 @@
         const toolsPath = isInTools ? './' : 'tools/';
 
         userInfoBar.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div class="spvi-nav-links">
-                    <a href="${basePath}dashboard.html" class="spvi-nav-link">หน้าหลัก</a>
-                    <a href="${toolsPath}stock-count.html" class="spvi-nav-link">ตรวจนับสต็อก</a>
-                    <a href="${toolsPath}cash-control.html" class="spvi-nav-link">ควบคุมเงินสด</a>
-                    <a href="${toolsPath}checklist.html" class="spvi-nav-link">รายการตรวจสอบ</a>
-                    <a href="${toolsPath}audit-calendar.html" class="spvi-nav-link">ปฏิทินตรวจสอบ</a>
-                    <a href="${toolsPath}issue-tracker.html" class="spvi-nav-link">ติดตามประเด็น</a>
-                    <a href="${toolsPath}report-comparison.html" class="spvi-nav-link">เปรียบเทียบรายงาน</a>
-                    <a href="${toolsPath}risk-analyzer.html" class="spvi-nav-link">วิเคราะห์ความเสี่ยง</a>
+            <div class="spvi-nav-container">
+                <button class="spvi-nav-toggle" id="spvi-nav-toggle">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <div class="spvi-nav-links" id="spvi-nav-links">
+                    <a href="${basePath}dashboard.html" class="spvi-nav-link">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        หน้าหลัก
+                    </a>
+                    <a href="${toolsPath}stock-count.html" class="spvi-nav-link">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        ตรวจนับสต็อก
+                    </a>
+                    <a href="${toolsPath}cash-control.html" class="spvi-nav-link">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        ควบคุมเงินสด
+                    </a>
+                    <a href="${toolsPath}checklist.html" class="spvi-nav-link">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                        รายการตรวจสอบ
+                    </a>
+                    <a href="${toolsPath}audit-calendar.html" class="spvi-nav-link">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        ปฏิทินตรวจสอบ
+                    </a>
+                    <a href="${toolsPath}issue-tracker.html" class="spvi-nav-link">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        ติดตามประเด็น
+                    </a>
+                    <a href="${toolsPath}report-comparison.html" class="spvi-nav-link">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        เปรียบเทียบรายงาน
+                    </a>
+                    <a href="${toolsPath}risk-analyzer.html" class="spvi-nav-link">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        วิเคราะห์ความเสี่ยง
+                    </a>
                 </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <div class="user-details" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem;">
-                    <span class="font-medium">${currentUser.name}</span>
-                    <span class="opacity-75">•</span>
-                    <span class="opacity-90">${currentUser.department}</span>
-                    <span class="opacity-75">•</span>
-                    <span class="opacity-75 text-xs uppercase font-semibold">${currentUser.role}</span>
-                </div>
-                <div class="user-actions" style="display: flex; gap: 0.5rem;">
-                    ${userManagementButton}
-                    <button 
-                        id="spvi-logout-btn" 
-                        class="spvi-logout-btn"
-                    >
-                        ออกจากระบบ
-                    </button>
+                <div class="spvi-user-actions">
+                    <div class="spvi-user-details">
+                        <span class="font-medium">${currentUser.name}</span>
+                        <span class="opacity-75">•</span>
+                        <span class="opacity-90">${currentUser.department}</span>
+                        <span class="opacity-75">•</span>
+                        <span class="opacity-75 text-xs uppercase font-semibold">${currentUser.role}</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        ${userManagementButton}
+                        <button id="spvi-logout-btn" class="spvi-logout-btn">
+                            ออกจากระบบ
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
 
         document.body.insertBefore(userInfoBar, document.body.firstChild);
-        document.body.style.paddingTop = '3rem';
         
         // Add logged-in class for proper CSS styling
         document.body.classList.add('logged-in');
@@ -521,6 +563,147 @@
             document.getElementById('spvi-user-management-btn').addEventListener('click', function() {
                 window.location.href = `${basePath}user-management.html`;
             });
+        }
+
+        // Mobile navigation toggle functionality
+        const navToggle = document.getElementById('spvi-nav-toggle');
+        const navLinks = document.getElementById('spvi-nav-links');
+        
+        if (navToggle && navLinks) {
+            navToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Add smooth transition classes
+                navToggle.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    navToggle.style.transform = '';
+                }, 150);
+                
+                navLinks.classList.toggle('open');
+                document.body.classList.toggle('nav-expanded');
+                
+                // Update toggle icon with smooth transition
+                const svg = navToggle.querySelector('svg');
+                const path = svg.querySelector('path');
+                
+                // Add transition to SVG
+                path.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                
+                if (navLinks.classList.contains('open')) {
+                    // Hamburger to X animation
+                    setTimeout(() => {
+                        path.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+                    }, 100);
+                } else {
+                    // X to hamburger animation
+                    setTimeout(() => {
+                        path.setAttribute('d', 'M4 6h16M4 12h16M4 18h16');
+                    }, 100);
+                }
+            });
+
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!userInfoBar.contains(event.target) && navLinks.classList.contains('open')) {
+                    navLinks.classList.remove('open');
+                    document.body.classList.remove('nav-expanded');
+                    const svg = navToggle.querySelector('svg');
+                    const path = svg.querySelector('path');
+                    path.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    setTimeout(() => {
+                        path.setAttribute('d', 'M4 6h16M4 12h16M4 18h16');
+                    }, 100);
+                }
+            });
+
+            // Close mobile menu when window is resized to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 1400) {
+                    navLinks.classList.remove('open');
+                    document.body.classList.remove('nav-expanded');
+                    const svg = navToggle.querySelector('svg');
+                    const path = svg.querySelector('path');
+                    path.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    setTimeout(() => {
+                        path.setAttribute('d', 'M4 6h16M4 12h16M4 18h16');
+                    }, 100);
+                }
+            });
+
+            // Handle navigation link clicks in mobile view
+            navLinks.addEventListener('click', function(e) {
+                if (e.target.closest('.spvi-nav-link')) {
+                    // Add click animation
+                    const clickedLink = e.target.closest('.spvi-nav-link');
+                    clickedLink.style.transform = 'translateX(8px)';
+                    setTimeout(() => {
+                        clickedLink.style.transform = '';
+                    }, 200);
+                    
+                    // Close mobile menu when navigating
+                    if (window.innerWidth <= 1400) {
+                        setTimeout(() => {
+                            navLinks.classList.remove('open');
+                            document.body.classList.remove('nav-expanded');
+                            const svg = navToggle.querySelector('svg');
+                            const path = svg.querySelector('path');
+                            path.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                            setTimeout(() => {
+                                path.setAttribute('d', 'M4 6h16M4 12h16M4 18h16');
+                            }, 100);
+                        }, 300);
+                    }
+                }
+            });
+        }
+    }
+
+    // Refresh user info display in navigation bar
+    function refreshUserInfo() {
+        const userInfoBar = document.getElementById('spvi-user-info');
+        if (!userInfoBar) return;
+
+        const currentUser = getCurrentUser();
+        if (!currentUser) return;
+
+        // Update user details in the navigation bar
+        const userDetailsElement = userInfoBar.querySelector('.spvi-user-details');
+        if (userDetailsElement) {
+            userDetailsElement.innerHTML = `
+                <span class="font-medium">${currentUser.name}</span>
+                <span class="opacity-75">•</span>
+                <span class="opacity-90">${currentUser.department}</span>
+                <span class="opacity-75">•</span>
+                <span class="opacity-75 text-xs uppercase font-semibold">${currentUser.role}</span>
+            `;
+        }
+
+        // Update user management button visibility based on role
+        const userActionsContainer = userInfoBar.querySelector('.spvi-user-actions > div');
+        if (userActionsContainer) {
+            const existingUserMgmtBtn = document.getElementById('spvi-user-management-btn');
+            
+            if (currentUser.role === 'admin' && !existingUserMgmtBtn) {
+                // Add user management button if user is admin and button doesn't exist
+                const userManagementButton = document.createElement('button');
+                userManagementButton.id = 'spvi-user-management-btn';
+                userManagementButton.style.cssText = 'background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.4rem 0.65rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; min-width: fit-content;';
+                userManagementButton.textContent = 'จัดการผู้ใช้';
+                userManagementButton.onmouseover = function() { this.style.background = 'rgba(255,255,255,0.3)'; };
+                userManagementButton.onmouseout = function() { this.style.background = 'rgba(255,255,255,0.2)'; };
+                userManagementButton.addEventListener('click', function() {
+                    const isInTools = window.location.pathname.includes('/tools/');
+                    const basePath = isInTools ? '../' : './';
+                    window.location.href = `${basePath}user-management.html`;
+                });
+                
+                const logoutBtn = userActionsContainer.querySelector('#spvi-logout-btn');
+                userActionsContainer.insertBefore(userManagementButton, logoutBtn);
+            } else if (currentUser.role !== 'admin' && existingUserMgmtBtn) {
+                // Remove user management button if user is not admin
+                existingUserMgmtBtn.remove();
+            }
         }
     }
 
@@ -576,6 +759,8 @@
         
         // UI functions
         addUserInfo,
+        refreshUserInfo,
+        updateCurrentUserData,
         
         // Utility functions
         showDevtoolsToast,

@@ -610,9 +610,15 @@
         // Update user status
         async function updateUserStatus(userId, status) {
             try {
-                await SPViAuth.updateUser(userId, { status });
+                const updatedUser = await SPViAuth.updateUser(userId, { status });
                 showToast(`User status updated to ${status}`, 'success');
                 await refreshUsers();
+                
+                // Refresh navigation bar if current user was updated
+                const currentUser = SPViAuth.getCurrentUser();
+                if (currentUser && currentUser.id === userId) {
+                    await SPViAuth.updateCurrentUserData(userId);
+                }
             } catch (error) {
                 // Error updating user status handled silently for production
                 showToast('Error updating user status: ' + error.message, 'error');
@@ -655,13 +661,19 @@
             };
 
             try {
-                await SPViAuth.updateUser(userId, updates);
+                const updatedUser = await SPViAuth.updateUser(userId, updates);
                 if (updates.role !== allUsers.find(u => u.id === userId).role) {
                     await SPViAuth.updateUserRole(userId, updates.role);
                 }
                 showToast('User updated successfully', 'success');
                 closeEditModal();
                 await refreshUsers();
+                
+                // Refresh navigation bar if current user was updated
+                const currentUser = SPViAuth.getCurrentUser();
+                if (currentUser && currentUser.id === userId) {
+                    await SPViAuth.updateCurrentUserData(userId);
+                }
             } catch (error) {
                 // Error updating user handled silently for production
                 showToast('Error updating user: ' + error.message, 'error');
