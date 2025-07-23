@@ -3730,11 +3730,18 @@ def calculate_serial_sku_score(text, pattern_type):
                     // Track SKUs with updated SOH
                     const sohUpdatedSkus = new Set();
                     let updatedCount = 0;
-                    
                     state.netDiffData.forEach(item => {
                         if (latestSohProcessedLookup[item.SKU] !== undefined) {
                             const oldSoh = item.SOH;
                             const newSoh = latestSohProcessedLookup[item.SKU].SOH;
+                            
+                            // Skip updating SKUs that had diff = 0 in first count
+                            const originalDiff1 = item.Scan1 - oldSoh;
+                            if (originalDiff1 === 0) {
+                                // Skip this item - it was counted correctly in first count
+                                return;
+                            }
+                            
                             if (oldSoh !== newSoh) { 
                                 item.SOH = newSoh; 
                                 item.Diff1 = item.Scan1 - item.SOH; 
@@ -3747,6 +3754,17 @@ def calculate_serial_sku_score(text, pattern_type):
                         if (latestSohProcessedLookup[item.SKU] !== undefined) {
                             const oldSoh = item.SOH;
                             const newSoh = latestSohProcessedLookup[item.SKU].SOH;
+                            
+                            // Skip updating SKUs that had diff = 0 in first count (check if this item exists in netDiffData)
+                            const netDiffItem = state.netDiffData.find(ndItem => ndItem.SKU === item.SKU);
+                            if (netDiffItem) {
+                                const originalDiff1 = netDiffItem.Scan1 - oldSoh;
+                                if (originalDiff1 === 0) {
+                                    // Skip this item - it was counted correctly in first count
+                                    return;
+                                }
+                            }
+                            
                             if (oldSoh !== newSoh) {
                                 item.SOH = newSoh;
                                 sohUpdatedSkus.add(item.SKU);
@@ -3758,6 +3776,14 @@ def calculate_serial_sku_score(text, pattern_type):
                             if (latestSohProcessedLookup[item.SKU] !== undefined) { 
                                 const oldSoh = item.SOH;
                                 const newSoh = latestSohProcessedLookup[item.SKU].SOH;
+                                
+                                // Skip updating SKUs that had diff = 0 in first count
+                                const originalDiff1 = item.Scan1 - oldSoh;
+                                if (originalDiff1 === 0) {
+                                    // Skip this item - it was counted correctly in first count
+                                    return;
+                                }
+                                
                                 if (oldSoh !== newSoh) {
                                     item.SOH = newSoh; 
                                     item.FinalDiff = item.Recount - item.SOH;
@@ -3776,12 +3802,27 @@ def calculate_serial_sku_score(text, pattern_type):
                         });
                         applyFinalReportView(); renderFinalReportCharts();
                     }
-                    
                     // Store SOH updated SKUs for future reference
                     if (!state.sohUpdatedSkus) state.sohUpdatedSkus = new Set();
                     sohUpdatedSkus.forEach(sku => state.sohUpdatedSkus.add(sku));
                     
-                    showModal("Success", `SOH updated for ${updatedCount} items. You can now generate a new recount file or finalize the report.`);
+                    // Count skipped items (those with diff = 0 in first count)
+                    let skippedCount = 0;
+                    state.netDiffData.forEach(item => {
+                        if (latestSohProcessedLookup[item.SKU] !== undefined) {
+                            const originalDiff1 = item.Scan1 - item.SOH;
+                            if (originalDiff1 === 0) {
+                                skippedCount++;
+                            }
+                        }
+                    });
+                    
+                    const totalAvailable = Object.keys(latestSohProcessedLookup).length;
+                    const message = skippedCount > 0 
+                        ? `SOH updated for ${updatedCount} items. ${skippedCount} items with correct first count were skipped (no update needed). Total items in latest SOH: ${totalAvailable}.`
+                        : `SOH updated for ${updatedCount} items. You can now generate a new recount file or finalize the report.`;
+                    
+                    showModal("Success", message);
                     setUnsavedChanges(true);
                 } catch (error) { showModal("Error Updating SOH", error.message);
                 } finally { hideLoader(); e.target.value = ''; getEl('latestSohFileName').textContent = ''; }
