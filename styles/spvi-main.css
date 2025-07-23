@@ -236,8 +236,8 @@ body {
     height: 1.25rem;
 }
 
-/* Desktop View (>1400px) - Fixed one row, no wrapping */
-@media (min-width: 1401px) {
+/* Desktop View (>1420px) - Fixed one row, no wrapping */
+@media (min-width: 1421px) {
     #spvi-user-info {
         padding: 0.75rem 1rem;
         height: 3.5rem;
@@ -251,7 +251,7 @@ body {
     }
     
     .spvi-nav-links {
-        gap: 1rem;
+        gap: 0.25rem;
         flex-wrap: nowrap;
     }
     
@@ -275,8 +275,8 @@ body {
     }
 }
 
-/* Mobile View (<=1400px) - Collapsible navigation */
-@media (max-width: 1400px) {
+/* Mobile View (<=1420px) - Collapsible navigation */
+@media (max-width: 1420px) {
     #spvi-user-info {
         padding: 0.75rem 0.75rem;
         min-height: 3rem;
@@ -288,6 +288,7 @@ body {
         justify-content: space-between;
         align-items: center;
         width: 100%;
+        gap: 1rem;
     }
     
     .spvi-nav-toggle {
@@ -311,19 +312,20 @@ body {
         gap: 0;
         max-height: 0;
         overflow: hidden;
-        transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         z-index: 999;
-        border-top: 1px solid rgba(255,255,255,0.1);
+        border-top: 1px solid transparent;
     }
     
     .spvi-nav-links.open {
         max-height: 280px;
-        padding: 0.15rem 0;
+        padding: 0.1rem 0;
+        border-top: 1px solid rgba(255,255,255,0.1);
     }
     
     .spvi-nav-link {
-        padding: 0.4rem 1rem;
+        padding: 0.3rem 1rem;
         font-size: 0.75rem;
         border-radius: 0;
         border-bottom: 1px solid rgba(255,255,255,0.1);
