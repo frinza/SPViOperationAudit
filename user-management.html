@@ -14,6 +14,9 @@
     <!-- Configuration Manager -->
     <script src="config.js"></script>
     
+    <!-- Session Manager -->
+    <script src="session-manager.js"></script>
+    
     <!-- Firebase Auth System -->
     <script src="firebase-auth.js"></script>
     
@@ -142,6 +145,96 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     สำหรับผู้ดูแลเท่านั้น
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Management Section -->
+        <div class="bg-white rounded-xl shadow-sm border p-6 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Session Management
+                    </h3>
+                    <p class="text-sm text-slate-600">Monitor and configure user session settings</p>
+                </div>
+                <button 
+                    onclick="refreshSessionInfo()" 
+                    class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                >
+                    Refresh
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Current Session Info -->
+                <div class="space-y-4">
+                    <h4 class="font-medium text-slate-900">Current Session Information</h4>
+                    <div class="bg-slate-50 rounded-lg p-4 space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-sm text-slate-600">Session ID:</span>
+                            <span class="text-sm font-mono text-slate-900" id="current-session-id">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-slate-600">Session Age:</span>
+                            <span class="text-sm text-slate-900" id="session-age">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-slate-600">Time Since Activity:</span>
+                            <span class="text-sm text-slate-900" id="time-since-activity">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-slate-600">Remaining Time:</span>
+                            <span class="text-sm font-medium text-green-600" id="remaining-time">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-slate-600">Warning Status:</span>
+                            <span class="text-sm" id="warning-status">
+                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Active</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Session Configuration -->
+                <div class="space-y-4">
+                    <h4 class="font-medium text-slate-900">Session Configuration</h4>
+                    <div class="bg-slate-50 rounded-lg p-4 space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-sm text-slate-600">Inactivity Timeout:</span>
+                            <span class="text-sm text-slate-900" id="config-inactivity">30 minutes</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-slate-600">Maximum Duration:</span>
+                            <span class="text-sm text-slate-900" id="config-max-duration">8 hours</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-slate-600">Warning Time:</span>
+                            <span class="text-sm text-slate-900" id="config-warning-time">5 minutes</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-slate-600">Check Interval:</span>
+                            <span class="text-sm text-slate-900" id="config-check-interval">30 seconds</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button 
+                            onclick="testSessionTimeout()" 
+                            class="flex-1 bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-yellow-700 transition-colors"
+                        >
+                            Test Timeout
+                        </button>
+                        <button 
+                            onclick="extendAllSessions()" 
+                            class="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                        >
+                            Extend Session
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -794,6 +887,107 @@
             applyFilters();
         }
 
+        // Session Management Functions
+        function refreshSessionInfo() {
+            if (!window.SPViSessionManager) {
+                showToast('Session manager not available', 'error');
+                return;
+            }
+
+            const sessionInfo = window.SPViSessionManager.getSessionInfo();
+            const config = window.SPViSessionManager.getConfig();
+
+            if (sessionInfo) {
+                // Update session information display
+                document.getElementById('current-session-id').textContent = sessionInfo.sessionId.substring(0, 16) + '...';
+                document.getElementById('session-age').textContent = formatDuration(sessionInfo.sessionAge);
+                document.getElementById('time-since-activity').textContent = formatDuration(sessionInfo.timeSinceActivity);
+                document.getElementById('remaining-time').textContent = formatDuration(Math.max(0, sessionInfo.remainingTime));
+                
+                // Update warning status
+                const warningElement = document.getElementById('warning-status');
+                if (sessionInfo.warningShown) {
+                    warningElement.innerHTML = '<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Warning Active</span>';
+                } else {
+                    warningElement.innerHTML = '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Active</span>';
+                }
+            } else {
+                // No session data available
+                document.getElementById('current-session-id').textContent = 'No active session';
+                document.getElementById('session-age').textContent = '-';
+                document.getElementById('time-since-activity').textContent = '-';
+                document.getElementById('remaining-time').textContent = '-';
+                document.getElementById('warning-status').innerHTML = '<span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">Inactive</span>';
+            }
+
+            // Update configuration display
+            document.getElementById('config-inactivity').textContent = Math.floor(config.INACTIVITY_TIMEOUT / 60000) + ' minutes';
+            document.getElementById('config-max-duration').textContent = Math.floor(config.MAX_SESSION_DURATION / 3600000) + ' hours';
+            document.getElementById('config-warning-time').textContent = Math.floor(config.WARNING_TIME / 60000) + ' minutes';
+            document.getElementById('config-check-interval').textContent = Math.floor(config.CHECK_INTERVAL / 1000) + ' seconds';
+        }
+
+        function formatDuration(milliseconds) {
+            if (milliseconds < 0) return '0s';
+            
+            const seconds = Math.floor(milliseconds / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes % 60}m`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${seconds % 60}s`;
+            } else {
+                return `${seconds}s`;
+            }
+        }
+
+        function testSessionTimeout() {
+            if (!window.SPViSessionManager) {
+                showToast('Session manager not available', 'error');
+                return;
+            }
+
+            if (confirm('This will simulate a session timeout warning. Continue?')) {
+                // Force show session warning for testing
+                if (window.SPViSessionManager.showSessionWarning) {
+                    window.SPViSessionManager.showSessionWarning();
+                    showToast('Session timeout warning triggered', 'info');
+                } else {
+                    showToast('Session warning function not available', 'warning');
+                }
+            }
+        }
+
+        function extendAllSessions() {
+            if (!window.SPViSessionManager) {
+                showToast('Session manager not available', 'error');
+                return;
+            }
+
+            try {
+                window.SPViSessionManager.extendSession();
+                showToast('Session extended successfully', 'success');
+                refreshSessionInfo();
+            } catch (error) {
+                showToast('Failed to extend session: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-refresh session info every 10 seconds
+        let sessionInfoInterval;
+        function startSessionInfoAutoRefresh() {
+            sessionInfoInterval = setInterval(refreshSessionInfo, 10000);
+        }
+
+        function stopSessionInfoAutoRefresh() {
+            if (sessionInfoInterval) {
+                clearInterval(sessionInfoInterval);
+                sessionInfoInterval = null;
+            }
+        }
+
         // Add event listeners for filters
         document.getElementById('status-filter').addEventListener('change', applyFilters);
         document.getElementById('role-filter').addEventListener('change', applyFilters);
@@ -806,6 +1000,12 @@
             try {
                 await SPViAuth.initializeFirebase();
                 await loadUsers();
+                
+                // Initialize session management display
+                setTimeout(() => {
+                    refreshSessionInfo();
+                    startSessionInfoAutoRefresh();
+                }, 1000);
             } catch (error) {
                 // Initialization error handled silently for production
                 showToast('Failed to initialize. Please check Firebase configuration.', 'error');

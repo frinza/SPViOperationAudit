@@ -17,7 +17,12 @@
         ADMIN_EMAIL: 'admin@spvi.co.th',
         ADMIN_DEFAULT_PASSWORD: 'admin123',
         APP_NAME: 'SPVi Operations Audit',
-        APP_VERSION: '1.0.0'
+        APP_VERSION: '1.0.0',
+        
+        // Session timeout configuration (in minutes)
+        SESSION_INACTIVITY_TIMEOUT: 30,
+        SESSION_MAX_DURATION: 480, // 8 hours
+        SESSION_WARNING_TIME: 5
     };
 
     // Function to get environment variable with fallback
@@ -174,6 +179,18 @@
             });
 
             console.log('App Config:', appConfig);
+            
+            const sessionConfig = this.getSessionConfig();
+            console.log('Session Config:', sessionConfig);
+        },
+
+        // Get session timeout configuration
+        getSessionConfig() {
+            return {
+                inactivityTimeout: parseInt(getEnvVar('SESSION_INACTIVITY_TIMEOUT')) || 30, // minutes
+                maxDuration: parseInt(getEnvVar('SESSION_MAX_DURATION')) || 480, // minutes (8 hours)
+                warningTime: parseInt(getEnvVar('SESSION_WARNING_TIME')) || 5 // minutes
+            };
         }
     };
 

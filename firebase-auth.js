@@ -131,10 +131,25 @@
 
     function setCurrentUser(user) {
         localStorage.setItem('spvi_current_user', JSON.stringify(user));
+        
+        // Initialize session manager when user logs in
+        if (window.SPViSessionManager && !isLoginPage()) {
+            setTimeout(() => {
+                window.SPViSessionManager.initialize();
+            }, 100);
+        }
     }
 
     function clearCurrentUser() {
         localStorage.removeItem('spvi_current_user');
+    }
+
+    // Check if current page is login page
+    function isLoginPage() {
+        const currentPage = window.location.pathname;
+        return currentPage.includes('index.html') || 
+               currentPage.endsWith('/') || 
+               currentPage === '/';
     }
 
     // Update current user data and refresh UI
@@ -744,6 +759,11 @@
         checkAuth,
         checkAuthentication: checkAuth, // Alias for compatibility
         logout: function() {
+            // Clear session data from session manager
+            if (window.SPViSessionManager) {
+                window.SPViSessionManager.clearSessionData();
+            }
+            
             clearCurrentUser();
             // Remove logged-in class when logging out
             document.body.classList.remove('logged-in');

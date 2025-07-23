@@ -30,6 +30,7 @@ The SPVi Operations Audit Toolkit is a modern, responsive web application for op
 
 - 🔐 **Firebase Authentication** - Secure user registration and login
 - 👥 **User Management** - Admin approval workflow and role-based access  
+- ⏱️ **Session Timeout Management** - Automatic session expiration and activity monitoring
 - 📱 **Mobile Responsive** - Works seamlessly on all devices
 - 🇹🇭 **Thai Language Support** - Optimized for Thai users with Sarabun font
 - 🛡️ **Security First** - Role-based permissions and secure data handling
@@ -39,6 +40,17 @@ The SPVi Operations Audit Toolkit is a modern, responsive web application for op
 - ⚡ **Production Ready** - Optimized and deployment-ready
 
 ## 🆕 Recent Updates
+
+### Session Timeout Implementation (July 2025)
+**🔒 Enhanced Security Features**
+
+- **⏱️ Automatic Session Management**: 30-minute inactivity timeout with 8-hour maximum duration
+- **⚠️ Warning System**: 5-minute warning with countdown timer and audio alert
+- **🎯 Activity Monitoring**: Tracks user interactions to prevent unexpected logouts
+- **👨‍💼 Admin Panel**: Real-time session monitoring and management tools
+- **🔧 Configurable Settings**: Environment-based timeout configuration
+- **🔐 Security Validation**: Session tampering detection and prevention
+- **📱 Multi-tab Support**: Synchronized session state across browser tabs
 
 ### Stock Count Tool Major Bug Fix (July 2025)
 **✅ Critical Input Update Fix**
@@ -383,8 +395,43 @@ Each user can be granted access to specific tools:
 - **🔐 Password Hashing** - Secure password storage
 - **🛡️ Role-Based Access** - User/Admin permissions
 - **✅ Status Verification** - Only approved users can access
-- **🔒 Session Management** - Secure login/logout
+- **🔒 Session Management** - Secure login/logout with timeout
+- **⏱️ Session Timeout** - Automatic logout after inactivity
+- **🚨 Activity Monitoring** - Real-time user activity tracking
+- **⚠️ Session Warnings** - Proactive timeout notifications
+- **🔐 Session Validation** - Continuous session integrity checks
 - **📱 Cross-Device Security** - Consistent security across devices
+
+### Session Timeout Security
+
+The application includes comprehensive session timeout management:
+
+#### Configuration
+```bash
+# .env file settings
+SESSION_INACTIVITY_TIMEOUT=30    # Minutes of inactivity before logout
+SESSION_MAX_DURATION=480         # Maximum session duration (8 hours)
+SESSION_WARNING_TIME=5           # Warning time before timeout (minutes)
+```
+
+#### Features
+- **Automatic Logout**: After 30 minutes of inactivity
+- **Maximum Duration**: 8-hour maximum session regardless of activity
+- **Warning System**: 5-minute warning with countdown and audio alert
+- **Activity Detection**: Mouse, keyboard, scroll, and touch events
+- **Session Extension**: Users can extend sessions when warned
+- **Security Validation**: Detects and prevents session tampering
+- **Multi-tab Sync**: Session state synchronized across browser tabs
+
+#### Testing Session Timeout
+```bash
+# Run the automated test script
+./test-session-timeout.sh
+
+# Or test manually in browser console
+SPViSessionManager.getSessionInfo()
+SPViSessionManager.extendSession()
+```
 
 ### Production Security Checklist
 
