@@ -11,6 +11,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     
+    <!-- Configuration Manager -->
+    <script src="config.js"></script>
+    
     <!-- Firebase Auth System -->
     <script src="firebase-auth.js"></script>
     
@@ -491,9 +494,19 @@ ${spviKnowledgeBase.tools.map(item => `- ${item}`).join('\n')}
           
           chatHistory.push({ role: "user", parts: [{ text: enhancedPrompt }] });
           const payload = { contents: chatHistory };
-          const apiKey = "AIzaSyAuWkWlmGv0AqizfxpOxDgIK4SmrJrDBHU"; // <-- Insert Gemini API key
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+          
           try {
+            // Get Gemini API key from configuration
+            if (!window.SPViConfig) {
+              throw new Error('Configuration not loaded');
+            }
+            
+            const geminiConfig = window.SPViConfig.getGeminiConfig();
+            if (!geminiConfig.apiKey) {
+              throw new Error('Gemini API key not configured');
+            }
+            
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiConfig.apiKey}`;
             const response = await fetch(apiUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

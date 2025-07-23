@@ -4,17 +4,6 @@
 (function() {
     'use strict';
     
-    // Firebase Configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyBiNqHECmqDg0uk6fsR66qfldBCTK76OQE",
-        authDomain: "spvi-operations-audit.firebaseapp.com",
-        projectId: "spvi-operations-audit",
-        storageBucket: "spvi-operations-audit.firebasestorage.app",
-        messagingSenderId: "179262645525",
-        appId: "1:179262645525:web:95c002a6df7552220e351c",
-        measurementId: "G-XBZVKJPDZQ"
-    };
-
     // Initialize Firebase
     let db = null;
     let auth = null;
@@ -27,6 +16,17 @@
             if (!window.firebase) {
                 throw new Error('Firebase SDK not loaded. Please include Firebase scripts.');
             }
+
+            // Ensure configuration is loaded
+            if (!window.SPViConfig) {
+                throw new Error('SPViConfig not loaded. Please include config.js.');
+            }
+
+            // Get Firebase configuration from config manager
+            const firebaseConfig = window.SPViConfig.getFirebaseConfig();
+            
+            // Validate configuration
+            window.SPViConfig.validate();
             
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
@@ -327,14 +327,17 @@
             await initializeFirebase();
             
             try {
-                const adminEmail = 'admin@spvi.co.th';
+                // Get admin configuration from config manager
+                const adminConfig = window.SPViConfig.getAdminConfig();
+                const adminEmail = adminConfig.email;
+                
                 const existingAdmin = await this.getUserByEmail(adminEmail);
                 
                 if (!existingAdmin) {
                     const adminUser = {
                         name: 'System Administrator',
                         email: adminEmail,
-                        password: 'admin123', // This will be hashed by registerUser
+                        password: adminConfig.defaultPassword, // This will be hashed by registerUser
                         department: 'IT',
                         position: 'System Administrator',
                         role: 'admin',
@@ -355,11 +358,13 @@
                     const createdAdmin = await this.registerUser(adminUser);
                 } else {
                     // Check if password is missing and fix it
-                    if (!existingAdmin.password || existingAdmin.password === undefined) {
-                        const correctPasswordHash = hashPassword('admin123');
+                    if (!existingAdmin.hasOwnProperty('password') || !existingAdmin.password || existingAdmin.password === undefined) {
+                        console.log('Admin user exists but password is missing. Adding password...');
+                        const correctPasswordHash = hashPassword(adminConfig.defaultPassword);
                         await this.updateUser(existingAdmin.id, { 
                             password: correctPasswordHash 
                         });
+                        console.log('Admin password has been set successfully');
                     }
                 }
             } catch (error) {
@@ -371,7 +376,9 @@
             await initializeFirebase();
             
             try {
-                const adminEmail = 'admin@spvi.co.th';
+                // Get admin email from config
+                const adminConfig = window.SPViConfig.getAdminConfig();
+                const adminEmail = adminConfig.email;
                 const hashedCurrentPassword = hashPassword(currentPassword);
                 
                 // Verify current password first
@@ -396,7 +403,9 @@
             await initializeFirebase();
             
             try {
-                const adminEmail = 'admin@spvi.co.th';
+                // Get admin email from config
+                const adminConfig = window.SPViConfig.getAdminConfig();
+                const adminEmail = adminConfig.email;
                 return await this.getUserByEmail(adminEmail);
             } catch (error) {
                 throw error;
@@ -766,13 +775,9 @@
         showDevtoolsToast,
         setupDevToolsProtection,
 
-        // Firebase config management
-        setFirebaseConfig: function(config) {
-            Object.assign(firebaseConfig, config);
-        },
-        
-        getFirebaseConfig: function() {
-            return { ...firebaseConfig };
+        // Configuration access
+        getConfig: function() {
+            return window.SPViConfig;
         }
     };
 
