@@ -30,13 +30,17 @@
 
     <!-- Header -->
     <header class="bg-white shadow-sm border-b">
-        <div class="container mx-auto px-6 py-4">
+        <div class="container mx-auto px-4 sm:px-6 py-4">
+            <!-- Main Header Row -->
             <div class="flex justify-between items-center">
-                <div>
-                    <h1 class="text-2xl font-bold text-slate-900">👨‍💼 User Management</h1>
-                    <p class="text-sm text-slate-600">จัดการผู้ใช้งานระบบ SPVi Operations Audit Toolkit</p>
+                <!-- Title Section -->
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-xl sm:text-2xl font-bold text-slate-900 truncate">👨‍💼 User Management</h1>
+                    <p class="text-xs sm:text-sm text-slate-600 mt-1 hidden sm:block">จัดการผู้ใช้งานระบบ SPVi Operations Audit Toolkit</p>
                 </div>
-                <div class="flex items-center gap-4">
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden lg:flex items-center gap-3">
                     <button 
                         onclick="refreshUsers()" 
                         class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
@@ -65,12 +69,63 @@
                         กลับหน้าหลัก
                     </a>
                 </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="lg:hidden">
+                    <button 
+                        id="mobile-menu-btn"
+                        onclick="toggleMobileMenu()"
+                        class="bg-slate-100 hover:bg-slate-200 p-2 rounded-lg transition-colors"
+                    >
+                        <svg id="menu-icon" class="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                        <svg id="close-icon" class="w-6 h-6 text-slate-700 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Navigation Menu -->
+            <div id="mobile-menu" class="lg:hidden mt-4 border-t pt-4 hidden">
+                <div class="space-y-3">
+                    <button 
+                        onclick="refreshUsers(); closeMobileMenu();" 
+                        class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        รีเฟรช
+                    </button>
+                    <a 
+                        href="admin-permission-manager.html" 
+                        class="w-full bg-purple-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        จัดการสิทธิ์
+                    </a>
+                    <a 
+                        href="dashboard.html" 
+                        class="w-full bg-slate-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-slate-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        กลับหน้าหลัก
+                    </a>
+                </div>
+                <!-- Mobile Description -->
+                <p class="text-xs text-slate-600 mt-4 px-2 text-center">จัดการผู้ใช้งานระบบ SPVi Operations Audit Toolkit</p>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-6 py-8">
+    <main class="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm border p-6">
@@ -186,24 +241,50 @@
         </div>
 
         <!-- Online Users Monitoring -->
-        <div class="bg-white rounded-xl shadow-sm border p-6 mb-8">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-6 mb-8">
+            <!-- Header Section - Mobile Optimized -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-lg sm:text-xl font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
+                        <svg class="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
-                        Online Users Monitor
+                        <span class="truncate">Online Users Monitor</span>
                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800" id="online-count-badge">
-                            0 online
+                            1 online
                         </span>
                     </h3>
-                    <p class="text-sm text-slate-600">Real-time monitoring of active user sessions</p>
+                    <p class="text-xs sm:text-sm text-slate-600 mt-1">Real-time monitoring of active user sessions</p>
                 </div>
-                <div class="flex gap-2">
+                
+                <!-- Desktop Controls -->
+                <div class="hidden sm:flex gap-2">
                     <button 
                         onclick="refreshOnlineUsers()" 
                         class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span class="hidden md:inline">Refresh</span>
+                    </button>
+                    <button 
+                        onclick="forceLogoutAllUsers()" 
+                        class="bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
+                        title="Force logout all non-admin users"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        <span class="hidden md:inline">Force Logout All</span>
+                    </button>
+                </div>
+
+                <!-- Mobile Controls -->
+                <div class="flex sm:hidden gap-2">
+                    <button 
+                        onclick="refreshOnlineUsers()" 
+                        class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
@@ -212,7 +293,7 @@
                     </button>
                     <button 
                         onclick="forceLogoutAllUsers()" 
-                        class="bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
+                        class="flex-1 bg-red-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
                         title="Force logout all non-admin users"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,17 +304,19 @@
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Content Grid - Mobile Responsive -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <!-- Online Users List -->
-                <div class="lg:col-span-2">
-                    <div class="flex items-center justify-between mb-4">
+                <div class="lg:col-span-2 order-2 lg:order-1">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4">
                         <h4 class="font-medium text-slate-900">Currently Online</h4>
-                        <div class="flex items-center gap-2 text-sm text-slate-500">
+                        <div class="flex items-center gap-2 text-xs sm:text-sm text-slate-500">
                             <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                            Auto-refresh: 10s
+                            <span class="hidden sm:inline">Auto-refresh: 10s</span>
+                            <span class="sm:hidden">Auto: 10s</span>
                         </div>
                     </div>
-                    <div class="bg-slate-50 rounded-lg border max-h-80 overflow-y-auto" id="online-users-list">
+                    <div class="bg-slate-50 rounded-lg border max-h-64 sm:max-h-80 overflow-y-auto" id="online-users-list">
                         <div class="flex items-center justify-center py-12">
                             <div class="text-center">
                                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -243,10 +326,11 @@
                     </div>
                 </div>
                 
-                <!-- Quick Stats -->
-                <div class="space-y-4">
+                <!-- Quick Stats - Mobile First -->
+                <div class="space-y-3 sm:space-y-4 order-1 lg:order-2">
                     <h4 class="font-medium text-slate-900">Session Statistics</h4>
-                    <div class="space-y-3">
+                    <!-- Mobile: 2x2 Grid, Desktop: Vertical Stack -->
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-1 sm:space-y-3 sm:gap-0">
                         <div class="bg-blue-50 rounded-lg p-3">
                             <div class="text-xs text-blue-600 font-medium">Active Sessions</div>
                             <div class="text-lg font-bold text-blue-900" id="active-sessions-stat">0</div>
@@ -256,11 +340,11 @@
                             <div class="text-lg font-bold text-green-900" id="users-online-stat">0</div>
                         </div>
                         <div class="bg-yellow-50 rounded-lg p-3">
-                            <div class="text-xs text-yellow-600 font-medium">Avg Session Time</div>
+                            <div class="text-xs text-yellow-600 font-medium truncate">Avg Session</div>
                             <div class="text-lg font-bold text-yellow-900" id="avg-session-time-stat">0m</div>
                         </div>
                         <div class="bg-red-50 rounded-lg p-3">
-                            <div class="text-xs text-red-600 font-medium">Long Sessions (>4h)</div>
+                            <div class="text-xs text-red-600 font-medium truncate">Long Sessions</div>
                             <div class="text-lg font-bold text-red-900" id="long-sessions-stat">0</div>
                         </div>
                     </div>
@@ -2023,6 +2107,50 @@
             } catch (error) {
                 // Initialization error handled silently for production
                 showToast('Failed to initialize. Please check Firebase configuration.', 'error');
+            }
+        });
+
+        // Mobile Menu Functions
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuIcon = document.getElementById('menu-icon');
+            const closeIcon = document.getElementById('close-icon');
+            
+            if (mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.remove('hidden');
+                menuIcon.classList.add('hidden');
+                closeIcon.classList.remove('hidden');
+            } else {
+                mobileMenu.classList.add('hidden');
+                menuIcon.classList.remove('hidden');
+                closeIcon.classList.add('hidden');
+            }
+        }
+
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuIcon = document.getElementById('menu-icon');
+            const closeIcon = document.getElementById('close-icon');
+            
+            mobileMenu.classList.add('hidden');
+            menuIcon.classList.remove('hidden');
+            closeIcon.classList.add('hidden');
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            
+            if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+                closeMobileMenu();
+            }
+        });
+
+        // Close mobile menu on window resize if it becomes desktop size
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 1024) { // lg breakpoint
+                closeMobileMenu();
             }
         });
 

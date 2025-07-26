@@ -727,6 +727,11 @@
 
     // Add user info bar to pages
     function addUserInfo() {
+        // Check if this page should skip the user info bar
+        if (window.skipUserInfoBar) {
+            return;
+        }
+        
         const currentUser = getCurrentUser();
         if (!currentUser) return;
 
@@ -1006,18 +1011,20 @@
     function init() {
         const currentPage = window.location.pathname;
         
-        // Skip auth check if we're on the login page or user management
+        // Skip auth check if we're on the login page
         const isLoginPage = currentPage.includes('index.html') || 
                            currentPage.endsWith('/') || 
                            currentPage === '/';
-        const isUserManagement = currentPage.includes('user-management.html');
         
-        if (isLoginPage || isUserManagement) {
+        if (isLoginPage) {
             return;
         }
 
         if (checkAuth()) {
-            addUserInfo();
+            // Only add user info if not explicitly skipped
+            if (!window.skipUserInfoBar) {
+                addUserInfo();
+            }
         }
     }
 

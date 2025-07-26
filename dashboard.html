@@ -25,36 +25,36 @@
 </head>
 <body class="bg-slate-50 text-slate-800">
 
-    <div class="container mx-auto px-6 py-12 md:py-20">
+    <div class="container mx-auto px-4 sm:px-6 py-6 sm:py-12 md:py-20">
 
-        <header class="text-center mb-12 md:mb-16">
-            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+        <header class="text-center mb-8 sm:mb-12 md:mb-16">
+            <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">
                 Operations Audit SPVi Toolkit
             </h1>
-            <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+            <p class="mt-2 sm:mt-4 text-sm sm:text-base lg:text-lg text-slate-600 max-w-2xl mx-auto px-2">
                 เครื่องมือตรวจสอบสาขา โดย ฝ่าย Operation Audit SPVi
             </p>
         </header>
 
         <main>
-            <div id="tools-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div id="tools-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-6xl mx-auto">
                 <!-- Tool cards will be dynamically generated based on user permissions -->
             </div>
             
             <!-- No access message -->
-            <div id="no-access-message" class="text-center py-16 hidden">
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-8 max-w-md mx-auto">
-                    <svg class="w-16 h-16 text-yellow-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div id="no-access-message" class="text-center py-8 sm:py-16 hidden">
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 sm:p-8 max-w-md mx-auto">
+                    <svg class="w-12 h-12 sm:w-16 sm:h-16 text-yellow-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
                     </svg>
-                    <h3 class="text-lg font-semibold text-yellow-800 mb-2">ไม่มีสิทธิ์เข้าถึงเครื่องมือ</h3>
-                    <p class="text-yellow-700">คุณยังไม่ได้รับสิทธิ์ในการใช้งานเครื่องมือใด ๆ กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การใช้งาน</p>
+                    <h3 class="text-base sm:text-lg font-semibold text-yellow-800 mb-2">ไม่มีสิทธิ์เข้าถึงเครื่องมือ</h3>
+                    <p class="text-sm sm:text-base text-yellow-700">คุณยังไม่ได้รับสิทธิ์ในการใช้งานเครื่องมือใด ๆ กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การใช้งาน</p>
                 </div>
             </div>
         </main>
 
-        <footer class="text-center mt-16 md:mt-24 text-slate-500">
-            <p>&copy; 2025 SPVi/Operation Audit. All Rights Reserved.</p>
+        <footer class="text-center mt-8 sm:mt-16 md:mt-24 text-slate-500">
+            <p class="text-xs sm:text-sm">&copy; 2025 SPVi/Operation Audit. All Rights Reserved.</p>
         </footer>
     </div>
 
@@ -135,21 +135,21 @@
             const colors = colorMappings[tool.color] || colorMappings.blue;
             return `
                 <a href="${tool.url}" class="tool-card group">
-                    <div class="p-8">
+                    <div class="p-4 sm:p-6 lg:p-8">
                         <div class="icon-wrapper ${colors.bg} ${colors.text}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="${tool.icon}" />
                             </svg>
                         </div>
-                        <h2 class="mt-6 text-xl font-bold text-slate-900">
+                        <h2 class="mt-4 sm:mt-6 text-lg sm:text-xl font-bold text-slate-900">
                             ${tool.title}
                         </h2>
-                        <p class="mt-2 text-slate-500">
+                        <p class="mt-2 text-sm sm:text-base text-slate-500 leading-relaxed">
                             ${tool.description}
                         </p>
-                        <div class="mt-6 ${colors.text} font-semibold flex items-center gap-2">
+                        <div class="mt-4 sm:mt-6 ${colors.text} font-semibold flex items-center gap-2 text-sm sm:text-base">
                             เปิดใช้งาน
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
                         </div>
@@ -217,20 +217,28 @@
     <style>
         #chatbot-fab {
           position: fixed;
-          bottom: 2.5rem;
-          right: 2.5rem;
+          bottom: 1.5rem;
+          right: 1.5rem;
           z-index: 50;
           background: #2563eb;
           color: #fff;
           border-radius: 9999px;
-          width: 56px;
-          height: 56px;
+          width: 48px;
+          height: 48px;
           box-shadow: 0 4px 24px rgba(37,99,235,0.18);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           transition: box-shadow 0.2s;
+        }
+        @media (min-width: 640px) {
+          #chatbot-fab {
+            bottom: 2.5rem;
+            right: 2.5rem;
+            width: 56px;
+            height: 56px;
+          }
         }
         #chatbot-fab:hover { box-shadow: 0 8px 32px rgba(37,99,235,0.28); }
         #chatbot-modal-bg {
@@ -244,19 +252,38 @@
           display: none;
           position: fixed;
           z-index: 51;
-          bottom: 6.5rem;
-          right: 2.5rem;
-          width: 100%;
+          bottom: 4rem;
+          right: 1rem;
+          left: 1rem;
+          width: auto;
           max-width: 400px;
-          max-height: 80vh;
+          max-height: 70vh;
           background: #fff;
-          border-radius: 1.5rem;
+          border-radius: 1rem;
           box-shadow: 0 8px 32px rgba(30,41,59,0.18);
           overflow: hidden;
           flex-direction: column;
         }
+        @media (min-width: 640px) {
+          #chatbot-modal {
+            bottom: 6.5rem;
+            right: 2.5rem;
+            left: auto;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            border-radius: 1.5rem;
+          }
+        }
         @media (max-width: 500px) {
-          #chatbot-modal { right: 0; left: 0; bottom: 0; max-width: 100vw; border-radius: 0; }
+          #chatbot-modal { 
+            right: 0; 
+            left: 0; 
+            bottom: 0; 
+            max-width: 100vw; 
+            border-radius: 0; 
+            max-height: 90vh;
+          }
         }
         .chat-bubble { max-width: 80%; word-wrap: break-word; }
         .user-bubble { background-color: #3b82f6; color: white; }

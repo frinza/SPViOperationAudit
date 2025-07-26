@@ -37,8 +37,7 @@
         body {
             font-family: 'Sarabun', sans-serif;
         }
-        
-        /* ===== MOBILE RESPONSIVE TABLE ENHANCEMENTS ===== */
+          /* ===== MOBILE RESPONSIVE TABLE ENHANCEMENTS ===== */
         @media (max-width: 768px) {
             /* Hide traditional table structure on mobile */
             .mobile-hidden {
@@ -49,199 +48,233 @@
             .mobile-card-view {
                 display: block !important;
             }
-            
+              /* COMPACT MOBILE CARDS */
             .stock-card {
                 background: white;
-                border-radius: 0.75rem;
+                border-radius: 0.5rem;
                 border: 1px solid #e2e8f0;
-                margin-bottom: 1rem;
-                padding: 1.25rem;
+                margin-bottom: 0.5rem;
+                padding: 0.5rem;
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
                 transition: all 0.2s ease;
                 position: relative;
             }
             
             .stock-card:hover {
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                transform: translateY(-2px);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+                transform: translateY(-1px);
             }
-            
-            .stock-card.diff-positive {
-                border-left: 4px solid #f59e0b;
+              .stock-card.diff-positive {
+                border-left: 3px solid #f59e0b;
                 background-color: #fefce8;
             }
             
             .stock-card.diff-negative {
-                border-left: 4px solid #ef4444;
+                border-left: 3px solid #ef4444;
                 background-color: #fef2f2;
             }
             
             .stock-card.diff-zero {
-                border-left: 4px solid #22c55e;
+                border-left: 3px solid #22c55e;
                 background-color: #f0fdf4;
             }
             
+            .stock-card.diff-null {
+                border-left: 3px solid #e5e7eb;
+                background-color: white;
+            }
+            
+            /* Compact header with inline elements */
             .stock-card-header {
                 display: flex;
                 justify-content: space-between;
-                align-items: flex-start;
-                margin-bottom: 1rem;
-                gap: 1rem;
+                align-items: center;
+                margin-bottom: 0.375rem;
+                gap: 0.375rem;
+            }
+            
+            .stock-card-number {
+                background: #e5e7eb;
+                color: #374151;
+                padding: 0.125rem 0.25rem;
+                border-radius: 0.25rem;
+                font-size: 0.65rem;
+                font-weight: 600;
+                min-width: fit-content;
             }
             
             .stock-card-sku {
                 font-weight: 700;
                 color: #1f2937;
                 flex: 1;
-                font-size: 1.1rem;
-                line-height: 1.4;
+                font-size: 0.85rem;
+                line-height: 1.2;
             }
-            
-            .stock-card-diff {
-                background: #e0e7ff;
-                color: #3730a3;
-                padding: 0.375rem 0.75rem;
-                border-radius: 0.5rem;
-                font-size: 0.8rem;
-                font-weight: 700;
-                white-space: nowrap;
-                text-align: center;
-                min-width: fit-content;
-            }
-            
+              /* Ultra compact description */
             .stock-card-description {
                 color: #4b5563;
-                margin-bottom: 1rem;
-                line-height: 1.6;
-                font-size: 0.95rem;
-                background: rgba(0, 0, 0, 0.02);
-                padding: 0.75rem;
-                border-radius: 0.5rem;
-                border-left: 3px solid #e5e7eb;
+                margin-bottom: 0.375rem;
+                line-height: 1.3;
+                font-size: 0.75rem;
+                display: -webkit-box;
+                -webkit-line-clamp: 1;
+                line-clamp: 1;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
             }
             
+            /* Horizontal layout for all data - single row */
             .stock-card-meta {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 1rem;
-                margin-bottom: 1rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.375rem;
+                gap: 0.25rem;
+                flex-wrap: wrap;
             }
             
             .stock-card-field {
                 display: flex;
                 flex-direction: column;
-                gap: 0.375rem;
+                align-items: center;
+                gap: 0.125rem;
+                min-width: 0;
+                flex: 1;
             }
             
             .stock-card-field label {
-                font-size: 0.75rem;
+                font-size: 0.6rem;
                 font-weight: 600;
                 color: #6b7280;
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
+                white-space: nowrap;
             }
             
-            .stock-card-field input,
-            .stock-card-field .value {
+            .stock-card-value {
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: #374151;
+                text-align: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+            }
+            
+            /* Compact controls in horizontal layout */
+            .stock-card-controls {
+                display: flex;
+                gap: 0.375rem;
+            }
+            
+            .stock-card-controls .stock-card-field {
+                flex: 1;
+                align-items: stretch;
+            }            .stock-card-input {
                 width: 100%;
-                padding: 0.75rem;
+                padding: 0.25rem;
                 border: 1px solid #d1d5db;
-                border-radius: 0.5rem;
-                font-size: 0.95rem;
+                border-radius: 0.25rem;
+                font-size: 0.75rem;
                 background: white;
                 transition: all 0.2s ease;
-                min-height: 44px; /* Better touch target */
+                min-height: 32px;
+                max-height: 32px;
+                height: 32px;
+                text-align: center;
+                line-height: 1.2;
+                box-sizing: border-box;
             }
             
-            .stock-card-field input:focus {
+            /* Ensure all input fields in mobile cards have consistent sizing */
+            .mobile-card-view input[type="number"],
+            .mobile-card-view input[type="text"] {
+                min-height: 32px;
+                max-height: 32px;
+                height: 32px;
+                box-sizing: border-box;
+            }
+            
+            .stock-card-input:focus {
                 outline: none;
                 border-color: #3b82f6;
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-                background: #fafbff;
+                box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.1);
             }
             
-            .stock-card-field .value {
-                background: #f8fafc;
-                border: 1px solid #e2e8f0;
-                display: flex;
-                align-items: center;
-                color: #475569;
-                font-weight: 500;
-            }
-            
+            /* Compact actions */
             .stock-card-actions {
                 display: flex;
                 justify-content: flex-end;
-                gap: 0.75rem;
-                padding-top: 1rem;
+                gap: 0.5rem;
+                padding-top: 0.5rem;
                 border-top: 1px solid #e5e7eb;
-                margin-top: 1rem;
             }
             
             .stock-card-btn {
-                padding: 0.75rem 1.25rem;
-                border-radius: 0.5rem;
-                font-size: 0.9rem;
+                padding: 0.5rem 0.75rem;
+                border-radius: 0.375rem;
+                font-size: 0.75rem;
                 font-weight: 600;
                 border: none;
                 cursor: pointer;
                 transition: all 0.2s ease;
-                min-height: 44px;
+                min-height: 36px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 0.5rem;
+                gap: 0.25rem;
             }
             
             .stock-card-btn-scan {
                 background: #3b82f6;
                 color: white;
+                min-width: 80px;
             }
             
             .stock-card-btn-scan:hover {
                 background: #2563eb;
                 transform: translateY(-1px);
+            }            
+            /* Ensure search icon is visible and prevent text collision */
+            .relative .absolute.left-3 {
+                z-index: 10;
+                pointer-events: none;
+            }
+            /* Search input specific styling - only apply padding to search inputs with icon */
+            input[id*="SearchInput"] {
+                padding-left: 3.5rem !important;
             }
             
-            .stock-card-categories {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.5rem;
-                margin-top: 0.75rem;
-            }
-            
-            .stock-category-badge {
-                display: inline-block;
-                padding: 0.25rem 0.5rem;
-                font-size: 0.75rem;
-                border-radius: 0.375rem;
-                font-weight: 500;
+            /* Hide placeholder text in search inputs on mobile, show only icon */
+            input[id*="SearchInput"]::placeholder {
+                color: transparent !important;
             }
             
             /* Mobile-specific improvements */
             .container {
-                padding-left: 1rem !important;
-                padding-right: 1rem !important;
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
             }
             
             header h1 {
-                font-size: 2rem !important;
+                font-size: 1.75rem !important;
                 line-height: 1.2 !important;
             }
             
             header p {
-                font-size: 0.875rem !important;
-                margin-top: 0.75rem !important;
+                font-size: 0.8rem !important;
+                margin-top: 0.5rem !important;
             }
             
             /* Improve button and input layout on mobile */
             .bg-white.p-6, .bg-white.p-8 {
-                padding: 1rem !important;
+                padding: 0.75rem !important;
             }
             
             .flex.flex-col.md\\:flex-row {
                 flex-direction: column !important;
-                gap: 1rem !important;
+                gap: 0.75rem !important;
             }
             
             .floating-scanner {
@@ -251,16 +284,25 @@
             
             /* Make sure scan buttons are touch-friendly */
             button[id*="openScanner"], button[id*="Scan"] {
-                min-height: 48px !important;
-                font-size: 1rem !important;
-                padding: 0.75rem 1rem !important;
+                min-height: 44px !important;
+                font-size: 0.9rem !important;
+                padding: 0.5rem 0.75rem !important;
             }
             
             /* Filter controls mobile optimization */
             select, input[type="text"] {
-                min-height: 48px !important;
-                font-size: 1rem !important;
-                padding: 0.75rem !important;
+                min-height: 44px !important;
+                font-size: 0.9rem !important;
+                padding: 0.5rem !important;
+            }
+            
+            /* Compact spacing for mobile */
+            .mb-6 {
+                margin-bottom: 1rem !important;
+            }
+            
+            .mb-8 {
+                margin-bottom: 1.25rem !important;
             }
         }
         
@@ -325,7 +367,7 @@
             visibility: visible;
             opacity: 1;
         }
-          .floating-scanner-header {
+        .floating-scanner-header {
             background: linear-gradient(90deg, #1e40af, #3b82f6);
             color: white;
             padding: 0.5rem 0.75rem;
@@ -561,12 +603,10 @@
                 <td class="p-2 text-center font-bold diff-cell ${getDiffColorClass(diff)}">${diffText}</td>
                 <td class="p-2 text-center"><input type="text" value="${item.remark ?? ''}" class="w-full text-center p-1.5 border border-slate-300 rounded-md bg-white"/></td>
             </tr>`;
-        }
-
-        function renderSppSparePartsCard(item, idx) {
+        }        function renderSppSparePartsCard(item, idx) {
             const diff = (item.counted === null) ? null : item.counted - item.SOH;
             const diffText = diff === null ? '-' : (diff > 0 ? `+${diff}` : diff);
-            const diffClass = diff === null ? 'diff-zero' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
+            const diffClass = diff === null ? 'diff-null' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
             
             const categoryBadge = getCategoryBadge(item);
             const branchTypeBadge = getBranchTypeBadge(item);
@@ -581,7 +621,6 @@
                     
                     <div class="stock-card-description">
                         ${item.Description}
-                        ${categoryBadge}
                     </div>
                     
                     <div class="stock-card-meta">
@@ -615,18 +654,10 @@
                             <input type="text" value="${item.remark ?? ''}" 
                                    class="stock-card-input" 
                                    onchange="updateSppSparePartsRemark('${item.SKU}', this.value)" />
-                        </div>
-                    </div>
-                    
-                    <div class="stock-card-actions">
-                        <button class="stock-card-btn stock-card-btn-scan" 
-                                onclick="openFloatingScanner('spp-spare-parts')">
-                            📱 Scan
-                        </button>
-                    </div>
+                        </div>                    </div>
                 </div>
             `;
-        }        
+        }
           function updateSppSparePartsSummary() {
             if (!state || !state.sppSparePartsMaster || !Array.isArray(state.sppSparePartsMaster) || state.sppSparePartsMaster.length === 0) {
                 // Clear summary if no data
@@ -714,13 +745,12 @@
                     updateTableRowVisuals(row, diff, false);
                 }
             }
-            
-            // Update mobile card display
+              // Update mobile card display
             const card = getEl('spp-spare-parts-cards').querySelector(`[data-sku="${sku}"]`);
             if (card) {
                 const diff = item.counted === null ? null : item.counted - item.SOH;
                 const diffText = diff === null ? '-' : (diff > 0 ? `+${diff}` : diff);
-                const diffClass = diff === null ? 'diff-zero' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
+                const diffClass = diff === null ? 'diff-null' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
                 
                 // Update card class
                 card.className = `stock-card ${diffClass}`;
@@ -879,12 +909,10 @@
                 <td class="p-2 text-center text-slate-600">${item.SOH}</td>
                 <td class="p-2 text-center text-slate-600"><input type="number" value="${item.counted ?? 0}" class="w-full text-center p-1.5 border border-slate-300 rounded-md bg-white"/></td>                <td class="p-2 text-center font-bold diff-cell ${getDiffColorClass(diff)}">${diffText}</td>
                 <td class="p-2 text-center"><input type="text" value="${item.remark ?? ''}" class="w-full text-center p-1.5 border border-slate-300 rounded-md bg-white"/></td>            </tr>`;
-        }
-
-        function renderSppGlueCard(item, idx) {
+        }        function renderSppGlueCard(item, idx) {
             const diff = (item.counted === null) ? null : item.counted - item.SOH;
             const diffText = diff === null ? '-' : (diff > 0 ? `+${diff}` : diff);
-            const diffClass = diff === null ? 'diff-zero' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
+            const diffClass = diff === null ? 'diff-null' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
             
             const categoryBadge = getCategoryBadge(item);
             const branchTypeBadge = getBranchTypeBadge(item);
@@ -899,7 +927,6 @@
                     
                     <div class="stock-card-description">
                         ${item.Description}
-                        ${categoryBadge}
                     </div>
                     
                     <div class="stock-card-meta">
@@ -933,15 +960,7 @@
                             <input type="text" value="${item.remark ?? ''}" 
                                    class="stock-card-input" 
                                    onchange="updateSppGlueRemark('${item.SKU}', this.value)" />
-                        </div>
-                    </div>
-                    
-                    <div class="stock-card-actions">
-                        <button class="stock-card-btn stock-card-btn-scan" 
-                                onclick="openFloatingScanner('spp-glue')">
-                            📱 Scan
-                        </button>
-                    </div>
+                        </div>                    </div>
                 </div>
             `;
         }        
@@ -1033,13 +1052,12 @@
                     updateTableRowVisuals(row, diff, false);
                 }
             }
-            
-            // Update mobile card display
+              // Update mobile card display
             const card = getEl('spp-glue-cards').querySelector(`[data-sku="${sku}"]`);
             if (card) {
                 const diff = item.counted === null ? null : item.counted - item.SOH;
                 const diffText = diff === null ? '-' : (diff > 0 ? `+${diff}` : diff);
-                const diffClass = diff === null ? 'diff-zero' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
+                const diffClass = diff === null ? 'diff-null' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
                 
                 // Update card class
                 card.className = `stock-card ${diffClass}`;
@@ -1199,12 +1217,10 @@
                 <td class="p-2 text-center text-slate-600"><input type="number" value="${item.counted ?? 0}" class="w-full text-center p-1.5 border border-slate-300 rounded-md bg-white"/></td>                <td class="p-2 text-center font-bold diff-cell ${getDiffColorClass(diff)}">${diffText}</td>
                 <td class="p-2 text-center"><input type="text" value="${item.remark ?? ''}" class="w-full text-center p-1.5 border border-slate-300 rounded-md bg-white"/></td>
             </tr>`;
-        }
-
-        function renderSppToolsCard(item, idx) {
+        }        function renderSppToolsCard(item, idx) {
             const diff = (item.counted === null) ? null : item.counted - item.SOH;
             const diffText = diff === null ? '-' : (diff > 0 ? `+${diff}` : diff);
-            const diffClass = diff === null ? 'diff-zero' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
+            const diffClass = diff === null ? 'diff-null' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
             
             const categoryBadge = getCategoryBadge(item);
             const branchTypeBadge = getBranchTypeBadge(item);
@@ -1219,7 +1235,6 @@
                     
                     <div class="stock-card-description">
                         ${item.Description}
-                        ${categoryBadge}
                     </div>
                     
                     <div class="stock-card-meta">
@@ -1253,15 +1268,7 @@
                             <input type="text" value="${item.remark ?? ''}" 
                                    class="stock-card-input" 
                                    onchange="updateSppToolsRemark('${item.SKU}', this.value)" />
-                        </div>
-                    </div>
-                    
-                    <div class="stock-card-actions">
-                        <button class="stock-card-btn stock-card-btn-scan" 
-                                onclick="openFloatingScanner('spp-tools')">
-                            📱 Scan
-                        </button>
-                    </div>
+                        </div>                    </div>
                 </div>
             `;
         }        
@@ -1353,13 +1360,12 @@
                     updateTableRowVisuals(row, diff, false);
                 }
             }
-            
-            // Update mobile card display
+              // Update mobile card display
             const card = getEl('spp-tools-cards').querySelector(`[data-sku="${sku}"]`);
             if (card) {
                 const diff = item.counted === null ? null : item.counted - item.SOH;
                 const diffText = diff === null ? '-' : (diff > 0 ? `+${diff}` : diff);
-                const diffClass = diff === null ? 'diff-zero' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
+                const diffClass = diff === null ? 'diff-null' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
                 
                 // Update card class
                 card.className = `stock-card ${diffClass}`;
@@ -1691,9 +1697,11 @@
                                  <option value="old">อายุ ≥ 300 วัน</option>
                              </select>
                              <select id="demoSubclassFilter" class="w-full md:w-auto p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                 <option value="all">ทุก SUBCLASS</option>
-                             </select>                         </div>
-                         <div id="demo-count-container" class="table-container border rounded-lg"></div>
+                                 <option value="all">ทุก SUBCLASS</option>                             </select>                         </div>
+                         <!-- Desktop table view -->
+                         <div id="demo-count-container" class="table-container border rounded-lg mobile-hidden"></div>
+                         <!-- Mobile card view -->
+                         <div id="demo-count-cards" class="mobile-card-view space-y-4"></div>
                          <div class="flex gap-2 mt-2">
                              <button id="exportDemoCsvButton" class="flex-1 bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm text-sm">
                                  Export DEMO Table as CSV
@@ -1720,11 +1728,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                     </svg>
                                     <input type="text" id="sppSparePartsSearchInput" placeholder="ค้นหา SPP Spare Parts..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                </div>
-                                <button id="openScannerBtn-spp-spare-parts" class="inline-flex items-center gap-2 bg-blue-500 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm whitespace-nowrap">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 16h4.01M12 8h.01M12 16h.01M16 12h.01m0 4h.01m-4-4h.01m0-4h.01" />
-                                    </svg>
+                                </div>                                <button id="openScannerBtn-spp-spare-parts" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm whitespace-nowrap">
                                    Scan
                                 </button>
                                 <select id="sppSparePartsFilterSelect" class="w-full md:w-auto p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -1992,10 +1996,13 @@
                                 <option value="old">อายุ ≥ 300 วัน</option>
                             </select>
                             <select id="finalSubclassFilter" class="w-full md:w-auto p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="all">ทุก SUBCLASS</option>
-                            </select>
-                        </div><div id="final-report-table-container" class="table-container border border-slate-200 rounded-lg"></div>
-                        <div class="mt-4 flex flex-col sm:flex-row gap-4 no-print">                            
+                                <option value="all">ทุก SUBCLASS</option>                            </select>
+                        </div>
+                        <!-- Desktop table view -->
+                        <div id="final-report-table-container" class="table-container border border-slate-200 rounded-lg mobile-hidden"></div>
+                        <!-- Mobile card view -->
+                        <div id="final-report-cards" class="mobile-card-view space-y-4"></div>
+                        <div class="mt-4 flex flex-col sm:flex-row gap-4 no-print">
                             <button id="print-final-report-btn" class="flex-1 inline-flex items-center justify-center gap-2 bg-gray-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
                                 <!-- Printer icon (Heroicons) -->
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -3040,13 +3047,16 @@ def calculate_serial_sku_score(text, pattern_type):
                     } else {
                         // Final report context - just highlight the found item
                         updateFloatingResults(`<div class="text-left w-full space-y-1"><p class="font-medium text-slate-800">${item.Description}</p><p class="text-sm text-slate-500">SKU: ${item.SKU}</p><div class="flex justify-between items-baseline pt-1"><span class="text-lg font-bold text-slate-700">Counted: <span class="text-blue-600">${item.Recount}</span> / ${item.SOH}</span><span class="text-lg font-bold">${item.FinalDiff === 0 ? '<span class="text-green-600">Matched</span>' : item.FinalDiff > 0 ? '<span class="text-yellow-600">Overage</span>' : '<span class="text-blue-600">Shortage</span>'}</span></div><p class="text-xs text-green-600 mt-1">✓ Match found for: ${scannedText}</p></div>`);
-                    }
-                      // Scroll to item in table and highlight
+                    }                    
+                    // Scroll to item in table and highlight
                     let tableContainer, cardsContainer;
                     if (currentScannerContext === 'demo') {
                         tableContainer = document.getElementById('demo-count-container');
+                        cardsContainer = document.getElementById('demo-count-cards');
                     } else if (currentScannerContext === 'final') {
-                        tableContainer = document.getElementById('final-report-table-container');                    } else if (currentScannerContext === 'spp-spare-parts') {
+                        tableContainer = document.getElementById('final-report-table-container');
+                        cardsContainer = document.getElementById('final-report-cards');
+                    } else if (currentScannerContext === 'spp-spare-parts') {
                         tableContainer = document.getElementById('spp-spare-parts-container');
                         cardsContainer = document.getElementById('spp-spare-parts-cards');
                     } else if (currentScannerContext === 'spp-glue') {
@@ -4781,10 +4791,11 @@ def calculate_serial_sku_score(text, pattern_type):
                 });
                 renderDemoCountTable(dataView);
                 updateDemoSummary();
-            }              
-            function renderDemoCountTable(data) {
+            }                function renderDemoCountTable(data) {
                 const container = getEl('demo-count-container');
-                // Responsive table styling
+                const cardsContainer = getEl('demo-count-cards');
+                
+                // Desktop table view
                 const headers = `<thead><tr>
                     <th class="p-2 text-center w-12">NO.</th>
                     <th class="p-2 text-left" data-sort-by="SKU">SKU<span class="sort-indicator"></span></th>
@@ -4798,6 +4809,13 @@ def calculate_serial_sku_score(text, pattern_type):
                 </tr></thead>`;
                 const body = data.length > 0 ? data.map((item, idx) => renderDemoTableRow(item, idx)).join('') : `<tr><td colspan="9" class="text-center p-6 text-slate-500">No items match filter.</td></tr>`;
                 container.innerHTML = `<table class="w-full text-sm">${headers}<tbody>${body}</tbody></table>`;
+                
+                // Mobile card view
+                if (data.length > 0) {
+                    cardsContainer.innerHTML = data.map((item, idx) => renderDemoCard(item, idx)).join('');
+                } else {
+                    cardsContainer.innerHTML = '<p class="text-center p-6 text-slate-500">No items match filter.</p>';
+                }
                 
                 // Update sort indicators with colors
                 const sortingTh = container.querySelector(`th[data-sort-by="${state.demoSort.column}"]`);
@@ -4833,7 +4851,64 @@ def calculate_serial_sku_score(text, pattern_type):
                     <td class="p-2 text-center text-slate-600"><input type="number" value="${item.counted ?? 0}" class="w-full text-center p-1.5 border border-slate-300 rounded-md bg-white"/></td>
                     <td class="p-2 text-center font-bold diff-cell ${getDiffColorClass(diff)}">${diffText}</td>
                     <td class="p-2 text-center"><input type="text" value="${item.remark ?? ''}" class="w-full text-center p-1.5 border border-slate-300 rounded-md bg-white"/></td>
-                </tr>`;            }
+                    </tr>`;            }
+    
+                function renderDemoCard(item, idx) {
+                    const diff = (item.counted === null) ? null : item.counted - item.SOH;
+                    const diffText = diff === null ? '-' : (diff > 0 ? `+${diff}` : diff);
+                    const diffClass = diff === null ? 'diff-null' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
+                    
+                    const categoryBadge = getCategoryBadge(item);
+                    const branchTypeBadge = getBranchTypeBadge(item);
+                    
+                    return `
+                        <div class="stock-card ${diffClass}" data-sku="${item.SKU}">
+                            <div class="stock-card-header">
+                                <span class="stock-card-number">#${idx + 1}</span>
+                                <span class="stock-card-sku">${item.SKU}</span>
+                                ${branchTypeBadge}
+                            </div>
+                            
+                            <div class="stock-card-description">
+                                ${item.Description}
+                            </div>
+                            
+                            <div class="stock-card-meta">
+                                <div class="stock-card-field">
+                                    <label>SRP</label>
+                                    <span class="stock-card-value">${item.Price ?? 0}</span>
+                                </div>
+                                <div class="stock-card-field">
+                                    <label>Age</label>
+                                    <span class="stock-card-value">${item.Age || 'N/A'}</span>
+                                </div>
+                                <div class="stock-card-field">
+                                    <label>SOH</label>
+                                    <span class="stock-card-value">${item.SOH}</span>
+                                </div>
+                                <div class="stock-card-field">
+                                    <label>Diff</label>
+                                    <span class="stock-card-value font-bold ${getDiffColorClass(diff)}">${diffText}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="stock-card-controls">
+                                <div class="stock-card-field">
+                                    <label>Counted</label>
+                                    <input type="number" value="${item.counted ?? 0}" 
+                                           class="stock-card-input" 
+                                           onchange="updateDemoCount('${item.SKU}', this.value)" />
+                                </div>
+                                <div class="stock-card-field">
+                                    <label>Remark</label>
+                                    <input type="text" value="${item.remark ?? ''}" 
+                                           class="stock-card-input" 
+                                           onchange="updateDemoRemark('${item.SKU}', this.value)" />
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
 
             function updateDemoSummary() {
                 const totalSOH = state.demoMaster.reduce((sum, item) => sum + item.SOH, 0);
@@ -4876,14 +4951,38 @@ def calculate_serial_sku_score(text, pattern_type):
                         reportItem.ReasonFinal = wasSohUpdated ? 'SOHupdated-DEMO-Manual' : 'DEMO-Manual';
                         applyFinalReportView();
                         renderFinalReportCharts();
-                    }
-                }                const row = getEl('demo-count-container').querySelector(`tr[data-sku="${sku}"]`);
+                    }                }                
+                // Update desktop table row display
+                const row = getEl('demo-count-container').querySelector(`tr[data-sku="${sku}"]`);
                 if (row) {
                     const diff = item.counted === null ? null : item.counted - item.SOH;
                     row.querySelector('.diff-cell').textContent = diff === null ? '-' : (diff > 0 ? `+${diff}` : diff);
                     row.querySelector('.diff-cell').className = `p-2 text-center font-bold diff-cell ${getDiffColorClass(diff)}`;
                     updateTableRowVisuals(row, diff, true);
                 }
+                
+                // Update mobile card display
+                const card = getEl('demo-count-cards').querySelector(`[data-sku="${sku}"]`);
+                if (card) {
+                    const diff = item.counted === null ? null : item.counted - item.SOH;
+                    const diffText = diff === null ? '-' : (diff > 0 ? `+${diff}` : diff);
+                    const diffClass = diff === null ? 'diff-null' : diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
+                    
+                    // Update card class
+                    card.className = `stock-card ${diffClass}`;
+                    
+                    // Update diff value
+                    const diffValueEl = card.querySelector('.stock-card-field:nth-of-type(4) .stock-card-value');
+                    if (diffValueEl) {
+                        diffValueEl.textContent = diffText;
+                        diffValueEl.className = `stock-card-value font-bold ${getDiffColorClass(diff)}`;
+                    }
+                    
+                    // Update input value
+                    const countInput = card.querySelector('input[type="number"]');
+                    if (countInput) countInput.value = item.counted ?? 0;
+                }
+                
                 updateDemoSummary();
                 updateFinalReportSummary();
                 setUnsavedChanges(true);
@@ -5900,13 +5999,23 @@ def calculate_serial_sku_score(text, pattern_type):
                 });
                 renderFinalReportTable(dataView);
                 updateFinalReportSummary();
-            }            
-            function renderFinalReportTable(data) {
+            }              function renderFinalReportTable(data) {
                 const container = getEl('final-report-table-container');
-                if (!data.length) { container.innerHTML = '<p class="text-center p-10 text-slate-500">No data matches the current filter.</p>'; return; }
+                const cardsContainer = getEl('final-report-cards');
+                
+                if (!data.length) { 
+                    container.innerHTML = '<p class="text-center p-10 text-slate-500">No data matches the current filter.</p>'; 
+                    cardsContainer.innerHTML = '<p class="text-center p-10 text-slate-500">No data matches the current filter.</p>';
+                    return; 
+                }
+                
+                // Desktop table view
                 const headers = `<thead><tr><th class="p-2 text-center w-12">NO.</th><th class="p-2 text-left" data-sort-by="SKU">SKU<span class="sort-indicator"></span></th><th class="p-2 text-left" data-sort-by="Description">Description<span class="sort-indicator"></span></th><th class="p-2 text-center" data-sort-by="SRP">SRP<span class="sort-indicator"></span></th><th class="p-2 text-center" data-sort-by="Age">Age<span class="sort-indicator"></span></th><th class="p-2 text-center" data-sort-by="SOH">SOH<span class="sort-indicator"></span></th><th class="p-2 text-center" data-sort-by="FinalCount">Final Count<span class="sort-indicator"></span></th><th class="p-2 text-center" data-sort-by="FinalDiff">Final Diff<span class="sort-indicator"></span></th><th class="p-2 text-left" data-sort-by="ReasonFinal">Reason<span class="sort-indicator"></span></th><th class="p-2 text-left" data-sort-by="Remark">Remark<span class="sort-indicator"></span></th></tr></thead>`;
                 const body = `<tbody>${data.map((item, idx) => renderFinalReportRow(item, idx)).join('')}</tbody>`;
                 container.innerHTML = `<table class="w-full text-sm">${headers}${body}</tbody></table>`;
+                
+                // Mobile card view
+                cardsContainer.innerHTML = data.map((item, idx) => renderFinalReportCard(item, idx)).join('');
                 
                 // Update sort indicators with colors
                 const sortingTh = container.querySelector(`th[data-sort-by="${state.finalReportSort.column}"]`);
@@ -5916,8 +6025,7 @@ def calculate_serial_sku_score(text, pattern_type):
                     // Add color: green for ascending, red for descending
                     indicator.style.color = state.finalReportSort.direction === 'asc' ? '#22c55e' : '#ef4444';
                 }
-            }            
-            function renderFinalReportRow(item, idx) {
+            }            function renderFinalReportRow(item, idx) {
                 const { rowClass, statusDotColor } = getRowVisuals(item.FinalDiff, item.isDemo);
                 return `<tr class="border-b border-slate-200 ${rowClass}" data-sku="${item.SKU}">
                     <td class="p-2 text-center">${idx + 1}</td>
@@ -5930,7 +6038,71 @@ def calculate_serial_sku_score(text, pattern_type):
                     <td class="p-2 font-bold text-center ${getDiffColorClass(item.FinalDiff)}">${item.FinalDiff > 0 ? '+' : ''}${item.FinalDiff}</td>
                     <td class="p-2 text-slate-600">${item.ReasonFinal || 'N/A'}</td>
                     <td class="p-2 w-40"><input type="text" value="${item.Remark || ''}" class="w-full p-1.5 border border-slate-300 rounded-md"/></td>
-                </tr>`;}            function updateTableRowVisuals(row, diff, isDemo = false) {
+                </tr>`;}
+
+            function renderFinalReportCard(item, idx) {
+                const diffClass = item.FinalDiff === null ? 'diff-null' : item.FinalDiff > 0 ? 'diff-positive' : item.FinalDiff < 0 ? 'diff-negative' : 'diff-zero';
+                const diffText = item.FinalDiff > 0 ? `+${item.FinalDiff}` : item.FinalDiff;
+                
+                const categoryBadge = getCategoryBadge(item);
+                const branchTypeBadge = getBranchTypeBadge(item);
+                
+                return `
+                    <div class="stock-card ${diffClass}" data-sku="${item.SKU}">
+                        <div class="stock-card-header">
+                            <span class="stock-card-number">#${idx + 1}</span>
+                            <span class="stock-card-sku">${item.SKU}</span>
+                            ${branchTypeBadge}
+                        </div>
+                        
+                        <div class="stock-card-description">
+                            ${item.Description}
+                        </div>
+                        
+                        <div class="stock-card-meta">
+                            <div class="stock-card-field">
+                                <label>SRP</label>
+                                <span class="stock-card-value">${item.Price ?? 0}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Age</label>
+                                <span class="stock-card-value">${item.Age || 'N/A'}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>SOH</label>
+                                <span class="stock-card-value">${item.SOH}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Final Diff</label>
+                                <span class="stock-card-value font-bold ${getDiffColorClass(item.FinalDiff)}">${diffText}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stock-card-controls">
+                            <div class="stock-card-field">
+                                <label>Final Count</label>
+                                <input type="number" value="${item.Recount}" 
+                                       class="stock-card-input" 
+                                       onchange="updateFinalCount('${item.SKU}', this.value)" />
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Remark</label>
+                                <input type="text" value="${item.Remark ?? ''}" 
+                                       class="stock-card-input" 
+                                       onchange="updateRemark('${item.SKU}', this.value)" />
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3 pt-3 border-t border-slate-200">
+                            <div class="text-xs text-slate-500">
+                                <div><strong>Reason:</strong> ${item.ReasonFinal || 'N/A'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function updateTableRowVisuals(row, diff, isDemo = false) {
                 // Remove row highlighting for performance - keep rows white
                 row.className = `border-b border-slate-200 bg-white`;
                 // Note: .status-dot element doesn't exist in table rows, so no need to update it
@@ -5944,12 +6116,13 @@ def calculate_serial_sku_score(text, pattern_type):
                 // Handle SOH updated reason tracking
                 const wasSohUpdated = state.sohUpdatedSkus && state.sohUpdatedSkus.has(sku);
                 if (wasSohUpdated) {
-                    item.ReasonFinal = 'SOHupdated-Manual Edit';
-                } else {
+                    item.ReasonFinal = 'SOHupdated-Manual Edit';                } else {
                     item.ReasonFinal = 'Manual Edit';
                 }
+                
+                // Update desktop table row display
                 const row = getEl('final-report-table-container').querySelector(`tr[data-sku="${sku}"]`);                
-                  if(row) {
+                if(row) {
                     // Update Final Count column (index 6) with the new count value
                     row.cells[6].querySelector('input[type="number"]').value = item.Recount;                    // Update Final Diff column (index 7) with the calculated difference
                     row.cells[7].textContent = item.FinalDiff > 0 ? `+${item.FinalDiff}` : item.FinalDiff;
@@ -5958,6 +6131,31 @@ def calculate_serial_sku_score(text, pattern_type):
                     row.cells[8].textContent = item.ReasonFinal;
                     updateTableRowVisuals(row, item.FinalDiff, item.isDemo);
                 }
+                
+                // Update mobile card display
+                const card = getEl('final-report-cards').querySelector(`[data-sku="${sku}"]`);
+                if (card) {
+                    const diffClass = item.FinalDiff === null ? 'diff-null' : item.FinalDiff > 0 ? 'diff-positive' : item.FinalDiff < 0 ? 'diff-negative' : 'diff-zero';
+                    
+                    // Update card class
+                    card.className = `stock-card ${diffClass}`;
+                    
+                    // Update final diff value
+                    const diffValueEl = card.querySelector('.stock-card-field:nth-of-type(4) .stock-card-value');
+                    if (diffValueEl) {
+                        diffValueEl.textContent = item.FinalDiff > 0 ? `+${item.FinalDiff}` : item.FinalDiff;
+                        diffValueEl.className = `stock-card-value font-bold ${getDiffColorClass(item.FinalDiff)}`;
+                    }
+                    
+                    // Update final count input value
+                    const countInput = card.querySelector('input[type="number"]');
+                    if (countInput) countInput.value = item.Recount;
+                    
+                    // Update reason text
+                    const reasonEl = card.querySelector('.mt-3 .text-xs div');
+                    if (reasonEl) reasonEl.innerHTML = `<strong>Reason:</strong> ${item.ReasonFinal || 'N/A'}`;
+                }
+                
                 updateFinalReportSummary();
                 updateDemoSummary();
                 renderFinalReportCharts();
@@ -6582,14 +6780,22 @@ def calculate_serial_sku_score(text, pattern_type):
                     playSound('success');
                     let currentCount = typeof item.counted === 'number' ? item.counted : 0;
                     item.counted = currentCount + 1;
-                    state.demoCounts[item.SKU] = { qty: item.counted, reason: reason };
-                    applyDemoView();
+                    state.demoCounts[item.SKU] = { qty: item.counted, reason: reason };                    applyDemoView();
                     const row = getEl('demo-count-container').querySelector(`tr[data-sku="${item.SKU}"]`);
                     if (row) {
                         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         row.classList.add('ring-2', 'ring-offset-2', 'ring-green-500');
                         setTimeout(() => row.classList.remove('ring-2', 'ring-offset-2', 'ring-green-500'), 800);
                     }
+                    
+                    // Also highlight mobile card
+                    const card = getEl('demo-count-cards').querySelector(`[data-sku="${item.SKU}"]`);
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        card.classList.add('ring-2', 'ring-offset-2', 'ring-green-500');
+                        setTimeout(() => card.classList.remove('ring-2', 'ring-offset-2', 'ring-green-500'), 800);
+                    }
+                    
                     const diff = item.counted - item.SOH;
                     let statusText = (diff === 0) ? 'Matched' : (diff > 0) ? 'Overage' : 'Shortage';
                     let statusColor = (diff === 0) ? 'text-green-600' : (diff > 0) ? 'text-yellow-600' : 'text-blue-600';
@@ -6783,8 +6989,24 @@ def calculate_serial_sku_score(text, pattern_type):
                     const { target: input } = e; 
                     const sku = input.closest('[data-sku]').dataset.sku; 
                     if (input.matches('input[type="number"]')) updateSppToolsCount(sku, input.value); 
-                    else if (input.matches('input[type="text"]')) updateSppToolsRemark(sku, input.value); 
+                    else if (input.matches('input[type="text"]')) updateSppToolsRemark(sku, input.value);                });
+                
+                // Demo and Final Report Mobile Card Event Listeners
+                addListener('demo-count-cards', 'input', e => { 
+                    const { target: input } = e; 
+                    const sku = input.closest('[data-sku]').dataset.sku; 
+                    if (input.matches('input[type="number"]')) updateDemoCount(sku, input.value); 
+                    else if (input.matches('input[type="text"]')) updateDemoRemark(sku, input.value); 
                 });
+                
+                addListener('final-report-cards', 'input', e => { 
+                    const { target: input } = e; 
+                    const sku = input.closest('[data-sku]').dataset.sku; 
+                    if (input.matches('input[type="number"]')) updateFinalCount(sku, input.value); 
+                    else if (input.matches('input[type="text"]')) updateRemark(sku, input.value); 
+                });
+
+                // === Enter Key Handling ===
                 const handleEnter = (event) => { if (event.key === 'Enter') { const allInputs = Array.from(event.currentTarget.querySelectorAll('input[type="number"], input[type="text"]')); const currentIndex = allInputs.indexOf(event.target); if (currentIndex > -1 && currentIndex < allInputs.length - 1) allInputs[currentIndex + 1].focus(); } };
                 addListener('demo-count-container', 'keydown', handleEnter);
                 addListener('final-report-table-container', 'keydown', handleEnter);
@@ -6792,11 +7014,14 @@ def calculate_serial_sku_score(text, pattern_type):
                 addListener('spp-spare-parts-container', 'keydown', handleEnter);
                 addListener('spp-glue-container', 'keydown', handleEnter);
                 addListener('spp-tools-container', 'keydown', handleEnter);
-                
-                // Add Enter key handling for SPP mobile cards
+                  // Add Enter key handling for SPP mobile cards
                 addListener('spp-spare-parts-cards', 'keydown', handleEnter);
                 addListener('spp-glue-cards', 'keydown', handleEnter);
                 addListener('spp-tools-cards', 'keydown', handleEnter);
+                
+                // Add Enter key handling for Demo and Final Report mobile cards
+                addListener('demo-count-cards', 'keydown', handleEnter);
+                addListener('final-report-cards', 'keydown', handleEnter);
 
                 // === OCR Enhancement Event Listeners ===
                 // Demo scanner OCR controls
@@ -6892,14 +7117,21 @@ def calculate_serial_sku_score(text, pattern_type):
                 let item = findItemByScannedText(state.reconciledData, scannedText);
 
                 if (item) {
-                    playSound('success');
-                    finalScannerResultsEl.innerHTML = `<div class="text-left w-full space-y-1"><p class="font-medium text-slate-800">${item.Description}</p><p class="text-sm text-slate-500">SKU: ${item.SKU}</p><div class="flex justify-between items-baseline pt-1"><span class="text-lg font-bold text-slate-700">Counted: <span class="text-blue-600">${item.Recount}</span> / ${item.SOH}</span><span class="text-lg font-bold">${item.FinalDiff === 0 ? '<span class="text-green-600">Matched</span>' : item.FinalDiff > 0 ? '<span class="text-yellow-600">Overage</span>' : '<span class="text-blue-600">Shortage</span>'}</span></div></div>`;
+                    playSound('success');                    finalScannerResultsEl.innerHTML = `<div class="text-left w-full space-y-1"><p class="font-medium text-slate-800">${item.Description}</p><p class="text-sm text-slate-500">SKU: ${item.SKU}</p><div class="flex justify-between items-baseline pt-1"><span class="text-lg font-bold text-slate-700">Counted: <span class="text-blue-600">${item.Recount}</span> / ${item.SOH}</span><span class="text-lg font-bold">${item.FinalDiff === 0 ? '<span class="text-green-600">Matched</span>' : item.FinalDiff > 0 ? '<span class="text-yellow-600">Overage</span>' : '<span class="text-blue-600">Shortage</span>'}</span></div></div>`;
                     const row = document.querySelector(`#final-report-table-container tr[data-sku="${item.SKU}"]`);
                     if (row) {
                         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         row.classList.add('ring-2', 'ring-offset-2', 'ring-green-500');
                         setTimeout(() => row.classList.remove('ring-2', 'ring-offset-2', 'ring-green-500'), 800);
-                    }                } else {
+                    }
+                    
+                    // Also highlight mobile card
+                    const card = document.querySelector(`#final-report-cards [data-sku="${item.SKU}"]`);
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        card.classList.add('ring-2', 'ring-offset-2', 'ring-green-500');
+                        setTimeout(() => card.classList.remove('ring-2', 'ring-offset-2', 'ring-green-500'), 800);
+                    }} else {
                     playSound('error');
                     finalScannerResultsEl.innerHTML = `<div class="text-center w-full"><p class="font-bold text-red-600">SKU Not Found</p><p class="text-sm text-slate-500">${scannedText}</p></div>`;
                 }
