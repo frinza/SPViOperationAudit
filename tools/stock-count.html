@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ตรวจนับสินค้าสาขา</title>    <script src="https://cdn.tailwindcss.com"></script>
+<head>    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ตรวจนับสินค้าสาขา</title><script src="https://cdn.tailwindcss.com"></script>
       <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
@@ -35,6 +34,9 @@
     <link rel="stylesheet" href="../styles/print-header.css">    
     <style>        body {
             font-family: 'Sarabun', sans-serif;
+            /* Safe area support for devices with notches */
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
         }
         
         /* ===== MOBILE TAB NAVIGATION ENHANCEMENTS ===== */
@@ -46,8 +48,7 @@
         .scrollbar-hide::-webkit-scrollbar {
             display: none;
         }
-        
-        @media (max-width: 768px) {
+          @media (max-width: 768px) {
             /* Enhanced mobile tab styling */
             .tab-button {
                 background-color: transparent;
@@ -57,6 +58,7 @@
                 -webkit-tap-highlight-color: transparent;
                 position: relative;
                 margin-bottom: -1px;
+                min-height: 44px; /* iOS minimum touch target */
             }
             
             .tab-button.active {
@@ -75,10 +77,28 @@
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none;
                 -ms-overflow-style: none;
+                scroll-snap-type: x proximity;
+            }
+            
+            nav[class*="overflow-x-auto"] .tab-button {
+                scroll-snap-align: start;
             }
             
             nav[class*="overflow-x-auto"]::-webkit-scrollbar {
                 display: none;
+            }
+            
+            /* Improve mobile button spacing and touch targets */
+            .btn, button {
+                min-height: 44px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            /* Better mobile form inputs */
+            input, select, textarea {
+                font-size: 16px; /* Prevent iOS zoom */
+                min-height: 44px;
             }
         }
         
@@ -1532,26 +1552,23 @@
                 <button id="modal-confirm-btn" class="bg-blue-600 text-white font-bold py-2.5 px-8 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">OK</button>
             </div>
         </div>
-    </div>
-      <div class="container w-full p-4 md:p-8" style="max-width:100vw;">
-        <header class="mb-8 text-center relative no-print mt-4">
+    </div>      <div class="container w-full p-3 md:p-8" style="max-width:100vw;">
+        <header class="mb-6 md:mb-8 text-center relative no-print mt-2 md:mt-4">
             <div class="absolute top-0 left-0">
-                 <div id="save-status" class="text-sm text-slate-500 opacity-0 text-left"></div>
+                 <div id="save-status" class="text-xs md:text-sm text-slate-500 opacity-0 text-left"></div>
             </div>
-            <h1 class="text-4xl font-bold text-slate-900 mb-2">ระบบตรวจนับสต็อกสินค้า</h1>
-            <div class="flex items-center justify-center mt-2 gap-4">
-                <p class="text-slate-500">เครื่องมือช่วยตรวจนับและกระทบยอดสต็อก</p>
-                <button id="newJobButton" class="bg-red-500 text-white font-bold py-1 px-3 rounded-lg hover:bg-red-600 transition-colors shadow-sm text-xs">
+            <h1 class="text-2xl md:text-4xl font-bold text-slate-900 mb-1 md:mb-2">ระบบตรวจนับสต็อกสินค้า</h1>            <div class="flex flex-col md:flex-row items-center justify-center mt-2 gap-2 md:gap-4">
+                <p class="text-slate-500 text-sm md:text-base text-center">เครื่องมือช่วยตรวจนับและกระทบยอดสต็อก</p>
+                <button id="newJobButton" class="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors shadow-sm text-sm min-h-[44px] flex-shrink-0">
                     New Job
                 </button>
             </div>
-        </header>
-
-        <div id="export-soh-excel-bar" class="flex justify-end mb-4 no-print">
-            <button id="exportSohExcelBtn" class="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors shadow-sm text-sm">
-                Export SOH Excel (SKU, Description, Age, SRP, SOH, FAMILY)
+        </header>        <div id="export-soh-excel-bar" class="flex justify-center md:justify-end mb-4 no-print">
+            <button id="exportSohExcelBtn" class="bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors shadow-sm text-xs md:text-sm w-full md:w-auto min-h-[44px]">
+                <span class="hidden md:inline">Export SOH Excel (SKU, Description, Age, SRP, SOH, FAMILY)</span>
+                <span class="md:hidden">Export SOH Excel</span>
             </button>
-        </div>        <div id="info-box-container" class="hidden bg-sky-100 border border-sky-300 text-sky-800 px-4 py-3 rounded-lg relative mb-8 text-sm" role="alert">
+        </div><div id="info-box-container" class="hidden bg-sky-100 border border-sky-300 text-sky-800 px-4 py-3 rounded-lg relative mb-8 text-sm" role="alert">
             <div class="flex justify-between items-center flex-col md:flex-row gap-2">
                 <div>
                     <strong class="font-bold">Branch:</strong>
@@ -1564,17 +1581,13 @@
                     <span id="info-count-date" class="ml-2 font-mono"></span>
                 </div>
             </div>
-        </div>
-
-        <div id="file-ops-container" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-col md:flex-row items-center justify-center gap-4 no-print">
-            <label for="load-progress-file" class="flex-1 w-full bg-blue-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-center cursor-pointer">Load Progress from File</label>
+        </div>        <div id="file-ops-container" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 md:mb-8 flex flex-col md:flex-row items-center justify-center gap-3 md:gap-4 no-print">
+            <label for="load-progress-file" class="flex-1 w-full bg-blue-600 text-white font-bold py-3 px-4 md:py-2.5 md:px-5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-center cursor-pointer min-h-[44px] flex items-center justify-center text-sm md:text-base">Load Progress from File</label>
             <input type="file" id="load-progress-file" class="hidden" accept=".json">
-            <button id="save-progress-button" class="flex-1 w-full bg-green-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-green-700 transition-colors shadow-sm">Save Progress to File</button>
-        </div>
-
-        <div id="upload-container" class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 mb-8 no-print">
-             <h2 class="text-2xl font-semibold mb-2 text-slate-800">ขั้นตอนที่ 1: อัพโหลดไฟล์ SOH</h2>
-            <p class="mb-6 text-slate-500">อัพโหลดไฟล์ Stock on Hand (.xlsx หรือ .csv).</p>
+            <button id="save-progress-button" class="flex-1 w-full bg-green-600 text-white font-bold py-3 px-4 md:py-2.5 md:px-5 rounded-lg hover:bg-green-700 transition-colors shadow-sm min-h-[44px] text-sm md:text-base">Save Progress to File</button>
+        </div>        <div id="upload-container" class="bg-white p-4 md:p-6 lg:p-8 rounded-2xl shadow-sm border border-slate-200 mb-6 md:mb-8 no-print">
+             <h2 class="text-xl md:text-2xl font-semibold mb-2 text-slate-800">ขั้นตอนที่ 1: อัพโหลดไฟล์ SOH</h2>
+            <p class="mb-4 md:mb-6 text-slate-500 text-sm md:text-base">อัพโหลดไฟล์ Stock on Hand (.xlsx หรือ .csv).</p>
             <label for="initialSohFile" class="custom-file-input w-full rounded-xl flex flex-col items-center justify-center text-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-slate-400 mb-2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
