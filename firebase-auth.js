@@ -34,8 +34,28 @@
             
             db = firebase.firestore();
             auth = firebase.auth();
+            
+            // Configure Firestore settings to reduce CORS errors
+            if (db) {
+                db.settings({
+                    ignoreUndefinedProperties: true,
+                    merge: true
+                });
+                
+                // Test connectivity with graceful error handling
+                try {
+                    await db.collection('_test').limit(1).get();
+                } catch (firestoreError) {
+                    // Log Firestore connectivity issues silently for production
+                    console.warn('Firestore connectivity limited - some features may be unavailable');
+                    // Continue with initialization as local functionality still works
+                }
+            }
+            
             isFirebaseInitialized = true;
         } catch (error) {
+            // In production, log errors silently but continue with local functionality
+            console.warn('Firebase initialization failed - operating in offline mode');
             throw error;
         }
     }
@@ -61,6 +81,21 @@
                 reportComparison: true,
                 issueTracker: true,
                 userManagement: false // Only admins
+            },
+            sessionInfo: userData.sessionInfo || {
+                isOnline: false,
+                sessionId: null,
+                lastActivity: null,
+                loginTime: null,
+                ipAddress: null,
+                userAgent: null
+            },
+            restrictions: userData.restrictions || {
+                maxConcurrentSessions: 1,
+                allowedIPs: [], // Empty array means no IP restrictions
+                forceLogout: false,
+                accountLocked: false,
+                lockReason: null
             }
         };
     }
@@ -164,7 +199,12 @@
                 return updatedUser;
             }
         } catch (error) {
-            console.error('Error updating current user data:', error);
+            // Handle Firebase errors gracefully - don't show CORS errors to user
+            if (error.code === 'permission-denied' || error.message.includes('CORS')) {
+                console.warn('Firebase access limited - continuing with cached user data');
+            } else {
+                console.error('Error updating current user data:', error);
+            }
         }
         return null;
     }
@@ -229,7 +269,14 @@
 
                 return user;
             } catch (error) {
-                throw error;
+                // Handle Firebase-specific errors gracefully
+                if (error.code === 'permission-denied') {
+                    throw new Error('Access denied - insufficient permissions');
+                } else if (error.message.includes('CORS') || error.message.includes('fetch')) {
+                    throw new Error('Connection error - please check your network');
+                } else {
+                    throw error;
+                }
             }
         },
 
@@ -243,7 +290,15 @@
                 
                 return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             } catch (error) {
-                throw error;
+                // Handle Firebase-specific errors gracefully
+                if (error.code === 'permission-denied') {
+                    throw new Error('Access denied - insufficient permissions to view users');
+                } else if (error.message.includes('CORS') || error.message.includes('fetch')) {
+                    console.warn('Firebase connectivity limited - user data may not be current');
+                    return []; // Return empty array for graceful degradation
+                } else {
+                    throw error;
+                }
             }
         },
 
@@ -263,7 +318,16 @@
                 const doc = snapshot.docs[0];
                 return { id: doc.id, ...doc.data() };
             } catch (error) {
-                throw error;
+                // Handle Firebase-specific errors gracefully
+                if (error.code === 'permission-denied') {
+                    console.warn('Firebase access limited - user lookup unavailable');
+                    return null;
+                } else if (error.message.includes('CORS') || error.message.includes('fetch')) {
+                    console.warn('Firebase connectivity limited - user lookup unavailable');
+                    return null;
+                } else {
+                    throw error;
+                }
             }
         },
 
@@ -342,6 +406,12 @@
             await initializeFirebase();
             
             try {
+                // Prevent multiple admin initialization attempts
+                if (window.adminInitialized) {
+                    console.log('Admin already initialized, skipping...');
+                    return;
+                }
+                
                 // Get admin configuration from config manager
                 const adminConfig = window.SPViConfig.getAdminConfig();
                 const adminEmail = adminConfig.email;
@@ -382,6 +452,9 @@
                         console.log('Admin password has been set successfully');
                     }
                 }
+                
+                // Mark admin as initialized to prevent duplicate creation
+                window.adminInitialized = true;
             } catch (error) {
                 // Continue silently if Firebase initialization fails
             }
@@ -750,6 +823,112 @@
         }
     }
 
+    // Session Management Functions
+    async function updateUserSession(userId, sessionData) {
+        await initializeFirebase();
+        const userRef = db.collection('users').doc(userId);
+        await userRef.update({
+            sessionInfo: sessionData,
+            lastLogin: new Date().toISOString()
+        });
+    }
+
+    async function disconnectUserSession(userId) {
+        await initializeFirebase();
+        const userRef = db.collection('users').doc(userId);
+        await userRef.update({
+            'sessionInfo.isOnline': false,
+            'sessionInfo.sessionId': null,
+            'restrictions.forceLogout': true
+        });
+    }
+
+    async function getOnlineUsers() {
+        await initializeFirebase();
+        const usersSnapshot = await db.collection('users')
+            .where('sessionInfo.isOnline', '==', true)
+            .get();
+        
+        return usersSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    }
+
+    async function clearForceLogout(userId) {
+        await initializeFirebase();
+        const userRef = db.collection('users').doc(userId);
+        await userRef.update({
+            'restrictions.forceLogout': false
+        });
+    }
+
+    // Permission Management Functions
+    async function updateUserPermissions(userId, permissions) {
+        await initializeFirebase();
+        const userRef = db.collection('users').doc(userId);
+        await userRef.update({
+            permissions: permissions
+        });
+    }
+
+    async function checkUserPermission(userId, toolName) {
+        await initializeFirebase();
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) return false;
+        
+        const userData = userDoc.data();
+        return userData.permissions && userData.permissions[toolName] === true;
+    }
+
+    function hasToolPermission(toolName) {
+        const currentUser = getCurrentUser();
+        if (!currentUser) return false;
+        
+        // Admins have access to everything
+        if (currentUser.role === 'admin') return true;
+        
+        // Check specific permission
+        return currentUser.permissions && currentUser.permissions[toolName] === true;
+    }
+
+    // Account Restriction Functions
+    async function lockUserAccount(userId, reason) {
+        await initializeFirebase();
+        const userRef = db.collection('users').doc(userId);
+        await userRef.update({
+            'restrictions.accountLocked': true,
+            'restrictions.lockReason': reason,
+            'restrictions.forceLogout': true,
+            'sessionInfo.isOnline': false,
+            'sessionInfo.sessionId': null
+        });
+    }
+
+    async function unlockUserAccount(userId) {
+        await initializeFirebase();
+        const userRef = db.collection('users').doc(userId);
+        await userRef.update({
+            'restrictions.accountLocked': false,
+            'restrictions.lockReason': null,
+            'restrictions.forceLogout': false
+        });
+    }
+
+    // IP Address Management
+    async function updateUserIPRestrictions(userId, allowedIPs) {
+        await initializeFirebase();
+        const userRef = db.collection('users').doc(userId);
+        await userRef.update({
+            'restrictions.allowedIPs': allowedIPs
+        });
+    }
+
+    function checkIPRestriction(userIPs, currentIP) {
+        if (!userIPs || userIPs.length === 0) return true; // No restrictions
+        return userIPs.includes(currentIP);
+    }
+
     // Export Firebase Auth API
     window.SPViAuth = {
         // Core functions
@@ -795,6 +974,23 @@
         showDevtoolsToast,
         setupDevToolsProtection,
 
+        // Session Management
+        updateUserSession,
+        disconnectUserSession,
+        getOnlineUsers,
+        clearForceLogout,
+        
+        // Permission Management
+        updateUserPermissions,
+        checkUserPermission,
+        hasToolPermission,
+        
+        // Account Restrictions
+        lockUserAccount,
+        unlockUserAccount,
+        updateUserIPRestrictions,
+        checkIPRestriction,
+        
         // Configuration access
         getConfig: function() {
             return window.SPViConfig;

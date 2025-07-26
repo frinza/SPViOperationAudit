@@ -216,7 +216,7 @@
     }
 
     // Validate current session
-    function validateSession() {
+    async function validateSession() {
         if (!sessionData) {
             logoutUser('Session data not found');
             return;
@@ -243,6 +243,47 @@
         if (!currentUser || currentUser.status !== 'approved') {
             logoutUser('User authentication invalid');
             return;
+        }
+
+        // Check for force logout from admin
+        try {
+            if (window.SPViAuth?.initializeFirebase) {
+                await window.SPViAuth.initializeFirebase();
+                const userDoc = await firebase.firestore().collection('users').doc(currentUser.id).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    if (userData.restrictions?.forceLogout) {
+                        // Clear the force logout flag
+                        await window.SPViAuth.clearForceLogout(currentUser.id);
+                        logoutUser('Session terminated by administrator');
+                        return;
+                    }
+                    
+                    // Check if account is locked
+                    if (userData.restrictions?.accountLocked) {
+                        logoutUser(`Account locked: ${userData.restrictions.lockReason || 'No reason provided'}`);
+                        return;
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Could not check force logout status:', error);
+        }
+
+        // Update session info in database if available
+        try {
+            if (window.SPViAuth?.updateUserSession && sessionData.sessionId) {
+                await window.SPViAuth.updateUserSession(currentUser.id, {
+                    isOnline: true,
+                    sessionId: sessionData.sessionId,
+                    lastActivity: new Date().toISOString(),
+                    loginTime: new Date(sessionData.startTime).toISOString(),
+                    ipAddress: await getCurrentIP(),
+                    userAgent: navigator.userAgent
+                });
+            }
+        } catch (error) {
+            console.warn('Could not update session info:', error);
         }
     }
 
@@ -620,6 +661,70 @@
         }, 3000);
     }
 
+    // Get current IP address
+    async function getCurrentIP() {
+        try {
+            // Try to get IP from a public API
+            const response = await fetch('https://api.ipify.org?format=json');
+            const data = await response.json();
+            return data.ip;
+        } catch (error) {
+            console.warn('Could not get IP address:', error);
+            return 'unknown';
+        }
+    }
+
+    // Tool access permission check
+    function checkToolAccess(toolName) {
+        if (!window.SPViAuth) {
+            console.warn('SPViAuth not available');
+            return false;
+        }
+
+        const hasPermission = window.SPViAuth.hasToolPermission(toolName);
+        if (!hasPermission) {
+            showAccessDeniedModal(toolName);
+            return false;
+        }
+        return true;
+    }
+
+    // Show access denied modal
+    function showAccessDeniedModal(toolName) {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        modal.innerHTML = `
+            <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+                <div class="flex items-center gap-3 mb-4">
+                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                    <h3 class="text-lg font-semibold text-gray-900">Access Denied</h3>
+                </div>
+                <p class="text-gray-600 mb-4">
+                    You don't have permission to access <strong>${toolName}</strong>. 
+                    Please contact your administrator for access.
+                </p>
+                <div class="flex gap-3">
+                    <button class="access-denied-close bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex-1">
+                        OK
+                    </button>
+                    <button class="access-denied-dashboard bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex-1">
+                        Go to Dashboard
+                    </button>
+                </div>
+            </div>
+        `;
+
+        modal.querySelector('.access-denied-close').onclick = () => modal.remove();
+        modal.querySelector('.access-denied-dashboard').onclick = () => {
+            modal.remove();
+            window.location.href = '../dashboard.html';
+        };
+
+        document.body.appendChild(modal);
+    }
+
     // Get session info for debugging
     function getSessionInfo() {
         if (!sessionData) return null;
@@ -643,6 +748,9 @@
         logoutUser: logoutUser,
         getSessionInfo: getSessionInfo,
         clearSessionData: clearSessionData,
+        
+        // Permission checking
+        checkToolAccess: checkToolAccess,
         
         // Configuration getters
         getConfig: () => ({ ...SESSION_CONFIG })

@@ -140,11 +140,133 @@
                     </svg>
                     เปลี่ยนรหัสผ่าน Admin
                 </button>
+                <button 
+                    onclick="showPermissionManager()" 
+                    class="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                    Manage Permissions
+                </button>
+                <button 
+                    onclick="showAccountRestrictions()" 
+                    class="bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 transition-colors flex items-center gap-2"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    Account Restrictions
+                </button>
+                <button 
+                    onclick="showSessionAnalytics()" 
+                    class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    Session Analytics
+                </button>
                 <div class="text-sm text-slate-600 flex items-center">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     สำหรับผู้ดูแลเท่านั้น
+                </div>
+            </div>
+        </div>
+
+        <!-- Online Users Monitoring -->
+        <div class="bg-white rounded-xl shadow-sm border p-6 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        Online Users Monitor
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800" id="online-count-badge">
+                            0 online
+                        </span>
+                    </h3>
+                    <p class="text-sm text-slate-600">Real-time monitoring of active user sessions</p>
+                </div>
+                <div class="flex gap-2">
+                    <button 
+                        onclick="refreshOnlineUsers()" 
+                        class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Refresh
+                    </button>
+                    <button 
+                        onclick="forceLogoutAllUsers()" 
+                        class="bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
+                        title="Force logout all non-admin users"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        Force Logout All
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Online Users List -->
+                <div class="lg:col-span-2">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-medium text-slate-900">Currently Online</h4>
+                        <div class="flex items-center gap-2 text-sm text-slate-500">
+                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            Auto-refresh: 10s
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 rounded-lg border max-h-80 overflow-y-auto" id="online-users-list">
+                        <div class="flex items-center justify-center py-12">
+                            <div class="text-center">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                <p class="text-slate-500">Loading online users...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="space-y-4">
+                    <h4 class="font-medium text-slate-900">Session Statistics</h4>
+                    <div class="space-y-3">
+                        <div class="bg-blue-50 rounded-lg p-3">
+                            <div class="text-xs text-blue-600 font-medium">Active Sessions</div>
+                            <div class="text-lg font-bold text-blue-900" id="active-sessions-stat">0</div>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-3">
+                            <div class="text-xs text-green-600 font-medium">Users Online</div>
+                            <div class="text-lg font-bold text-green-900" id="users-online-stat">0</div>
+                        </div>
+                        <div class="bg-yellow-50 rounded-lg p-3">
+                            <div class="text-xs text-yellow-600 font-medium">Avg Session Time</div>
+                            <div class="text-lg font-bold text-yellow-900" id="avg-session-time-stat">0m</div>
+                        </div>
+                        <div class="bg-red-50 rounded-lg p-3">
+                            <div class="text-xs text-red-600 font-medium">Long Sessions (>4h)</div>
+                            <div class="text-lg font-bold text-red-900" id="long-sessions-stat">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-slate-200">
+                        <button 
+                            onclick="exportSessionReport()" 
+                            class="w-full bg-slate-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Export Report
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -233,6 +355,85 @@
                             class="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
                         >
                             Extend Session
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Admin Control Panel -->
+        <div class="bg-white rounded-xl shadow-sm border p-6 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        Advanced Admin Controls
+                    </h3>
+                    <p class="text-sm text-slate-600">Manage online sessions, permissions, and security settings</p>
+                </div>
+                <button 
+                    onclick="refreshOnlineUsers()" 
+                    class="bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                >
+                    Refresh Online Users
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Online Users -->
+                <div class="space-y-4">
+                    <h4 class="font-medium text-slate-900">Online Users</h4>
+                    <div class="bg-slate-50 rounded-lg p-4 max-h-64 overflow-y-auto" id="online-users-list">
+                        <div class="text-center text-slate-500 py-4">
+                            <svg class="w-8 h-8 mx-auto mb-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            Click refresh to load online users
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="space-y-4">
+                    <h4 class="font-medium text-slate-900">Quick Actions</h4>
+                    <div class="space-y-3">
+                        <button 
+                            onclick="showPermissionManager()" 
+                            class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            Manage Tool Permissions
+                        </button>
+                        <button 
+                            onclick="showAccountRestrictions()" 
+                            class="w-full bg-yellow-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-yellow-700 transition-colors flex items-center gap-2"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                            </svg>
+                            Account Restrictions
+                        </button>
+                        <button 
+                            onclick="showSessionAnalytics()" 
+                            class="w-full bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            Session Analytics
+                        </button>
+                        <button 
+                            onclick="forceLogoutAllUsers()" 
+                            class="w-full bg-red-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                            Force Logout All Users
                         </button>
                     </div>
                 </div>
@@ -483,6 +684,195 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Permission Manager Modal -->
+    <div id="permission-modal" class="modal">
+        <div class="bg-white p-6 rounded-xl max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold text-slate-900">Manage Tool Permissions</h3>
+                <button onclick="closePermissionModal()" class="text-slate-400 hover:text-slate-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <label for="permission-user-select" class="block text-sm font-medium text-slate-700 mb-2">Select User</label>
+                <select id="permission-user-select" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                    <option value="">Choose a user...</option>
+                </select>
+            </div>
+            
+            <div id="permission-controls" class="hidden">
+                <h4 class="font-medium text-slate-900 mb-4">Tool Access Permissions</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-3">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="perm-stockCount" class="rounded mr-3">
+                            <span class="text-sm">Stock Count</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="perm-cashControl" class="rounded mr-3">
+                            <span class="text-sm">Cash Control</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="perm-checklist" class="rounded mr-3">
+                            <span class="text-sm">Checklist</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="perm-riskAnalyzer" class="rounded mr-3">
+                            <span class="text-sm">Risk Analyzer</span>
+                        </label>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="perm-auditCalendar" class="rounded mr-3">
+                            <span class="text-sm">Audit Calendar</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="perm-reportComparison" class="rounded mr-3">
+                            <span class="text-sm">Report Comparison</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="perm-issueTracker" class="rounded mr-3">
+                            <span class="text-sm">Issue Tracker</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="perm-userManagement" class="rounded mr-3" disabled>
+                            <span class="text-sm text-slate-500">User Management (Admin Only)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button onclick="savePermissions()" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                        Save Permissions
+                    </button>
+                    <button onclick="closePermissionModal()" class="flex-1 bg-slate-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-slate-700 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Restrictions Modal -->
+    <div id="restrictions-modal" class="modal">
+        <div class="bg-white p-6 rounded-xl max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold text-slate-900">Account Restrictions</h3>
+                <button onclick="closeRestrictionsModal()" class="text-slate-400 hover:text-slate-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <label for="restriction-user-select" class="block text-sm font-medium text-slate-700 mb-2">Select User</label>
+                <select id="restriction-user-select" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                    <option value="">Choose a user...</option>
+                </select>
+            </div>
+            
+            <div id="restriction-controls" class="hidden space-y-6">
+                <div>
+                    <h4 class="font-medium text-slate-900 mb-3">Account Status</h4>
+                    <div class="space-y-3">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="account-locked" class="rounded mr-3">
+                            <span class="text-sm">Lock Account</span>
+                        </label>
+                        <div class="ml-6 hidden" id="lock-reason-container">
+                            <input type="text" id="lock-reason" placeholder="Reason for locking account" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-slate-900 mb-3">IP Address Restrictions</h4>
+                    <div class="space-y-3">
+                        <textarea id="allowed-ips" placeholder="Enter allowed IP addresses (one per line, leave empty for no restrictions)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" rows="4"></textarea>
+                        <p class="text-xs text-slate-500">Example: 192.168.1.100</p>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-slate-900 mb-3">Session Management</h4>
+                    <div class="space-y-3">
+                        <label class="flex items-center justify-between">
+                            <span class="text-sm">Max Concurrent Sessions</span>
+                            <input type="number" id="max-sessions" min="1" max="5" value="1" class="border border-slate-300 rounded px-2 py-1 text-sm w-20">
+                        </label>
+                        <button onclick="disconnectUserSessions()" class="w-full bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+                            Disconnect All User Sessions
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="saveRestrictions()" class="flex-1 bg-yellow-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-yellow-700 transition-colors">
+                        Save Restrictions
+                    </button>
+                    <button onclick="closeRestrictionsModal()" class="flex-1 bg-slate-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-slate-700 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Analytics Modal -->
+    <div id="analytics-modal" class="modal">
+        <div class="bg-white p-6 rounded-xl max-w-4xl w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold text-slate-900">Session Analytics</h3>
+                <button onclick="closeAnalyticsModal()" class="text-slate-400 hover:text-slate-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <h4 class="font-medium text-blue-900">Active Sessions</h4>
+                    <p class="text-2xl font-bold text-blue-600" id="active-sessions-count">0</p>
+                </div>
+                <div class="bg-green-50 rounded-lg p-4">
+                    <h4 class="font-medium text-green-900">Avg Session Duration</h4>
+                    <p class="text-2xl font-bold text-green-600" id="avg-session-duration">0m</p>
+                </div>
+                <div class="bg-yellow-50 rounded-lg p-4">
+                    <h4 class="font-medium text-yellow-900">Today's Logins</h4>
+                    <p class="text-2xl font-bold text-yellow-600" id="today-logins">0</p>
+                </div>
+                <div class="bg-red-50 rounded-lg p-4">
+                    <h4 class="font-medium text-red-900">Force Logouts</h4>
+                    <p class="text-2xl font-bold text-red-600" id="force-logouts">0</p>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <h4 class="font-medium text-slate-900">Recent Activity</h4>
+                <div class="bg-slate-50 rounded-lg p-4 max-h-64 overflow-y-auto" id="recent-activity">
+                    <div class="text-center text-slate-500 py-8">
+                        <svg class="w-8 h-8 mx-auto mb-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        Loading activity data...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end mt-6">
+                <button onclick="closeAnalyticsModal()" class="bg-slate-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-slate-700 transition-colors">
+                    Close
+                </button>
+            </div>
         </div>
     </div>
 
@@ -993,6 +1383,575 @@
         document.getElementById('role-filter').addEventListener('change', applyFilters);
         document.getElementById('search-input').addEventListener('input', applyFilters);
 
+        // Advanced Admin Functions
+
+        // Online Users Management
+        async function refreshOnlineUsers() {
+            try {
+                const onlineUsers = await SPViAuth.getOnlineUsers();
+                const container = document.getElementById('online-users-list');
+                
+                // Update online count badge
+                document.getElementById('online-count-badge').textContent = `${onlineUsers.length} online`;
+                document.getElementById('users-online-stat').textContent = onlineUsers.length;
+                document.getElementById('active-sessions-stat').textContent = onlineUsers.length;
+                
+                if (onlineUsers.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-slate-500 py-8">
+                            <svg class="w-12 h-12 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            <p class="text-slate-500 font-medium">No users currently online</p>
+                            <p class="text-xs text-slate-400 mt-1">Users will appear here when they log in</p>
+                        </div>
+                    `;
+                    updateSessionStats(onlineUsers);
+                    return;
+                }
+
+                // Calculate session statistics
+                updateSessionStats(onlineUsers);
+
+                const onlineHTML = onlineUsers.map(user => {
+                    const sessionInfo = user.sessionInfo || {};
+                    const loginTime = sessionInfo.loginTime ? new Date(sessionInfo.loginTime) : null;
+                    const lastActivity = sessionInfo.lastActivity ? new Date(sessionInfo.lastActivity) : null;
+                    const sessionDuration = loginTime ? Date.now() - loginTime.getTime() : 0;
+                    const timeSinceActivity = lastActivity ? Date.now() - lastActivity.getTime() : 0;
+                    
+                    // Determine session status
+                    let statusColor = 'green';
+                    let statusText = 'Active';
+                    if (timeSinceActivity > 30 * 60 * 1000) { // 30 minutes
+                        statusColor = 'yellow';
+                        statusText = 'Idle';
+                    }
+                    if (sessionDuration > 4 * 60 * 60 * 1000) { // 4 hours
+                        statusColor = 'red';
+                        statusText = 'Long Session';
+                    }
+
+                    return `
+                        <div class="flex items-center justify-between p-4 border-b border-slate-200 last:border-b-0 hover:bg-white transition-colors">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                            ${user.name.charAt(0).toUpperCase()}
+                                        </div>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <p class="font-medium text-slate-900 truncate">${user.name}</p>
+                                            ${user.role === 'admin' ? 
+                                                '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Admin</span>' : 
+                                                '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">User</span>'
+                                            }
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${statusColor}-100 text-${statusColor}-800">
+                                                <div class="w-2 h-2 bg-${statusColor}-500 rounded-full mr-1"></div>
+                                                ${statusText}
+                                            </span>
+                                        </div>
+                                        <p class="text-sm text-slate-500 truncate">${user.email}</p>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 text-xs text-slate-600 ml-11">
+                                    <div>
+                                        <span class="font-medium">Session:</span>
+                                        <span>${formatDuration(sessionDuration)}</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium">Last Activity:</span>
+                                        <span>${lastActivity ? formatTimeAgo(lastActivity) : 'Unknown'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium">IP:</span>
+                                        <span class="font-mono">${sessionInfo.ipAddress || 'Unknown'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium">Session ID:</span>
+                                        <span class="font-mono">${sessionInfo.sessionId ? sessionInfo.sessionId.substring(0, 8) + '...' : 'Unknown'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2 ml-4">
+                                <button 
+                                    onclick="disconnectUser('${user.id}')" 
+                                    class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600 transition-colors flex items-center gap-1"
+                                    title="Disconnect user session"
+                                >
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                    </svg>
+                                    Disconnect
+                                </button>
+                                <button 
+                                    onclick="viewUserDetails('${user.id}')" 
+                                    class="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 transition-colors flex items-center gap-1"
+                                    title="View user details"
+                                >
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    Details
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = onlineHTML;
+            } catch (error) {
+                console.error('Error refreshing online users:', error);
+                showToast('Error loading online users: ' + error.message, 'error');
+                document.getElementById('online-users-list').innerHTML = `
+                    <div class="text-center text-red-500 py-8">
+                        <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                        </svg>
+                        <p class="font-medium">Error loading online users</p>
+                        <p class="text-sm text-red-400 mt-1">Please check your connection and try again</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateSessionStats(onlineUsers) {
+            const now = Date.now();
+            let totalSessionTime = 0;
+            let longSessions = 0;
+
+            onlineUsers.forEach(user => {
+                const sessionInfo = user.sessionInfo || {};
+                const loginTime = sessionInfo.loginTime ? new Date(sessionInfo.loginTime).getTime() : now;
+                const sessionDuration = now - loginTime;
+                
+                totalSessionTime += sessionDuration;
+                
+                if (sessionDuration > 4 * 60 * 60 * 1000) { // 4 hours
+                    longSessions++;
+                }
+            });
+
+            const avgSessionTime = onlineUsers.length > 0 ? totalSessionTime / onlineUsers.length : 0;
+            
+            document.getElementById('avg-session-time-stat').textContent = formatDuration(avgSessionTime);
+            document.getElementById('long-sessions-stat').textContent = longSessions;
+        }
+
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            return `${Math.floor(seconds / 86400)}d ago`;
+        }
+
+        async function disconnectUser(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+
+            if (!confirm(`Disconnect ${user.name} from their session?\n\nThis will immediately log them out.`)) {
+                return;
+            }
+
+            try {
+                await SPViAuth.disconnectUserSession(userId);
+                showToast(`${user.name} has been disconnected`, 'success');
+                setTimeout(refreshOnlineUsers, 1000); // Refresh after a short delay
+            } catch (error) {
+                console.error('Error disconnecting user:', error);
+                showToast('Error disconnecting user: ' + error.message, 'error');
+            }
+        }
+
+        function viewUserDetails(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+
+            // Find the user in the main users list and trigger edit
+            editUser(userId);
+        }
+
+        async function forceLogoutAllUsers() {
+            if (!confirm('This will force logout ALL users except admins. Are you sure?\n\nThis action cannot be undone and will immediately disconnect all non-admin users.')) {
+                return;
+            }
+
+            try {
+                const users = allUsers.filter(u => u.role !== 'admin' && u.status === 'approved');
+                let disconnected = 0;
+                let failed = 0;
+
+                // Show progress
+                const progressToast = showToast('Disconnecting users...', 'info');
+
+                for (const user of users) {
+                    try {
+                        await SPViAuth.disconnectUserSession(user.id);
+                        disconnected++;
+                    } catch (error) {
+                        console.warn('Failed to disconnect user:', user.name, error);
+                        failed++;
+                    }
+                }
+
+                if (failed === 0) {
+                    showToast(`Successfully disconnected ${disconnected} users`, 'success');
+                } else {
+                    showToast(`Disconnected ${disconnected} users, ${failed} failed`, 'warning');
+                }
+                
+                setTimeout(refreshOnlineUsers, 2000); // Refresh after delay
+            } catch (error) {
+                console.error('Error during mass logout:', error);
+                showToast('Error during mass logout: ' + error.message, 'error');
+            }
+        }
+
+        async function exportSessionReport() {
+            try {
+                const onlineUsers = await SPViAuth.getOnlineUsers();
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+                
+                // Prepare CSV data
+                const csvData = [
+                    ['Name', 'Email', 'Role', 'Session Duration', 'Last Activity', 'IP Address', 'Session ID', 'Status'].join(',')
+                ];
+
+                onlineUsers.forEach(user => {
+                    const sessionInfo = user.sessionInfo || {};
+                    const loginTime = sessionInfo.loginTime ? new Date(sessionInfo.loginTime) : null;
+                    const lastActivity = sessionInfo.lastActivity ? new Date(sessionInfo.lastActivity) : null;
+                    const sessionDuration = loginTime ? Date.now() - loginTime.getTime() : 0;
+                    const timeSinceActivity = lastActivity ? Date.now() - lastActivity.getTime() : 0;
+                    
+                    let status = 'Active';
+                    if (timeSinceActivity > 30 * 60 * 1000) status = 'Idle';
+                    if (sessionDuration > 4 * 60 * 60 * 1000) status = 'Long Session';
+
+                    const row = [
+                        `"${user.name}"`,
+                        `"${user.email}"`,
+                        user.role,
+                        `"${formatDuration(sessionDuration)}"`,
+                        lastActivity ? lastActivity.toLocaleString() : 'Unknown',
+                        sessionInfo.ipAddress || 'Unknown',
+                        sessionInfo.sessionId || 'Unknown',
+                        status
+                    ].join(',');
+                    
+                    csvData.push(row);
+                });
+
+                // Create and download CSV
+                const csvContent = csvData.join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `online-users-report-${timestamp}.csv`);
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showToast('Session report exported successfully', 'success');
+            } catch (error) {
+                console.error('Error exporting session report:', error);
+                showToast('Error exporting report: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-refresh online users
+        let onlineUsersInterval;
+        function startOnlineUsersAutoRefresh() {
+            refreshOnlineUsers(); // Initial load
+            onlineUsersInterval = setInterval(refreshOnlineUsers, 10000); // Refresh every 10 seconds
+        }
+
+        function stopOnlineUsersAutoRefresh() {
+            if (onlineUsersInterval) {
+                clearInterval(onlineUsersInterval);
+                onlineUsersInterval = null;
+            }
+        }
+
+        // Permission Management
+        function showPermissionManager() {
+            const modal = document.getElementById('permission-modal');
+            const userSelect = document.getElementById('permission-user-select');
+            
+            // Populate user dropdown
+            userSelect.innerHTML = '<option value="">Choose a user...</option>';
+            allUsers.filter(u => u.role !== 'admin').forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.name} (${user.email})`;
+                userSelect.appendChild(option);
+            });
+
+            modal.classList.add('show');
+        }
+
+        function closePermissionModal() {
+            document.getElementById('permission-modal').classList.remove('show');
+            document.getElementById('permission-controls').classList.add('hidden');
+        }
+
+        // Handle user selection for permissions
+        document.addEventListener('DOMContentLoaded', function() {
+            const userSelect = document.getElementById('permission-user-select');
+            const controls = document.getElementById('permission-controls');
+            
+            userSelect.addEventListener('change', function() {
+                if (this.value) {
+                    const user = allUsers.find(u => u.id === this.value);
+                    if (user) {
+                        loadUserPermissions(user);
+                        controls.classList.remove('hidden');
+                    }
+                } else {
+                    controls.classList.add('hidden');
+                }
+            });
+
+            // Account lock checkbox handler
+            const lockCheckbox = document.getElementById('account-locked');
+            const reasonContainer = document.getElementById('lock-reason-container');
+            
+            lockCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    reasonContainer.classList.remove('hidden');
+                } else {
+                    reasonContainer.classList.add('hidden');
+                }
+            });
+        });
+
+        function loadUserPermissions(user) {
+            const permissions = user.permissions || {};
+            
+            document.getElementById('perm-stockCount').checked = permissions.stockCount || false;
+            document.getElementById('perm-cashControl').checked = permissions.cashControl || false;
+            document.getElementById('perm-checklist').checked = permissions.checklist || false;
+            document.getElementById('perm-riskAnalyzer').checked = permissions.riskAnalyzer || false;
+            document.getElementById('perm-auditCalendar').checked = permissions.auditCalendar || false;
+            document.getElementById('perm-reportComparison').checked = permissions.reportComparison || false;
+            document.getElementById('perm-issueTracker').checked = permissions.issueTracker || false;
+        }
+
+        async function savePermissions() {
+            const userId = document.getElementById('permission-user-select').value;
+            if (!userId) return;
+
+            const permissions = {
+                stockCount: document.getElementById('perm-stockCount').checked,
+                cashControl: document.getElementById('perm-cashControl').checked,
+                checklist: document.getElementById('perm-checklist').checked,
+                riskAnalyzer: document.getElementById('perm-riskAnalyzer').checked,
+                auditCalendar: document.getElementById('perm-auditCalendar').checked,
+                reportComparison: document.getElementById('perm-reportComparison').checked,
+                issueTracker: document.getElementById('perm-issueTracker').checked,
+                userManagement: false // Always false for non-admins
+            };
+
+            try {
+                await SPViAuth.updateUserPermissions(userId, permissions);
+                showToast('Permissions updated successfully', 'success');
+                closePermissionModal();
+                await refreshUsers();
+            } catch (error) {
+                showToast('Error updating permissions: ' + error.message, 'error');
+            }
+        }
+
+        // Account Restrictions
+        function showAccountRestrictions() {
+            const modal = document.getElementById('restrictions-modal');
+            const userSelect = document.getElementById('restriction-user-select');
+            
+            // Populate user dropdown
+            userSelect.innerHTML = '<option value="">Choose a user...</option>';
+            allUsers.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.name} (${user.email})`;
+                userSelect.appendChild(option);
+            });
+
+            modal.classList.add('show');
+        }
+
+        function closeRestrictionsModal() {
+            document.getElementById('restrictions-modal').classList.remove('show');
+            document.getElementById('restriction-controls').classList.add('hidden');
+        }
+
+        // Handle user selection for restrictions
+        document.addEventListener('DOMContentLoaded', function() {
+            const userSelect = document.getElementById('restriction-user-select');
+            const controls = document.getElementById('restriction-controls');
+            
+            userSelect.addEventListener('change', function() {
+                if (this.value) {
+                    const user = allUsers.find(u => u.id === this.value);
+                    if (user) {
+                        loadUserRestrictions(user);
+                        controls.classList.remove('hidden');
+                    }
+                } else {
+                    controls.classList.add('hidden');
+                }
+            });
+        });
+
+        function loadUserRestrictions(user) {
+            const restrictions = user.restrictions || {};
+            
+            document.getElementById('account-locked').checked = restrictions.accountLocked || false;
+            document.getElementById('lock-reason').value = restrictions.lockReason || '';
+            document.getElementById('allowed-ips').value = (restrictions.allowedIPs || []).join('\n');
+            document.getElementById('max-sessions').value = restrictions.maxConcurrentSessions || 1;
+            
+            // Show/hide lock reason container
+            const reasonContainer = document.getElementById('lock-reason-container');
+            if (restrictions.accountLocked) {
+                reasonContainer.classList.remove('hidden');
+            } else {
+                reasonContainer.classList.add('hidden');
+            }
+        }
+
+        async function saveRestrictions() {
+            const userId = document.getElementById('restriction-user-select').value;
+            if (!userId) return;
+
+            const isLocked = document.getElementById('account-locked').checked;
+            const lockReason = document.getElementById('lock-reason').value;
+            const allowedIPsText = document.getElementById('allowed-ips').value;
+            const maxSessions = parseInt(document.getElementById('max-sessions').value);
+
+            const allowedIPs = allowedIPsText
+                .split('\n')
+                .map(ip => ip.trim())
+                .filter(ip => ip.length > 0);
+
+            try {
+                // Update restrictions
+                const restrictions = {
+                    accountLocked: isLocked,
+                    lockReason: isLocked ? lockReason : null,
+                    allowedIPs: allowedIPs,
+                    maxConcurrentSessions: maxSessions,
+                    forceLogout: false
+                };
+
+                await SPViAuth.updateUser(userId, { restrictions });
+
+                // If locking account, also disconnect sessions
+                if (isLocked) {
+                    await SPViAuth.lockUserAccount(userId, lockReason);
+                } else {
+                    await SPViAuth.unlockUserAccount(userId);
+                }
+
+                showToast('Account restrictions updated successfully', 'success');
+                closeRestrictionsModal();
+                await refreshUsers();
+                await refreshOnlineUsers();
+            } catch (error) {
+                showToast('Error updating restrictions: ' + error.message, 'error');
+            }
+        }
+
+        async function disconnectUserSessions() {
+            const userId = document.getElementById('restriction-user-select').value;
+            if (!userId) return;
+
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+
+            if (!confirm(`Disconnect all sessions for ${user.name}?`)) {
+                return;
+            }
+
+            try {
+                await SPViAuth.disconnectUserSession(userId);
+                showToast(`All sessions disconnected for ${user.name}`, 'success');
+                await refreshOnlineUsers();
+            } catch (error) {
+                showToast('Error disconnecting sessions: ' + error.message, 'error');
+            }
+        }
+
+        // Session Analytics
+        function showSessionAnalytics() {
+            const modal = document.getElementById('analytics-modal');
+            modal.classList.add('show');
+            loadSessionAnalytics();
+        }
+
+        function closeAnalyticsModal() {
+            document.getElementById('analytics-modal').classList.remove('show');
+        }
+
+        async function loadSessionAnalytics() {
+            try {
+                const onlineUsers = await SPViAuth.getOnlineUsers();
+                
+                // Update stats
+                document.getElementById('active-sessions-count').textContent = onlineUsers.length;
+                
+                // Calculate average session duration (mock for now)
+                const avgDuration = onlineUsers.length > 0 ? 45 : 0;
+                document.getElementById('avg-session-duration').textContent = avgDuration + 'm';
+                
+                // Today's logins (mock)
+                const todayLogins = allUsers.filter(u => {
+                    if (!u.lastLogin) return false;
+                    const loginDate = new Date(u.lastLogin);
+                    const today = new Date();
+                    return loginDate.toDateString() === today.toDateString();
+                }).length;
+                document.getElementById('today-logins').textContent = todayLogins;
+                
+                // Force logouts (mock)
+                document.getElementById('force-logouts').textContent = '0';
+                
+                // Recent activity
+                const recentActivity = document.getElementById('recent-activity');
+                const activityHTML = onlineUsers.map(user => `
+                    <div class="flex items-center justify-between py-2 border-b border-slate-200 last:border-b-0">
+                        <div>
+                            <span class="font-medium text-sm">${user.name}</span>
+                            <span class="text-xs text-slate-500 ml-2">Active session</span>
+                        </div>
+                        <div class="text-xs text-slate-400">
+                            ${user.sessionInfo?.lastActivity ? new Date(user.sessionInfo.lastActivity).toLocaleString() : 'Unknown'}
+                        </div>
+                    </div>
+                `).join('');
+                
+                if (activityHTML) {
+                    recentActivity.innerHTML = activityHTML;
+                } else {
+                    recentActivity.innerHTML = `
+                        <div class="text-center text-slate-500 py-8">
+                            No recent activity
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                showToast('Error loading analytics: ' + error.message, 'error');
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async function() {
             if (!checkAdminAccess()) return;
@@ -1005,11 +1964,20 @@
                 setTimeout(() => {
                     refreshSessionInfo();
                     startSessionInfoAutoRefresh();
+                    
+                    // Initialize online users monitoring
+                    startOnlineUsersAutoRefresh();
                 }, 1000);
             } catch (error) {
                 // Initialization error handled silently for production
                 showToast('Failed to initialize. Please check Firebase configuration.', 'error');
             }
+        });
+
+        // Cleanup intervals when page unloads
+        window.addEventListener('beforeunload', function() {
+            stopSessionInfoAutoRefresh();
+            stopOnlineUsersAutoRefresh();
         });
     </script>
 

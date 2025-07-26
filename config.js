@@ -100,6 +100,12 @@
         // Load configuration from server endpoint (for production)
         async loadFromServer() {
             try {
+                // Skip server loading for file:// protocol
+                if (window.location.protocol === 'file:') {
+                    console.log('File protocol detected, using fallback configuration');
+                    return FALLBACK_CONFIG;
+                }
+                
                 const response = await fetch('/api/config');
                 if (response.ok) {
                     const config = await response.json();

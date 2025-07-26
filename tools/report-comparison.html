@@ -218,6 +218,19 @@
             
             // Setup centralized devtools protection
             SPViAuth.setupDevToolsProtection();
+
+        // Check tool access permission
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user has permission to access reportComparison tool
+            if (window.SPViSessionManager && window.SPViSessionManager.checkToolAccess) {
+                const hasAccess = window.SPViSessionManager.checkToolAccess('reportComparison');
+                if (!hasAccess) {
+                    // Access denied - modal will be shown by checkToolAccess function
+                    // Optionally hide main content
+                    document.querySelector('main')?.style.setProperty('display', 'none');
+                }
+            }
+        });
         } catch (error) {
             // Authentication error handled silently for production
             // If authentication fails, redirect to login
