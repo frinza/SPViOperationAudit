@@ -379,8 +379,8 @@
         // --- Initial Load ---
         window.addEventListener('DOMContentLoaded', async () => {
             try {
-                await SPViAuth.initializeFirebase();
-                firestore = firebase.firestore();
+                const firebaseInstances = await SPViAuth.initializeFirebase();
+                firestore = firebaseInstances.db || window.firebase.app().firestore();
                 issuesCollection = firestore.collection('issues');
                 await loadData();
             } catch (error) {

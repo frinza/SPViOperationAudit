@@ -82,11 +82,15 @@
             if (db) return db;
             try {
                 // Use the Firebase instance from SPViAuth
-                await SPViAuth.initializeFirebase();
+                const firebaseInstances = await SPViAuth.initializeFirebase();
                 
-                // Get Firebase instance from window.firebase (already initialized)
-                if (window.firebase && window.firebase.apps.length > 0) {
-                    db = window.firebase.firestore();
+                // Get the already configured Firestore instance
+                if (firebaseInstances && firebaseInstances.db) {
+                    db = firebaseInstances.db;
+                    return db;
+                } else if (window.firebase && window.firebase.apps.length > 0) {
+                    // Fallback: get existing instance without calling firestore() again
+                    db = window.firebase.app().firestore();
                     return db;
                 } else {
                     throw new Error('Firebase not initialized by SPViAuth');

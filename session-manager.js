@@ -248,8 +248,9 @@
         // Check for force logout from admin
         try {
             if (window.SPViAuth?.initializeFirebase) {
-                await window.SPViAuth.initializeFirebase();
-                const userDoc = await firebase.firestore().collection('users').doc(currentUser.id).get();
+                const firebaseInstances = await window.SPViAuth.initializeFirebase();
+                const db = firebaseInstances.db || window.firebase.app().firestore();
+                const userDoc = await db.collection('users').doc(currentUser.id).get();
                 if (userDoc.exists) {
                     const userData = userDoc.data();
                     if (userData.restrictions?.forceLogout) {

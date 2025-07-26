@@ -10,7 +10,10 @@
     let isFirebaseInitialized = false;
 
     async function initializeFirebase() {
-        if (isFirebaseInitialized) return;
+        if (isFirebaseInitialized) {
+            // Return existing instances if already initialized
+            return { db, auth };
+        }
         
         try {
             if (!window.firebase) {
@@ -28,31 +31,44 @@
             // Validate configuration
             window.SPViConfig.validate();
             
+            // Initialize Firebase app only if not already initialized
+            let app;
             if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
+                app = firebase.initializeApp(firebaseConfig);
+            } else {
+                app = firebase.app(); // Use existing app
             }
             
+            // Get Firestore instance
             db = firebase.firestore();
             auth = firebase.auth();
             
-            // Configure Firestore settings to reduce CORS errors
-            if (db) {
-                db.settings({
-                    ignoreUndefinedProperties: true,
-                    merge: true
-                });
-                
-                // Test connectivity with graceful error handling
-                try {
-                    await db.collection('_test').limit(1).get();
-                } catch (firestoreError) {
-                    // Log Firestore connectivity issues silently for production
-                    console.warn('Firestore connectivity limited - some features may be unavailable');
-                    // Continue with initialization as local functionality still works
+            // Configure Firestore settings only if not already configured
+            // This must be done immediately after getting firestore instance and only once
+            try {
+                if (db && !window.firestoreSettingsApplied) {
+                    db.settings({
+                        ignoreUndefinedProperties: true,
+                        merge: true
+                    });
+                    window.firestoreSettingsApplied = true;
                 }
+            } catch (settingsError) {
+                // Settings already applied or Firestore already started
+                console.log('Firestore settings already configured, continuing...');
+            }
+            
+            // Test connectivity with graceful error handling
+            try {
+                await db.collection('_test').limit(1).get();
+            } catch (firestoreError) {
+                // Log Firestore connectivity issues silently for production
+                console.warn('Firestore connectivity limited - some features may be unavailable');
+                // Continue with initialization as local functionality still works
             }
             
             isFirebaseInitialized = true;
+            return { db, auth };
         } catch (error) {
             // In production, log errors silently but continue with local functionality
             console.warn('Firebase initialization failed - operating in offline mode');
