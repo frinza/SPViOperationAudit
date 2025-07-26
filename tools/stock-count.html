@@ -31,12 +31,30 @@
     <!-- Global Print Legal Section -->
     <link rel="stylesheet" href="../styles/print-legal.css">
     <!-- Global Print Header -->
-    <link rel="stylesheet" href="../styles/print-header.css">    
-    <style>        body {
+    <link rel="stylesheet" href="../styles/print-header.css">      
+    <style>        
+    body {
             font-family: 'Sarabun', sans-serif;
             /* Safe area support for devices with notches */
             padding-left: env(safe-area-inset-left);
             padding-right: env(safe-area-inset-right);
+        }        
+        /* ===== FILTER LAYOUT RESPONSIVE BREAKPOINT ===== */
+        /* Custom breakpoint at 1100px for filter layouts */
+        .filter-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }        
+        @media (min-width: 1101px) {
+            .filter-container {
+                flex-direction: row;
+            }
+            
+            /* Override Tailwind's md:w-auto at our custom breakpoint */
+            .w-full.md\:w-auto {
+                width: auto;
+            }
         }
         
         /* ===== MOBILE TAB NAVIGATION ENHANCEMENTS ===== */
@@ -48,7 +66,7 @@
         .scrollbar-hide::-webkit-scrollbar {
             display: none;
         }
-          @media (max-width: 768px) {
+        @media (max-width: 1100px) {
             /* Enhanced mobile tab styling */
             .tab-button {
                 background-color: transparent;
@@ -99,10 +117,9 @@
                 font-size: 16px; /* Prevent iOS zoom */
                 min-height: 44px;
             }
-        }
-        
-          /* ===== MOBILE RESPONSIVE TABLE ENHANCEMENTS ===== */
-        @media (max-width: 768px) {
+        }            
+        /* ===== MOBILE RESPONSIVE TABLE ENHANCEMENTS ===== */
+        @media (max-width: 1100px) {
             /* Hide traditional table structure on mobile */
             .mobile-hidden {
                 display: none !important;
@@ -368,35 +385,9 @@
             .mb-8 {
                 margin-bottom: 1.25rem !important;
             }
-        }
-        
-        /* Tablet optimization */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            /* Table still visible but optimized for tablet */
-            .container {
-                padding-left: 2rem !important;
-                padding-right: 2rem !important;
-            }
-            
-            /* Reduce table cell padding slightly */
-            table td {
-                padding: 0.75rem 0.5rem !important;
-            }
-            
-            table th {
-                padding: 0.75rem 0.5rem !important;
-                font-size: 0.75rem !important;
-            }
-            
-            /* Smaller input fields in table */
-            table input {
-                padding: 0.375rem !important;
-                font-size: 0.8rem !important;
-            }
-        }
-        
+        }          
         /* Desktop view - ensure card view is hidden */
-        @media (min-width: 769px) {
+        @media (min-width: 1101px) {
             .mobile-card-view {
                 display: none !important;
             }
@@ -1727,8 +1718,8 @@
                 <div id="main-panel-demo" class="hidden">
                      <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
                          <div class="flex flex-col md:flex-row justify-between items-start mb-4 gap-4">
-                             <h3 class="text-xl font-semibold text-slate-800">รายการตรวจนับสินค้า DEMO</h3>
-                             <div id="demo-summary" class="flex flex-col gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200 text-xs"></div>                         </div>                         <div class="flex flex-col md:flex-row gap-4 my-4">
+                             <h3 class="text-xl font-semibold text-slate-800">รายการตรวจนับสินค้า DEMO</h3>                             
+                             <div id="demo-summary" class="flex flex-col gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200 text-xs"></div>                         </div>                         <div class="filter-container my-4">
                              <div class="relative flex-grow">
                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                      <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1775,9 +1766,10 @@
                         <!-- SPP Spare Parts Section -->
                         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
                             <div class="flex flex-col md:flex-row justify-between items-start mb-4 gap-4">
-                                <h3 class="text-xl font-semibold text-slate-800">รายการตรวจนับ SPP - อะไหล่ (Spare Parts)</h3>
+                                <h3 class="text-xl font-semibold text-slate-800">รายการตรวจนับ SPP - อะไหล่ (Spare Parts)</h3>                                
                                 <div id="spp-spare-parts-summary" class="flex flex-col gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200 text-xs"></div>
-                            </div>                            <div class="flex flex-col md:flex-row gap-4 my-4">
+                            </div>                            
+                            <div class="filter-container my-4">
                                 <div class="relative flex-grow">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1830,9 +1822,10 @@
                         <!-- SPP Glue/Adhesive Section -->
                         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
                             <div class="flex flex-col md:flex-row justify-between items-start mb-4 gap-4">
-                                <h3 class="text-xl font-semibold text-slate-800">รายการตรวจนับ SPP - กาว/สารยึดติด (Glue/Adhesive)</h3>
+                                <h3 class="text-xl font-semibold text-slate-800">รายการตรวจนับ SPP - กาว/สารยึดติด (Glue/Adhesive)</h3>                                
                                 <div id="spp-glue-summary" class="flex flex-col gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200 text-xs"></div>
-                            </div>                            <div class="flex flex-col md:flex-row gap-4 my-4">
+                            </div>                            
+                            <div class="filter-container my-4">
                                 <div class="relative flex-grow">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1886,10 +1879,10 @@
                         <!-- SPP Tools Section -->
                         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
                             <div class="flex flex-col md:flex-row justify-between items-start mb-4 gap-4">
-                                <h3 class="text-xl font-semibold text-slate-800">รายการตรวจนับ SPP - เครื่องมือ (Tools)</h3>
+                                <h3 class="text-xl font-semibold text-slate-800">รายการตรวจนับ SPP - เครื่องมือ (Tools)</h3>                                
                                 <div id="spp-tools-summary" class="flex flex-col gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200 text-xs"></div>
                             </div>                            
-                            <div class="flex flex-col md:flex-row gap-4 my-4">
+                            <div class="filter-container my-4">
                                 <div class="relative flex-grow">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -2026,8 +2019,9 @@
                         </div>
                         <div id="final-summary" class="flex flex-col gap-2 p-4 bg-slate-100 rounded-lg border border-slate-200 text-sm"></div>
                     </div>
-                    <div class="space-y-4">
-                        <h3 class="text-xl font-semibold text-slate-800">รายการสรุปผลทั้งหมด</h3>                        <div class="flex flex-col md:flex-row gap-4 no-print">
+                    <div class="space-y-4">                        
+                        <h3 class="text-xl font-semibold text-slate-800">รายการสรุปผลทั้งหมด</h3>                        
+                        <div class="filter-container no-print">
                             <div class="relative flex-grow">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                 <input type="text" id="finalSearchInput" placeholder="ค้นหารายงาน..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
