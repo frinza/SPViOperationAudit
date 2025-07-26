@@ -87,16 +87,15 @@
             nav[class*="overflow-x-auto"]::-webkit-scrollbar {
                 display: none;
             }
-            
-            /* Improve mobile button spacing and touch targets */
-            .btn, button {
+              /* Improve mobile button spacing and touch targets */
+            .btn, button:not(#spvi-user-info button):not(.spvi-nav-toggle):not(.spvi-logout-btn) {
                 min-height: 44px;
                 touch-action: manipulation;
                 -webkit-tap-highlight-color: transparent;
             }
             
             /* Better mobile form inputs */
-            input, select, textarea {
+            input:not(#spvi-user-info input), select:not(#spvi-user-info select), textarea:not(#spvi-user-info textarea) {
                 font-size: 16px; /* Prevent iOS zoom */
                 min-height: 44px;
             }
