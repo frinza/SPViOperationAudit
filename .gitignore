@@ -1,5 +1,6 @@
 # Setup files
 setup.sh
+add-permission-checks.sh
 # Environment variables
 .env
 .env.local
