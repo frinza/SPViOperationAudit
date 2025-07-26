@@ -33,10 +33,55 @@
     <link rel="stylesheet" href="../styles/print-legal.css">
     <!-- Global Print Header -->
     <link rel="stylesheet" href="../styles/print-header.css">    
-    <style>
-        body {
+    <style>        body {
             font-family: 'Sarabun', sans-serif;
         }
+        
+        /* ===== MOBILE TAB NAVIGATION ENHANCEMENTS ===== */
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            /* Enhanced mobile tab styling */
+            .tab-button {
+                background-color: transparent;
+                border: none;
+                cursor: pointer;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+                position: relative;
+                margin-bottom: -1px;
+            }
+            
+            .tab-button.active {
+                color: #1e40af !important;
+                background-color: rgba(59, 130, 246, 0.05);
+                border-bottom: 2px solid #1e40af;
+            }
+            
+            .tab-button:not(.active):hover {
+                background-color: rgba(148, 163, 184, 0.1);
+            }
+            
+            /* Smooth scrolling for tab navigation */
+            nav[class*="overflow-x-auto"] {
+                scroll-behavior: smooth;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+            
+            nav[class*="overflow-x-auto"]::-webkit-scrollbar {
+                display: none;
+            }
+        }
+        
           /* ===== MOBILE RESPONSIVE TABLE ENHANCEMENTS ===== */
         @media (max-width: 768px) {
             /* Hide traditional table structure on mobile */
@@ -1539,24 +1584,22 @@
             </label>
             <input type="file" id="initialSohFile" class="hidden" accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
         </div>        
-        <div id="workspace-container" class="hidden no-print">            
-            <div class="mb-6 border-b border-slate-200">
-                <nav class="-mb-px flex space-x-6 overflow-x-auto">
-                    <button id="main-tab-workflow" class="tab-button text-lg font-semibold py-4 px-1 active whitespace-nowrap">ตรวจนับสินค้าขาย</button>
-                    <button id="main-tab-demo" class="tab-button text-lg font-semibold py-4 px-1 text-slate-500 hover:text-slate-700 whitespace-nowrap">ตรวจนับสินค้า DEMO</button>
-                    <button id="main-tab-spp" class="tab-button text-lg font-semibold py-4 px-1 text-slate-500 hover:text-slate-700 whitespace-nowrap hidden">SPP อะไหล่ กาว และเครื่องมือช่าง</button>
+        <div id="workspace-container" class="hidden no-print">              <div class="mb-6 border-b border-slate-200">
+                <nav class="-mb-px flex space-x-2 md:space-x-6 overflow-x-auto scrollbar-hide">
+                    <button id="main-tab-workflow" class="tab-button text-sm md:text-lg font-semibold py-3 md:py-4 px-3 md:px-1 active whitespace-nowrap flex-shrink-0 min-w-max rounded-t-lg transition-all duration-200">ตรวจนับสินค้าขาย</button>
+                    <button id="main-tab-demo" class="tab-button text-sm md:text-lg font-semibold py-3 md:py-4 px-3 md:px-1 text-slate-500 hover:text-slate-700 whitespace-nowrap flex-shrink-0 min-w-max rounded-t-lg transition-all duration-200">ตรวจนับสินค้า DEMO</button>
+                    <button id="main-tab-spp" class="tab-button text-sm md:text-lg font-semibold py-3 md:py-4 px-3 md:px-1 text-slate-500 hover:text-slate-700 whitespace-nowrap hidden flex-shrink-0 min-w-max rounded-t-lg transition-all duration-200">SPP อะไหล่ กาว และเครื่องมือช่าง</button>
                 </nav>
             </div>
         </div>
                 <!-- Workflow Panel Section (moved to be first) -->
                 <div id="main-panel-workflow">
                      <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-                         <h2 class="text-2xl font-semibold mb-2 text-slate-800">ตรวจนับสินค้าขาย</h2>
-                         <div id="wf-step-tabs" class="mb-4 border-b border-slate-200">
-                             <nav class="flex -mb-px space-x-6">
-                                 <button id="wf-tab-btn-1" class="tab-button active text-base font-semibold px-1 py-4">ขั้นตอนที่ 1: สร้างไฟล์</button>
-                                 <button id="wf-tab-btn-2" class="tab-button text-base font-semibold px-1 py-4 text-slate-500 hover:text-slate-700">ขั้นตอนที่ 2: กระทบยอด</button>
-                                 <button id="wf-tab-btn-3" class="tab-button text-base font-semibold px-1 py-4 text-slate-500 hover:text-slate-700">ขั้นตอนที่ 3: สรุปผล</button>
+                         <h2 class="text-2xl font-semibold mb-2 text-slate-800">ตรวจนับสินค้าขาย</h2>                         <div id="wf-step-tabs" class="mb-4 border-b border-slate-200">
+                             <nav class="flex -mb-px space-x-2 md:space-x-6 overflow-x-auto scrollbar-hide">
+                                 <button id="wf-tab-btn-1" class="tab-button active text-sm md:text-base font-semibold px-2 md:px-1 py-3 md:py-4 whitespace-nowrap flex-shrink-0 min-w-max">ขั้นตอนที่ 1: สร้างไฟล์</button>
+                                 <button id="wf-tab-btn-2" class="tab-button text-sm md:text-base font-semibold px-2 md:px-1 py-3 md:py-4 text-slate-500 hover:text-slate-700 whitespace-nowrap flex-shrink-0 min-w-max">ขั้นตอนที่ 2: กระทบยอด</button>
+                                 <button id="wf-tab-btn-3" class="tab-button text-sm md:text-base font-semibold px-2 md:px-1 py-3 md:py-4 text-slate-500 hover:text-slate-700 whitespace-nowrap flex-shrink-0 min-w-max">ขั้นตอนที่ 3: สรุปผล</button>
                              </nav>
                          </div>
                          <div id="wf-step1" class="workflow-step">
@@ -1963,10 +2006,9 @@
                                     Refresh Chart
                                 </button>
                             </div>                        
-                        </div>                        
-                        <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 flex flex-col">
+                        </div>                          <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 flex flex-col">
                             <h4 class="text-sm font-semibold text-center mb-2 text-slate-600 flex-shrink-0">ผลต่างแยกตามหมวดหมู่ (จำนวน)</h4>
-                            <div class="relative h-80">
+                            <div class="relative h-96 md:h-[500px]">
                                 <canvas id="categoryChart"></canvas>
                             </div>
                         </div>
@@ -6257,8 +6299,7 @@ def calculate_serial_sku_score(text, pattern_type):
                 const categoryLabels = categoryEntries.map(([name]) => name.substring(0, 15));
                 const overageData = categoryEntries.map(([,, data]) => data.over);
                 const shortageData = categoryEntries.map(([,, data]) => data.short);
-                
-                state.charts.category = new Chart(getEl('categoryChart'), { 
+                  state.charts.category = new Chart(getEl('categoryChart'), { 
                     type: 'bar', 
                     data: { 
                         labels: categoryLabels, 
@@ -6268,32 +6309,74 @@ def calculate_serial_sku_score(text, pattern_type):
                                 data: overageData, 
                                 backgroundColor: 'rgba(217, 119, 6, 0.7)',
                                 borderColor: 'rgba(217, 119, 6, 1)',
-                                borderWidth: 1
+                                borderWidth: 1,
+                                barThickness: 25,
+                                maxBarThickness: 30
                             },
                             { 
                                 label: 'Shortage', 
                                 data: shortageData, 
                                 backgroundColor: 'rgba(239, 68, 68, 0.7)',
                                 borderColor: 'rgba(239, 68, 68, 1)',
-                                borderWidth: 1
+                                borderWidth: 1,
+                                barThickness: 25,
+                                maxBarThickness: 30
                             }
                         ] 
                     }, 
                     options: { 
                         ...chartOptions, 
-                        indexAxis: 'y', 
+                        indexAxis: 'y',
+                        layout: {
+                            padding: {
+                                top: 10,
+                                bottom: 10,
+                                left: 10,
+                                right: 10
+                            }
+                        },
                         scales: { 
                             x: { 
                                 beginAtZero: true,
-                                stacked: false 
+                                stacked: false,
+                                grid: {
+                                    display: true,
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
                             },
                             y: {
-                                stacked: false
+                                stacked: false,
+                                categoryPercentage: 0.9,
+                                barPercentage: 0.8,
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    maxRotation: 0,
+                                    font: {
+                                        size: 11
+                                    }
+                                }
                             }
                         },
                         plugins: {
                             ...chartOptions.plugins,
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
                             tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: 'white',
+                                bodyColor: 'white',
+                                borderColor: 'rgba(255, 255, 255, 0.1)',
+                                borderWidth: 1,
                                 callbacks: {
                                     afterLabel: function(context) {
                                         const categoryIndex = context.dataIndex;
