@@ -82,6 +82,7 @@
             id: userData.id || generateId(),
             name: userData.name,
             email: userData.email,
+            password: userData.password, // Include password field
             department: userData.department || '',
             position: userData.position || '',
             role: userData.role || 'user', // 'user' or 'admin'
@@ -161,7 +162,31 @@
     }
 
     function hashPassword(password) {
+        // Ensure password is a string and normalize it
+        if (!password || typeof password !== 'string') {
+            throw new Error('Password must be a non-empty string');
+        }
+        
+        // Normalize the password to handle encoding issues
+        const normalizedPassword = password.trim();
+        
         // Simple hash for demo - in production, use proper server-side hashing
+        let hash = 0;
+        for (let i = 0; i < normalizedPassword.length; i++) {
+            const char = normalizedPassword.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+        
+        // Ensure we always return a consistent string representation
+        const hashString = hash.toString();
+        
+        // Add a prefix to make it clear this is a hashed password
+        return 'spvi_' + Math.abs(hash).toString();
+    }
+
+    // Old hash function for backward compatibility
+    function hashPasswordOldFormat(password) {
         let hash = 0;
         for (let i = 0; i < password.length; i++) {
             const char = password.charCodeAt(i);
@@ -231,15 +256,39 @@
             await initializeFirebase();
             
             try {
+                // Validate required fields
+                if (!userData.email || !userData.password || !userData.name) {
+                    throw new Error('Email, password, and name are required');
+                }
+                
+                // Validate password strength
+                if (userData.password.length < 6) {
+                    throw new Error('Password must be at least 6 characters long');
+                }
+                
                 // Check if user already exists
                 const existingUser = await this.getUserByEmail(userData.email);
                 if (existingUser) {
                     throw new Error('User with this email already exists');
                 }
 
+                // Hash the password before creating user data
+                const hashedPassword = hashPassword(userData.password);
+                console.log('Generated password hash:', hashedPassword);
+
                 const newUser = createUserData({
                     ...userData,
-                    password: hashPassword(userData.password)
+                    password: hashedPassword
+                });
+
+                // Verify password is included in newUser object
+                if (!newUser.password) {
+                    throw new Error('Failed to include password in user data structure');
+                }
+
+                console.log('Creating user with data structure:', {
+                    ...newUser,
+                    password: '[HASH:' + newUser.password.substring(0, 10) + '...]'
                 });
 
                 // Add to Firestore
@@ -249,8 +298,23 @@
                 // Update document with the actual ID
                 await db.collection('users').doc(docRef.id).update({ id: docRef.id });
 
+                // Verify the user was created with a password
+                const verifyDoc = await db.collection('users').doc(docRef.id).get();
+                const verifyData = verifyDoc.data();
+                
+                if (!verifyData.password || verifyData.password === null || verifyData.password === '') {
+                    // Additional error details for debugging
+                    console.error('Verification failed. Document data:', {
+                        ...verifyData,
+                        password: verifyData.password ? '[PRESENT]' : '[MISSING]'
+                    });
+                    throw new Error('User registration failed - password not saved properly');
+                }
+
+                console.log('User registered successfully. Password verification passed.');
                 return newUser;
             } catch (error) {
+                console.error('Registration error:', error);
                 throw error;
             }
         },
@@ -259,32 +323,103 @@
             await initializeFirebase();
             
             try {
-                const hashedPassword = hashPassword(password);
+                if (!email || !password) {
+                    throw new Error('Email and password are required');
+                }
                 
-                const snapshot = await db.collection('users')
+                console.log('Attempting login for email:', email);
+                
+                // First, get the user by email to check what password format they have
+                const emailOnlySnapshot = await db.collection('users')
                     .where('email', '==', email)
-                    .where('password', '==', hashedPassword)
-                    .limit(1)
                     .get();
-
-                if (snapshot.empty) {
-                    // Check if user exists with different password
-                    const emailOnlySnapshot = await db.collection('users')
-                        .where('email', '==', email)
-                        .get();
-                    
+                
+                if (emailOnlySnapshot.empty) {
+                    console.log('No user found with email:', email);
                     return null;
                 }
-
-                const doc = snapshot.docs[0];
-                const user = { id: doc.id, ...doc.data() };
-
+                
+                const userDoc = emailOnlySnapshot.docs[0];
+                const userData = userDoc.data();
+                console.log('User found, checking password format...');
+                
+                // Check if user exists but password is missing
+                if (!userData.password || userData.password === null || userData.password === undefined || userData.password === '') {
+                    console.log('User found but password is missing - user needs admin assistance');
+                    throw new Error('Account found but password not set. Please contact administrator.');
+                }
+                
+                let passwordMatches = false;
+                let needsMigration = false;
+                
+                // Check if password is in old format (numeric only without prefix)
+                if (/^-?\d+$/.test(userData.password)) {
+                    console.log('User has old password format - checking with old hash function');
+                    
+                    // Try old hash function (exact match)
+                    const oldHash = hashPasswordOldFormat(password);
+                    console.log('Old hash check:', oldHash, 'vs stored:', userData.password);
+                    
+                    if (userData.password === oldHash) {
+                        passwordMatches = true;
+                        needsMigration = true;
+                        console.log('Old password format matched - migration needed');
+                    } else {
+                        // Also try with trimmed password in case there were whitespace issues
+                        const oldHashTrimmed = hashPasswordOldFormat(password.trim());
+                        console.log('Old hash (trimmed) check:', oldHashTrimmed, 'vs stored:', userData.password);
+                        
+                        if (userData.password === oldHashTrimmed) {
+                            passwordMatches = true;
+                            needsMigration = true;
+                            console.log('Old password format (trimmed) matched - migration needed');
+                        }
+                    }
+                }
+                
+                // If old format didn't match, try new format
+                if (!passwordMatches) {
+                    const newHash = hashPassword(password);
+                    console.log('New hash check:', newHash, 'vs stored:', userData.password);
+                    
+                    if (userData.password === newHash) {
+                        passwordMatches = true;
+                        console.log('New password format matched');
+                    }
+                }
+                
+                // If still no match, check if it's stored in plain text (emergency fallback)
+                if (!passwordMatches && userData.password === password) {
+                    passwordMatches = true;
+                    needsMigration = true;
+                    console.log('Plain text password matched - migration needed');
+                }
+                
+                if (!passwordMatches) {
+                    console.log('Password does not match any format');
+                    return null;
+                }
+                
+                // Password matched, proceed with login
+                const user = { id: userDoc.id, ...userData };
+                
+                // Migrate password if needed
+                if (needsMigration) {
+                    console.log('Migrating password to new format...');
+                    const newHash = hashPassword(password);
+                    await this.updateUser(userDoc.id, { password: newHash });
+                    console.log('Password migrated successfully');
+                }
+                
                 // Update last login
                 await this.updateUser(user.id, { lastLogin: new Date().toISOString() });
                 user.lastLogin = new Date().toISOString();
-
+                
+                console.log('Login successful for user:', user.name);
                 return user;
+                
             } catch (error) {
+                console.error('Login error:', error);
                 // Handle Firebase-specific errors gracefully
                 if (error.code === 'permission-denied') {
                     throw new Error('Access denied - insufficient permissions');
@@ -457,21 +592,27 @@
 
                     // Register admin user
                     const createdAdmin = await this.registerUser(adminUser);
+                    console.log('Admin user created successfully');
                 } else {
-                    // Check if password is missing and fix it
-                    if (!existingAdmin.hasOwnProperty('password') || !existingAdmin.password || existingAdmin.password === undefined) {
-                        console.log('Admin user exists but password is missing. Adding password...');
-                        const correctPasswordHash = hashPassword(adminConfig.defaultPassword);
+                    // Only add password if it's completely missing - DON'T reset existing passwords
+                    if (!existingAdmin.hasOwnProperty('password') || !existingAdmin.password || existingAdmin.password === undefined || existingAdmin.password === null || existingAdmin.password === '') {
+                        console.log('Admin user exists but password is missing. Adding default password...');
+                        const newPasswordHash = hashPassword(adminConfig.defaultPassword);
                         await this.updateUser(existingAdmin.id, { 
-                            password: correctPasswordHash 
+                            password: newPasswordHash 
                         });
-                        console.log('Admin password has been set successfully');
+                        console.log('Admin password has been set to default with hash:', newPasswordHash);
+                    } else {
+                        console.log('Admin user exists with existing password - leaving password unchanged');
+                        console.log('Password format:', existingAdmin.password.startsWith('spvi_') ? 'NEW' : 'OLD/OTHER');
+                        // DO NOT automatically update passwords - let the login function handle migration
                     }
                 }
                 
                 // Mark admin as initialized to prevent duplicate creation
                 window.adminInitialized = true;
             } catch (error) {
+                console.error('Admin initialization error:', error);
                 // Continue silently if Firebase initialization fails
             }
         },
@@ -483,7 +624,6 @@
                 // Get admin email from config
                 const adminConfig = window.SPViConfig.getAdminConfig();
                 const adminEmail = adminConfig.email;
-                const hashedCurrentPassword = hashPassword(currentPassword);
                 
                 // Verify current password first
                 const admin = await this.getUserByEmail(adminEmail);
@@ -491,7 +631,31 @@
                     throw new Error('Admin user not found');
                 }
                 
-                if (admin.password !== hashedCurrentPassword) {
+                // Check current password using the same logic as login
+                let passwordMatches = false;
+                
+                // Check if password is in old format (numeric only without prefix)
+                if (/^-?\d+$/.test(admin.password)) {
+                    const oldHash = hashPasswordOldFormat(currentPassword);
+                    const oldHashTrimmed = hashPasswordOldFormat(currentPassword.trim());
+                    
+                    if (admin.password === oldHash || admin.password === oldHashTrimmed) {
+                        passwordMatches = true;
+                    }
+                } else {
+                    // Check new format
+                    const newHash = hashPassword(currentPassword);
+                    if (admin.password === newHash) {
+                        passwordMatches = true;
+                    }
+                }
+                
+                // Check plain text fallback
+                if (!passwordMatches && admin.password === currentPassword) {
+                    passwordMatches = true;
+                }
+                
+                if (!passwordMatches) {
                     throw new Error('Current password is incorrect');
                 }
                 
@@ -585,6 +749,65 @@
         const basePath = isInTools ? '../' : './';
         const toolsPath = isInTools ? './' : 'tools/';
 
+        // Define all available tools with their details
+        const allTools = [
+            {
+                name: 'stockCount',
+                url: 'stock-count.html',
+                title: 'ตรวจนับสต็อก',
+                icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
+            },
+            {
+                name: 'cashControl',
+                url: 'cash-control.html',
+                title: 'ควบคุมเงินสด',
+                icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z'
+            },
+            {
+                name: 'checklist',
+                url: 'checklist.html',
+                title: 'รายการตรวจสอบ',
+                icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'
+            },
+            {
+                name: 'auditCalendar',
+                url: 'audit-calendar.html',
+                title: 'ปฏิทินตรวจสอบ',
+                icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'
+            },
+            {
+                name: 'issueTracker',
+                url: 'issue-tracker.html',
+                title: 'ติดตามประเด็น',
+                icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
+            },
+            {
+                name: 'reportComparison',
+                url: 'report-comparison.html',
+                title: 'เปรียบเทียบรายงาน',
+                icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+            },
+            {
+                name: 'riskAnalyzer',
+                url: 'risk-analyzer.html',
+                title: 'วิเคราะห์ความเสี่ยง',
+                icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+            }
+        ];
+
+        // Filter tools based on user permissions
+        const allowedTools = allTools.filter(tool => hasToolPermission(tool.name));
+
+        // Generate navigation links for allowed tools
+        const toolNavLinks = allowedTools.map(tool => `
+            <a href="${toolsPath}${tool.url}" class="spvi-nav-link">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${tool.icon}"></path>
+                </svg>
+                ${tool.title}
+            </a>
+        `).join('');
+
         userInfoBar.innerHTML = `
             <div class="spvi-nav-container">
                 <button class="spvi-nav-toggle" id="spvi-nav-toggle">
@@ -599,48 +822,7 @@
                         </svg>
                         หน้าหลัก
                     </a>
-                    <a href="${toolsPath}stock-count.html" class="spvi-nav-link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
-                        ตรวจนับสต็อก
-                    </a>
-                    <a href="${toolsPath}cash-control.html" class="spvi-nav-link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                        ควบคุมเงินสด
-                    </a>
-                    <a href="${toolsPath}checklist.html" class="spvi-nav-link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                        </svg>
-                        รายการตรวจสอบ
-                    </a>
-                    <a href="${toolsPath}audit-calendar.html" class="spvi-nav-link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        ปฏิทินตรวจสอบ
-                    </a>
-                    <a href="${toolsPath}issue-tracker.html" class="spvi-nav-link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                        ติดตามประเด็น
-                    </a>
-                    <a href="${toolsPath}report-comparison.html" class="spvi-nav-link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        เปรียบเทียบรายงาน
-                    </a>
-                    <a href="${toolsPath}risk-analyzer.html" class="spvi-nav-link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        วิเคราะห์ความเสี่ยง
-                    </a>
+                    ${toolNavLinks}
                 </div>
                 <div class="spvi-user-actions">
                     <div class="spvi-user-details">
@@ -844,7 +1026,10 @@
         await initializeFirebase();
         const userRef = db.collection('users').doc(userId);
         await userRef.update({
-            sessionInfo: sessionData,
+            sessionInfo: {
+                ...sessionData,
+                lastUpdated: new Date().toISOString()
+            },
             lastLogin: new Date().toISOString()
         });
     }
@@ -852,23 +1037,55 @@
     async function disconnectUserSession(userId) {
         await initializeFirebase();
         const userRef = db.collection('users').doc(userId);
+        
+        // Set both force logout flag and clear session info
         await userRef.update({
             'sessionInfo.isOnline': false,
             'sessionInfo.sessionId': null,
-            'restrictions.forceLogout': true
+            'sessionInfo.lastActivity': new Date().toISOString(),
+            'restrictions.forceLogout': true,
+            'restrictions.forceLogoutTime': new Date().toISOString()
         });
+        
+        console.log(`User ${userId} session disconnected by admin`);
     }
 
     async function getOnlineUsers() {
         await initializeFirebase();
+        
+        // Get all approved users first, then filter by session activity
         const usersSnapshot = await db.collection('users')
-            .where('sessionInfo.isOnline', '==', true)
+            .where('status', '==', 'approved')
             .get();
         
-        return usersSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+        const now = new Date().getTime();
+        const onlineThreshold = 5 * 60 * 1000; // 5 minutes
+        
+        const onlineUsers = [];
+        
+        usersSnapshot.docs.forEach(doc => {
+            const userData = doc.data();
+            const sessionInfo = userData.sessionInfo;
+            
+            // Check if user has recent session activity
+            if (sessionInfo && sessionInfo.lastActivity) {
+                const lastActivity = new Date(sessionInfo.lastActivity).getTime();
+                const timeSinceActivity = now - lastActivity;
+                
+                // Consider user online if:
+                // 1. They have an active session ID AND
+                // 2. Their last activity was within the threshold OR they're marked as online
+                if (sessionInfo.sessionId && 
+                    (timeSinceActivity < onlineThreshold || sessionInfo.isOnline === true)) {
+                    onlineUsers.push({
+                        id: doc.id,
+                        ...userData
+                    });
+                }
+            }
+        });
+        
+        return onlineUsers;
     }
 
     async function clearForceLogout(userId) {
@@ -989,6 +1206,8 @@
         // Utility functions
         showDevtoolsToast,
         setupDevToolsProtection,
+        hashPassword, // Expose hash function for testing
+        hashPasswordOldFormat, // Expose old hash function for migration
 
         // Session Management
         updateUserSession,
@@ -1006,6 +1225,68 @@
         unlockUserAccount,
         updateUserIPRestrictions,
         checkIPRestriction,
+        
+        // Password Management
+        fixUserPasswords: async function() {
+            await initializeFirebase();
+            
+            try {
+                const allUsers = await FirebaseUserManager.getAllUsers();
+                let fixedCount = 0;
+                let issuesFound = [];
+
+                for (const user of allUsers) {
+                    let needsFix = false;
+                    let issue = '';
+                    let fixAction = '';
+
+                    // Check for missing password
+                    if (!user.hasOwnProperty('password') || user.password === null || user.password === undefined) {
+                        needsFix = true;
+                        issue = 'Missing password';
+                        fixAction = 'Cannot fix - manual intervention required';
+                    }
+                    // Check for empty password
+                    else if (user.password === '' || user.password === '0') {
+                        needsFix = true;
+                        issue = 'Empty/zero password';
+                        fixAction = 'Cannot fix - manual intervention required';
+                    }
+                    // Check for old format password (numeric only)
+                    else if (/^-?\d+$/.test(user.password)) {
+                        needsFix = true;
+                        issue = 'Old password format';
+                        fixAction = 'Migrated to new format';
+                        
+                        // Convert to new format but keep the same hash value logic
+                        const newHash = 'spvi_' + Math.abs(parseInt(user.password)).toString();
+                        await FirebaseUserManager.updateUser(user.id, { password: newHash });
+                        fixedCount++;
+                    }
+
+                    if (needsFix) {
+                        issuesFound.push({
+                            id: user.id,
+                            email: user.email,
+                            name: user.name,
+                            role: user.role,
+                            issue: issue,
+                            action: fixAction,
+                            oldPassword: user.password
+                        });
+                    }
+                }
+
+                return {
+                    totalUsers: allUsers.length,
+                    issuesFound: issuesFound.length,
+                    fixedCount: fixedCount,
+                    details: issuesFound
+                };
+            } catch (error) {
+                throw new Error('Error fixing user passwords: ' + error.message);
+            }
+        },
         
         // Configuration access
         getConfig: function() {

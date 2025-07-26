@@ -9,7 +9,8 @@
         INACTIVITY_TIMEOUT: 30 * 60 * 1000, // 30 minutes in milliseconds
         MAX_SESSION_DURATION: 8 * 60 * 60 * 1000, // 8 hours in milliseconds
         WARNING_TIME: 5 * 60 * 1000, // Show warning 5 minutes before timeout
-        CHECK_INTERVAL: 30 * 1000, // Check session every 30 seconds
+        CHECK_INTERVAL: 10 * 1000, // Check session every 10 seconds (faster for admin monitoring)
+        UPDATE_INTERVAL: 15 * 1000, // Update session in database every 15 seconds
         STORAGE_KEY: 'spvi_session_data'
     };
 
@@ -32,9 +33,11 @@
     let sessionTimer = null;
     let warningTimer = null;
     let sessionCheckInterval = null;
+    let sessionUpdateInterval = null;
     let warningModal = null;
     let isWarningShown = false;
     let sessionData = null;
+    let lastDatabaseUpdate = 0;
 
     // Activity tracking
     const ACTIVITY_EVENTS = [
@@ -213,6 +216,11 @@
         sessionCheckInterval = setInterval(() => {
             validateSession();
         }, SESSION_CONFIG.CHECK_INTERVAL);
+        
+        // Start separate interval for database updates
+        sessionUpdateInterval = setInterval(() => {
+            updateSessionInDatabase();
+        }, SESSION_CONFIG.UPDATE_INTERVAL);
     }
 
     // Validate current session
@@ -271,7 +279,34 @@
             console.warn('Could not check force logout status:', error);
         }
 
-        // Update session info in database if available
+        // Update session info in database if available - but only occasionally to reduce load
+        const currentTime = Date.now();
+        if (currentTime - lastDatabaseUpdate >= SESSION_CONFIG.UPDATE_INTERVAL) {
+            try {
+                if (window.SPViAuth?.updateUserSession && sessionData.sessionId) {
+                    await window.SPViAuth.updateUserSession(currentUser.id, {
+                        isOnline: true,
+                        sessionId: sessionData.sessionId,
+                        lastActivity: new Date().toISOString(),
+                        loginTime: new Date(sessionData.startTime).toISOString(),
+                        ipAddress: await getCurrentIP(),
+                        userAgent: navigator.userAgent
+                    });
+                    lastDatabaseUpdate = currentTime;
+                }
+            } catch (error) {
+                console.warn('Could not update session info:', error);
+            }
+        }
+    }
+
+    // Separate function for database updates
+    async function updateSessionInDatabase() {
+        if (!sessionData) return;
+        
+        const currentUser = window.SPViAuth?.getCurrentUser();
+        if (!currentUser) return;
+
         try {
             if (window.SPViAuth?.updateUserSession && sessionData.sessionId) {
                 await window.SPViAuth.updateUserSession(currentUser.id, {
@@ -282,9 +317,10 @@
                     ipAddress: await getCurrentIP(),
                     userAgent: navigator.userAgent
                 });
+                lastDatabaseUpdate = Date.now();
             }
         } catch (error) {
-            console.warn('Could not update session info:', error);
+            console.warn('Could not update session info in database:', error);
         }
     }
 
@@ -588,6 +624,11 @@
             sessionCheckInterval = null;
         }
         
+        if (sessionUpdateInterval) {
+            clearInterval(sessionUpdateInterval);
+            sessionUpdateInterval = null;
+        }
+        
         if (window.warningCountdownInterval) {
             clearInterval(window.warningCountdownInterval);
             window.warningCountdownInterval = null;
@@ -596,6 +637,7 @@
         // Remove session data
         localStorage.removeItem(SESSION_CONFIG.STORAGE_KEY);
         sessionData = null;
+        lastDatabaseUpdate = 0;
         
         // Hide warning modal
         if (warningModal) {

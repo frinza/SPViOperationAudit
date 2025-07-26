@@ -47,6 +47,15 @@
                         รีเฟรช
                     </button>
                     <a 
+                        href="admin-permission-manager.html" 
+                        class="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        จัดการสิทธิ์
+                    </a>
+                    <a 
                         href="dashboard.html" 
                         class="bg-slate-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-slate-700 transition-colors flex items-center gap-2"
                     >
@@ -385,7 +394,7 @@
                 <!-- Online Users -->
                 <div class="space-y-4">
                     <h4 class="font-medium text-slate-900">Online Users</h4>
-                    <div class="bg-slate-50 rounded-lg p-4 max-h-64 overflow-y-auto" id="online-users-list">
+                    <div class="bg-slate-50 rounded-lg p-4 max-h-64 overflow-y-auto" id="admin-online-users-list">
                         <div class="text-center text-slate-500 py-4">
                             <svg class="w-8 h-8 mx-auto mb-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
@@ -1385,11 +1394,12 @@
 
         // Advanced Admin Functions
 
-        // Online Users Management
+        // Online Users Management        
         async function refreshOnlineUsers() {
             try {
                 const onlineUsers = await SPViAuth.getOnlineUsers();
                 const container = document.getElementById('online-users-list');
+                const adminContainer = document.getElementById('admin-online-users-list');
                 
                 // Update online count badge
                 document.getElementById('online-count-badge').textContent = `${onlineUsers.length} online`;
@@ -1397,7 +1407,7 @@
                 document.getElementById('active-sessions-stat').textContent = onlineUsers.length;
                 
                 if (onlineUsers.length === 0) {
-                    container.innerHTML = `
+                    const emptyContent = `
                         <div class="text-center text-slate-500 py-8">
                             <svg class="w-12 h-12 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
@@ -1406,6 +1416,13 @@
                             <p class="text-xs text-slate-400 mt-1">Users will appear here when they log in</p>
                         </div>
                     `;
+                    const adminEmptyContent = `
+                        <div class="text-center text-slate-500 py-4">
+                            <p class="text-sm font-medium">No users online</p>
+                        </div>
+                    `;
+                    container.innerHTML = emptyContent;
+                    if (adminContainer) adminContainer.innerHTML = adminEmptyContent;
                     updateSessionStats(onlineUsers);
                     return;
                 }
@@ -1413,6 +1430,7 @@
                 // Calculate session statistics
                 updateSessionStats(onlineUsers);
 
+                // Generate detailed HTML for main monitoring section
                 const onlineHTML = onlineUsers.map(user => {
                     const sessionInfo = user.sessionInfo || {};
                     const loginTime = sessionInfo.loginTime ? new Date(sessionInfo.loginTime) : null;
@@ -1501,11 +1519,37 @@
                     `;
                 }).join('');
 
+                // Generate simple HTML for admin controls section - just name and status dot
+                const adminHTML = onlineUsers.map(user => {
+                    const sessionInfo = user.sessionInfo || {};
+                    const lastActivity = sessionInfo.lastActivity ? new Date(sessionInfo.lastActivity) : null;
+                    const timeSinceActivity = lastActivity ? Date.now() - lastActivity.getTime() : 0;
+                    
+                    // Determine status color for dot
+                    let statusColor = 'green';
+                    if (timeSinceActivity > 30 * 60 * 1000) statusColor = 'yellow';
+                    if (timeSinceActivity > 60 * 60 * 1000) statusColor = 'red';
+
+                    return `
+                        <div class="flex items-center justify-between py-2 px-3 hover:bg-slate-100 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 bg-${statusColor}-500 rounded-full"></div>
+                                <span class="text-sm font-medium text-slate-900">${user.name}</span>
+                                ${user.role === 'admin' ? 
+                                    '<span class="text-xs text-red-600 font-semibold">ADMIN</span>' : ''
+                                }
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Update both containers with different layouts
                 container.innerHTML = onlineHTML;
+                if (adminContainer) adminContainer.innerHTML = adminHTML;
             } catch (error) {
                 console.error('Error refreshing online users:', error);
                 showToast('Error loading online users: ' + error.message, 'error');
-                document.getElementById('online-users-list').innerHTML = `
+                const errorContent = `
                     <div class="text-center text-red-500 py-8">
                         <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
@@ -1514,6 +1558,14 @@
                         <p class="text-sm text-red-400 mt-1">Please check your connection and try again</p>
                     </div>
                 `;
+                const adminErrorContent = `
+                    <div class="text-center text-red-500 py-4">
+                        <p class="text-sm font-medium">Error loading users</p>
+                    </div>
+                `;
+                document.getElementById('online-users-list').innerHTML = errorContent;
+                const adminContainer = document.getElementById('admin-online-users-list');
+                if (adminContainer) adminContainer.innerHTML = adminErrorContent;
             }
         }
 

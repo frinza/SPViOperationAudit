@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการสิทธิ์ผู้ใช้งาน - SPVi Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    
+    <!-- Configuration Manager -->
+    <script src="config.js"></script>
+    
+    <!-- Session Manager -->
+    <script src="session-manager.js"></script>
+    
+    <!-- Firebase Auth System -->
+    <script src="firebase-auth.js"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="styles/spvi-main.css">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans Thai', sans-serif;
+        }
+        
+        .permission-toggle {
+            transition: all 0.3s ease;
+        }
+        
+        .permission-toggle.enabled {
+            background-color: #10b981;
+        }
+        
+        .permission-toggle.disabled {
+            background-color: #ef4444;
+        }
+        
+        .user-card {
+            transition: all 0.2s ease;
+        }
+        
+        .user-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tool-permission {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #f9fafb;
+        }
+        
+        .tool-permission.enabled {
+            background: #ecfdf5;
+            border-color: #10b981;
+        }
+        
+        .tool-permission.disabled {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">จัดการสิทธิ์ผู้ใช้งาน</h1>
+                    <p class="text-gray-600 mt-2">กำหนดสิทธิ์การเข้าถึงเครื่องมือต่าง ๆ สำหรับผู้ใช้งานในระบบ</p>
+                </div>
+                <div class="flex gap-3">
+                    <button id="refresh-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        รีเฟรช
+                    </button>
+                    <a href="dashboard.html" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                        กลับหน้าหลัก
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tools Reference -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">เครื่องมือที่มีในระบบ</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">ตรวจนับสต็อก</div>
+                        <div class="text-sm text-gray-600">stockCount</div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">ควบคุมเงินสด</div>
+                        <div class="text-sm text-gray-600">cashControl</div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
+                    <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">รายการตรวจสอบ</div>
+                        <div class="text-sm text-gray-600">checklist</div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">ปฏิทินตรวจสอบ</div>
+                        <div class="text-sm text-gray-600">auditCalendar</div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                    <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">ติดตามประเด็น</div>
+                        <div class="text-sm text-gray-600">issueTracker</div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 p-3 bg-cyan-50 rounded-lg">
+                    <div class="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">เปรียบเทียบรายงาน</div>
+                        <div class="text-sm text-gray-600">reportComparison</div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 p-3 bg-rose-50 rounded-lg">
+                    <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">วิเคราะห์ความเสี่ยง</div>
+                        <div class="text-sm text-gray-600">riskAnalyzer</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">การจัดการแบบกลุ่ม</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button id="grant-all-btn" class="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    เปิดสิทธิ์ทั้งหมดสำหรับผู้ใช้ที่เลือก
+                </button>
+                <button id="revoke-all-btn" class="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    ปิดสิทธิ์ทั้งหมดสำหรับผู้ใช้ที่เลือก
+                </button>
+                <button id="copy-permissions-btn" class="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    คัดลอกสิทธิ์จากผู้ใช้อื่น
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-12">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-gray-600">กำลังโหลดข้อมูลผู้ใช้...</p>
+        </div>
+
+        <!-- Users Grid -->
+        <div id="users-container" class="grid grid-cols-1 lg:grid-cols-2 gap-8 hidden">
+            <!-- User cards will be generated here -->
+        </div>
+
+        <!-- No Users Message -->
+        <div id="no-users-message" class="text-center py-12 hidden">
+            <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+            </svg>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">ไม่พบผู้ใช้งาน</h3>
+            <p class="text-gray-600">ไม่มีผู้ใช้งานในระบบหรือไม่สามารถโหลดข้อมูลได้</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+            <div class="flex items-center gap-3 mb-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                <h3 class="text-lg font-semibold text-gray-900">สำเร็จ</h3>
+            </div>
+            <p id="success-message" class="text-gray-600 mb-4"></p>
+            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full" onclick="closeModal('success-modal')">
+                ตกลง
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="error-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+            <div class="flex items-center gap-3 mb-4">
+                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                </svg>
+                <h3 class="text-lg font-semibold text-gray-900">เกิดข้อผิดพลาด</h3>
+            </div>
+            <p id="error-message" class="text-gray-600 mb-4"></p>
+            <button class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 w-full" onclick="closeModal('error-modal')">
+                ตกลง
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Available tools configuration
+        const availableTools = [
+            { name: 'stockCount', title: 'ตรวจนับสต็อก' },
+            { name: 'cashControl', title: 'ควบคุมเงินสด' },
+            { name: 'checklist', title: 'รายการตรวจสอบ' },
+            { name: 'auditCalendar', title: 'ปฏิทินตรวจสอบ' },
+            { name: 'issueTracker', title: 'ติดตามประเด็น' },
+            { name: 'reportComparison', title: 'เปรียบเทียบรายงาน' },
+            { name: 'riskAnalyzer', title: 'วิเคราะห์ความเสี่ยง' }
+        ];
+
+        let selectedUsers = new Set();
+        let allUsers = [];
+
+        // Check admin permission on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for auth system to be ready
+            const checkAuthReady = setInterval(() => {
+                if (window.SPViAuth && window.SPViAuth.getCurrentUser()) {
+                    clearInterval(checkAuthReady);
+                    const currentUser = window.SPViAuth.getCurrentUser();
+                    
+                    if (currentUser.role !== 'admin') {
+                        showError('คุณไม่มีสิทธิ์เข้าถึงหน้านี้ เฉพาะผู้ดูแลระบบเท่านั้น');
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 2000);
+                        return;
+                    }
+                    
+                    loadUsers();
+                }
+            }, 100);
+
+            // Timeout after 5 seconds
+            setTimeout(() => {
+                clearInterval(checkAuthReady);
+                if (!window.SPViAuth || !window.SPViAuth.getCurrentUser()) {
+                    window.location.href = 'index.html';
+                }
+            }, 5000);
+        });
+
+        // Load all users
+        async function loadUsers() {
+            try {
+                showLoading(true);
+                
+                if (!window.SPViAuth) {
+                    throw new Error('Authentication system not available');
+                }
+
+                // Get all users from Firebase
+                await window.SPViAuth.initializeFirebase();
+                const usersSnapshot = await firebase.firestore().collection('users').get();
+                
+                allUsers = usersSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })).filter(user => user.role !== 'admin'); // Don't show admin users
+                
+                displayUsers();
+                showLoading(false);
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showError('ไม่สามารถโหลดข้อมูลผู้ใช้ได้: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        // Display users
+        function displayUsers() {
+            const container = document.getElementById('users-container');
+            const noUsersMessage = document.getElementById('no-users-message');
+            
+            if (allUsers.length === 0) {
+                container.classList.add('hidden');
+                noUsersMessage.classList.remove('hidden');
+                return;
+            }
+            
+            container.classList.remove('hidden');
+            noUsersMessage.classList.add('hidden');
+            
+            container.innerHTML = allUsers.map(user => createUserCard(user)).join('');
+            
+            // Add event listeners
+            allUsers.forEach(user => {
+                // User selection checkbox
+                const checkbox = document.getElementById(`user-${user.id}-checkbox`);
+                if (checkbox) {
+                    checkbox.addEventListener('change', (e) => {
+                        if (e.target.checked) {
+                            selectedUsers.add(user.id);
+                        } else {
+                            selectedUsers.delete(user.id);
+                        }
+                    });
+                }
+                
+                // Tool permission toggles
+                availableTools.forEach(tool => {
+                    const toggle = document.getElementById(`toggle-${user.id}-${tool.name}`);
+                    if (toggle) {
+                        toggle.addEventListener('click', () => {
+                            togglePermission(user.id, tool.name);
+                        });
+                    }
+                });
+            });
+        }
+
+        // Create user card HTML
+        function createUserCard(user) {
+            const permissions = user.permissions || {};
+            
+            return `
+                <div class="user-card bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="user-${user.id}-checkbox" class="w-4 h-4 text-blue-600 rounded">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">${user.name}</h3>
+                                <p class="text-sm text-gray-600">${user.email}</p>
+                                <p class="text-xs text-gray-500">${user.department} • ${user.role}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">
+                                ${user.role}
+                            </span>
+                            ${user.restrictions?.accountLocked ? '<span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">ถูกล็อค</span>' : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">สิทธิ์การเข้าถึงเครื่องมือ</h4>
+                        ${availableTools.map(tool => {
+                            const hasPermission = permissions[tool.name] === true;
+                            return `
+                                <div class="tool-permission ${hasPermission ? 'enabled' : 'disabled'}">
+                                    <span class="text-sm font-medium">${tool.title}</span>
+                                    <button id="toggle-${user.id}-${tool.name}" class="permission-toggle px-3 py-1 text-xs font-medium rounded-full text-white ${hasPermission ? 'enabled' : 'disabled'}">
+                                        ${hasPermission ? 'เปิด' : 'ปิด'}
+                                    </button>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <div class="text-xs text-gray-500">
+                            สร้างเมื่อ: ${new Date(user.createdAt).toLocaleDateString('th-TH')}
+                            ${user.lastLogin ? `• เข้าสู่ระบบล่าสุด: ${new Date(user.lastLogin).toLocaleDateString('th-TH')}` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Toggle individual permission
+        async function togglePermission(userId, toolName) {
+            try {
+                const user = allUsers.find(u => u.id === userId);
+                if (!user) return;
+                
+                const currentPermission = user.permissions?.[toolName] === true;
+                const newPermission = !currentPermission;
+                
+                // Update permissions object
+                const updatedPermissions = { ...(user.permissions || {}) };
+                updatedPermissions[toolName] = newPermission;
+                
+                // Update in Firebase
+                await window.SPViAuth.updateUserPermissions(userId, updatedPermissions);
+                
+                // Update local data
+                user.permissions = updatedPermissions;
+                
+                // Update UI
+                const toggle = document.getElementById(`toggle-${userId}-${toolName}`);
+                const toolPermission = toggle.closest('.tool-permission');
+                
+                if (newPermission) {
+                    toggle.textContent = 'เปิด';
+                    toggle.classList.remove('disabled');
+                    toggle.classList.add('enabled');
+                    toolPermission.classList.remove('disabled');
+                    toolPermission.classList.add('enabled');
+                } else {
+                    toggle.textContent = 'ปิด';
+                    toggle.classList.remove('enabled');
+                    toggle.classList.add('disabled');
+                    toolPermission.classList.remove('enabled');
+                    toolPermission.classList.add('disabled');
+                }
+                
+                showSuccess(`อัปเดตสิทธิ์ ${toolName} สำหรับ ${user.name} เรียบร้อยแล้ว`);
+            } catch (error) {
+                console.error('Error toggling permission:', error);
+                showError('ไม่สามารถอัปเดตสิทธิ์ได้: ' + error.message);
+            }
+        }
+
+        // Bulk actions
+        document.getElementById('grant-all-btn').addEventListener('click', async () => {
+            if (selectedUsers.size === 0) {
+                showError('กรุณาเลือกผู้ใช้อย่างน้อย 1 คน');
+                return;
+            }
+            
+            if (!confirm(`ต้องการเปิดสิทธิ์ทั้งหมดสำหรับผู้ใช้ ${selectedUsers.size} คนที่เลือกหรือไม่?`)) {
+                return;
+            }
+            
+            try {
+                const allPermissions = {};
+                availableTools.forEach(tool => {
+                    allPermissions[tool.name] = true;
+                });
+                
+                for (const userId of selectedUsers) {
+                    await window.SPViAuth.updateUserPermissions(userId, allPermissions);
+                    const user = allUsers.find(u => u.id === userId);
+                    if (user) {
+                        user.permissions = allPermissions;
+                    }
+                }
+                
+                displayUsers();
+                selectedUsers.clear();
+                showSuccess(`เปิดสิทธิ์ทั้งหมดสำหรับผู้ใช้ ${selectedUsers.size} คนเรียบร้อยแล้ว`);
+            } catch (error) {
+                console.error('Error granting all permissions:', error);
+                showError('ไม่สามารถเปิดสิทธิ์ได้: ' + error.message);
+            }
+        });
+
+        document.getElementById('revoke-all-btn').addEventListener('click', async () => {
+            if (selectedUsers.size === 0) {
+                showError('กรุณาเลือกผู้ใช้อย่างน้อย 1 คน');
+                return;
+            }
+            
+            if (!confirm(`ต้องการปิดสิทธิ์ทั้งหมดสำหรับผู้ใช้ ${selectedUsers.size} คนที่เลือกหรือไม่?`)) {
+                return;
+            }
+            
+            try {
+                const noPermissions = {};
+                availableTools.forEach(tool => {
+                    noPermissions[tool.name] = false;
+                });
+                
+                for (const userId of selectedUsers) {
+                    await window.SPViAuth.updateUserPermissions(userId, noPermissions);
+                    const user = allUsers.find(u => u.id === userId);
+                    if (user) {
+                        user.permissions = noPermissions;
+                    }
+                }
+                
+                displayUsers();
+                selectedUsers.clear();
+                showSuccess(`ปิดสิทธิ์ทั้งหมดสำหรับผู้ใช้ ${selectedUsers.size} คนเรียบร้อยแล้ว`);
+            } catch (error) {
+                console.error('Error revoking all permissions:', error);
+                showError('ไม่สามารถปิดสิทธิ์ได้: ' + error.message);
+            }
+        });
+
+        document.getElementById('refresh-btn').addEventListener('click', loadUsers);
+
+        // Utility functions
+        function showLoading(show) {
+            const loadingState = document.getElementById('loading-state');
+            const usersContainer = document.getElementById('users-container');
+            const noUsersMessage = document.getElementById('no-users-message');
+            
+            if (show) {
+                loadingState.classList.remove('hidden');
+                usersContainer.classList.add('hidden');
+                noUsersMessage.classList.add('hidden');
+            } else {
+                loadingState.classList.add('hidden');
+            }
+        }
+
+        function showSuccess(message) {
+            document.getElementById('success-message').textContent = message;
+            document.getElementById('success-modal').classList.remove('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-modal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
