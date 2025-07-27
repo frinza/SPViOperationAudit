@@ -217,10 +217,10 @@
                 border-radius: 9999px !important;
             }
             
-            /* Touch-friendly improvements */
+            /* Touch-friendly improvements - exclude all navigation buttons */
             .filter-btn,
             .quarter-filter-btn,
-            button {
+            button:not(#spvi-user-info button):not(.spvi-nav-container button):not(.spvi-nav-link):not(.spvi-nav-toggle):not(.spvi-logout-btn) {
                 min-height: 44px !important;
                 min-width: 44px !important;
                 touch-action: manipulation !important;
