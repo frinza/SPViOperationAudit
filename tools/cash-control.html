@@ -37,6 +37,76 @@
         .dynamic-row { transition: all 0.3s ease-in-out; overflow: hidden; }
         .dynamic-row.removing { transform: translateX(100%); max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; }
         
+        /* Searchable dropdown styling */
+        .searchable-dropdown {
+            position: relative;
+        }
+        
+        .dropdown-arrow {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            transition: transform 0.2s;
+        }
+        
+        .searchable-dropdown.open .dropdown-arrow {
+            transform: translateY(-50%) rotate(180deg);
+        }
+        
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #d1d5db;
+            border-top: none;
+            background: white;
+            border-radius: 0 0 0.375rem 0.375rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+        }
+        
+        .dropdown-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .dropdown-option:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .dropdown-option.highlighted {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .dropdown-option:last-child {
+            border-bottom: none;
+        }
+        
+        .no-results {
+            padding: 8px 12px;
+            color: #6b7280;
+            font-style: italic;
+            text-align: center;
+        }
+        
+        /* Remove old dropdown styling */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+        
         .print-only { display: none; }
         .attachment-thumbnail {
             width: 2.5rem;
@@ -112,6 +182,22 @@
                 page-break-inside: avoid !important;
             }
             .dynamic-row input[type="text"], .dynamic-row input[type="number"] {
+                padding: 1px 4px !important;
+                font-size: 9pt !important;
+                border: 1px solid #bbb !important;
+                background: #fafafa !important;
+            }
+            /* Print styling for dropdown and search elements */
+            select, input[type="text"], input[type="date"] {
+                padding: 1px 4px !important;
+                font-size: 9pt !important;
+                border: 1px solid #bbb !important;
+                background: #fafafa !important;
+            }
+            .dropdown-list, .dropdown-arrow {
+                display: none !important;
+            }
+            .searchable-dropdown input {
                 padding: 1px 4px !important;
                 font-size: 9pt !important;
                 border: 1px solid #bbb !important;
@@ -229,7 +315,22 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label for="department" class="block text-sm font-medium text-gray-700">สาขา/แผนก</label>
-                    <input type="text" id="department" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="เช่น B000-คลังสินค้าสำนักงานใหญ่">
+                    <div class="relative">
+                        <div class="searchable-dropdown">
+                            <input type="text" id="department-search" placeholder="ค้นหาหรือเลือกสาขา..." 
+                                   class="mt-1 w-full p-2 pr-8 border border-gray-300 rounded-md shadow-sm bg-white"
+                                   autocomplete="off">
+                            <div class="dropdown-arrow">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                            <div id="dropdown-list" class="dropdown-list hidden">
+                                <div class="dropdown-option" data-value="">-- เลือกสาขา --</div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="department" name="department">
+                    </div>
                 </div>
                 <div>
                     <label for="custodian" class="block text-sm font-medium text-gray-700">ผู้ดูแลเงิน (ชื่อ-ตำแหน่ง)</label>
@@ -417,6 +518,253 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Branch list data
+            const branches = [
+                'B000 HO บมจ.เอส พี วี ไอ(สำนักงานใหญ่) Iphone',
+                'B000 HO บมจ.เอส พี วี ไอ(สำนักงานใหญ่) SVOA',
+                'B000 HO บมจ.เอส พี วี ไอ(สำนักงานใหญ่) อุปกรณ์เสริม',
+                'B002 IBeat – IT Mall ไอที มอลล์ ฟอร์จูน (B-IT)',
+                'B004 IBeat Esplanade เอสพลานาด ซีนีเพล็กซ์ รัชดาภิเษก(B-ES)',
+                'B006 Ustore TU Rungsit มหาวิทยาลัยธรรมศาสตร์ รังสิต (TUR)',
+                'B007 Ustore ABAC Bangna มหาวิทยาลัยอัสสัมชัญ สุวรรณภูมิ (ABB)',
+                'B008 Ustore TU Thaprajan มหาวิทยาลัยธรรมศาสตร์ ท่าพระจันทร์ (TUT)',
+                'B009 iStudio Central Chaengwattana เซ็นทรัลพลาซ่า แจ้งวัฒนะ (S-CW)',
+                'B010 iStudio Seacon Square ซีคอนสแควร์ ศรีนครินทร์ (S-SQ)',
+                'B012 Ustore Kasetsart University มหาวิทยาลัยเกษตรศาสตร์ บางเขน (KU)',
+                'B013 Ustore Mahidol University มหาวิทยาลัยมหิดล ศาลายา(MU)',
+                'B016 Ustore Bangkok University Rangsit มหาวิทยาลัยกรุงเทพ รังสิต (BUR)',
+                'B017 Ustore Dhurakij Pundit University มหาวิทยาลัยธุรกิจบัณฑิตย์(DPU)',
+                'B018 iStudio Central Rama 9 เซ็นทรัลพลาซา แกรนด์ พระราม 9 (S-CR)',
+                'B019 Ustore Burapha University มหาวิทยาลัยบูรพา (BUU)',
+                'B020 iCenter Central Changwattana เซ็นทรัลพลาซ่า แจ้งวัฒนะ (C-CCW)',
+                'B021 IBeat Gateway Ekamai เกตเวย์ เอกมัย (B-GE)',
+                'B024 IBeat – Central Chiang Rai เซ็นทรัล เชียงราย (B-CCR)',
+                'B031 iStudio Central Rayong เซ็นทรัลพลาซา ระยอง (S-CRY)',
+                'B032 iCenter Central Chiang Rai เซ็นทรัลเชียงราย (C-CCR)',
+                'B034 AIS Lotus Rayong โลตัสระยอง (A-LR)',
+                'B035 AIS Big C Aranyaprathet บิ๊กซี อรัญประเทศ(A-BA)',
+                'B036 iCenter Laemtong Rayong แหลมทอง ระยอง (C-LRY)',
+                'B037 Mobi Phayao พะเยา (M-PY)',
+                'B038 Mobi Lumphun ลำพูน (M-LP)',
+                'B039 iCenter Homepro Nakhonpatom ศูนย์การค้าโฮมโปรนครปฐม (I-HNT)',
+                'B040 AIS Robinson Lifestyle Chanthaburiโรบินสัน ไลฟ์สไตล์ จันทบุรี (A-RJ)',
+                'B044 AIS Telewiz Lotus Rojana โลตัส โรจนะ (A-LRJ)',
+                'B046 AIS Lotus Ban Chang โลตัส บ้านฉาง (A-LC)',
+                'B047 AIS Telewiz Lotus lom sak โลตัส หล่มสัก(A-LL)',
+                'B048 I Beat Robinson kampaeng phet โรบินสัน กำแพงเพชร (B-RK)',
+                'B049 Mobi phichit พิจิตร (M-PJ)',
+                'B050 AIS Telewiz Big C Wichian Buri บิ๊กซี วิเชียรบุรี(A-BW)',
+                'B051 AIS Robinson Kamphaeng Phet โรบินสันกำแพงเพชร(A-RK)',
+                'B052 AIS Buddy phayao ศูนย์การค้า ท็อปส์ พลาซ่า พะเยา (A-PY)',
+                'B053 AIS Lotus Phetchaboon โลตัส เพชรบูรณ์ (A-LP)',
+                'B054 AIS shop Big C sattahip ศูนย์การค้าบิ๊กซีซุปเปอร์เซนเตอร์สาขาสัตหีบ (A-BS)',
+                'B055 iCenter G Tower อาคารจี ทาวเวอร์ แกรนด์ พระราม 9 (C-GR)',
+                'B056 AIS robinson chonburi โรบินสันชลบุรี2 (อมตะนคร) (A-RC)',
+                'B058 AIS Telewiz U-Tapao โลตัส สาขาอู่ตะเภา (A-UT)',
+                'B059 AIS Central Rayong เซ็นทรัล พลาซา สาขา ระยอง (A-CR)',
+                'B061 Ustore Mae Fah Luang University มหาวิทยาลัยแม่ฟ้าหลวง(MFU)',
+                'B062 Ustore KMUTNB พระจอมเกล้าพระนครเหนือ (KMU)',
+                'B063 Ustore Naresuan University มหาวิทยาลัยนเรศวร(NU)',
+                'B064 AIS Telewiz Si-Thap ศรีเทพ(A-ST)',
+                'B065 Ustore Mahasarakham University มหาวิทยาลัยมหาสารคาม',
+                'B066 Ustore Rambhai Barni Rajabhat University มรภ.รำไพพรรณี (RBRU)',
+                'B067 Ustore Chiang Mai Rajabhat University มรภ.เชียงใหม่ (CMRU)',
+                'B068 A-Store มหาวิทยาลัยศรีนครินทรวิโรฒ ประสานมิตร (A-SWU)',
+                'B069 Ustore Prince of Songkla University มหาวิทยาลัยสงขลานครินทร์ (PSU)',
+                'B070 A-Store มหาวิทยาลัยสงขลานครินทร์ (A-PSU)',
+                'B071 Ustore University of Phayao มหาวิทยาลัยพะเยา (UP)',
+                'B072 Ustore SUT มหาวิทยาลัยเทคโนโลยีสุรนารี (SUT)',
+                'B073 Ustore Maejo University มหาวิทยาลัยแม่โจ้ (MJU)',
+                'B074 Ustore RMUTT มหาวิทยาลัยเทคโนโลยีราชมงคลธัญบุรี(RMUTT)',
+                'B075 AIS Telewiz Lotus Chonburi โลตัส สาขา ชลบุรี (A-LCB)',
+                'B076 A-Store มหาวิทยาลัยมหิดล ศาลายา (A-MU)',
+                'B077 iCenter Phuke ศูนย์การค้าเซ็นทรัล ภูเก็ต (I-PNPT)',
+                'B078 AIS Robinson Mae Sot โรบินสัน แม่สอด (A-RM)',
+                'B079 A-Store มหาวิทยาลัยเทคโนโลยีสุรนารี (A-SUT)',
+                'B080 Icenter Robinson Chanthaburi โรบินสันไลฟ์สไตล์ จันทบุรี (I-RJ)',
+                'B081 AIS Telewiz Laemtong Chonburi แหลมทองชลบุรี(A-LCH)',
+                'B083 A-Store Bangkok University Rangsit มหาวิทยาลัยกรุงเทพ รังสิต (A-BU)',
+                'B084 Mobi Suvarnabhumi มาร์เก็ตวิลเลจ สุวรรณภูมิ(M-MS)',
+                'B085 Ustore Nakhon Pathom Rajabhat University มรภ.นครปฐม (NPRU)',
+                'B087 AIS Robinson Ban Chang โรบินสัน บ้านฉาง(A-RB)',
+                'B089 A-Store มหาวิทยาลัยแม่ฟ้าหลวง (A-MFU)',
+                'B090 U Store Pibulsongkram Rajabhat University มรภ.พิบูลสงคราม(PSRU)',
+                'B091 A-Store มหาวิทยาลัยราชภัฏเชียงใหม่ (A-CMRU)',
+                'B092 AIS Shop Robinson Lifestyle Thalang โรบินสัน ไลฟ์สไตล์ ถลาง(A-RT)',
+                'B093 Ustore TU Rungsit-MED ม.ธรรมศาสตร์รังสิต คณะแพทย์ฯ (TUMED)',
+                'B094 U Store SIAMSCAPE สยามสเคป',
+                'B095 A-Store มหาวิทยาลัยมหาสารคาม (A-MSU)',
+                'B096 A-Store มหาวิทยาลัยเกษตรศาสตร์ ศรีราชา (A-KUSRC)',
+                'B097 Ustore Kasetsart University มหาวิทยาลัยเกษตรศาสตร์ ศรีราชา (U-KUSRC)',
+                'B098 Mobi Lotus Bo Win โลตัส บ่อวิน(M-LBV)',
+                'B099 AIS Mini Shop Lotus Pak Kret โลตัสปากเกร็ด (M-LPK)',
+                'B100 AIS Telewiz Lotus Sattahip โลตัสสัตหีบ(A-LS)',
+                'B101 AIS Buddy Krua Sahapat เครือสหพัฒน์ จ.ชลบุรี (A-KS)',
+                'B102 A-Store Kasetsart University มหาวิทยาลัยเกษตรศาสตร์ (KU)',
+                'B103 Ustore RMUTK มหาวิทยาลัยเทคโนโลยีราชมงคลกรุงเทพ(RMUTK)',
+                'B104 Ustore Phranakhon Rajabhat Universityมหาวิทยาลัยราชภัฏพระนคร(PNRU)',
+                'B105 Ustore Nakhon Sawan Rajabhat University มหาวิทยาลัยราชภัฐนครสวรรค์',
+                'B106 iStudio Central Westville ราชพฤกษ์(ศูนย์ iCenter)',
+                'B107 iStudio Central Nakhon Sawan เซ็นทรัล นครสวรรค์ (ศูนย์ iCenter)',
+                'B109 AIS Telewiz Lotus พะเยา(A-LPY)',
+                'B110 Mobi Esplanade',
+                'B111 Head Office <AIS Shop Robinson Chalong>',
+                'B112 Head Office <AIS Telewiz Lotus Samkong>'
+            ];
+
+            // Populate branch dropdown with searchable functionality
+            const departmentSearch = document.getElementById('department-search');
+            const departmentHidden = document.getElementById('department');
+            const dropdownList = document.getElementById('dropdown-list');
+            const searchableDropdown = document.querySelector('.searchable-dropdown');
+            
+            // Populate dropdown options
+            branches.forEach(branch => {
+                const option = document.createElement('div');
+                option.className = 'dropdown-option';
+                option.setAttribute('data-value', branch);
+                option.textContent = branch;
+                dropdownList.appendChild(option);
+            });
+
+            // Searchable dropdown functionality
+            let filteredBranches = [...branches];
+            let highlightedIndex = -1;
+            let isOpen = false;
+
+            function filterOptions(searchTerm) {
+                filteredBranches = branches.filter(branch => 
+                    branch.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                
+                // Clear existing options
+                dropdownList.innerHTML = '<div class="dropdown-option" data-value="">-- เลือกสาขา --</div>';
+                
+                if (filteredBranches.length === 0 && searchTerm) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'no-results';
+                    noResults.textContent = 'ไม่พบสาขาที่ตรงกับการค้นหา';
+                    dropdownList.appendChild(noResults);
+                } else {
+                    filteredBranches.forEach(branch => {
+                        const option = document.createElement('div');
+                        option.className = 'dropdown-option';
+                        option.setAttribute('data-value', branch);
+                        option.textContent = branch;
+                        dropdownList.appendChild(option);
+                    });
+                }
+                
+                highlightedIndex = -1;
+                updateHighlight();
+            }
+
+            function updateHighlight() {
+                const options = dropdownList.querySelectorAll('.dropdown-option:not(.no-results)');
+                options.forEach((option, index) => {
+                    option.classList.toggle('highlighted', index === highlightedIndex);
+                });
+            }
+
+            function openDropdown() {
+                isOpen = true;
+                searchableDropdown.classList.add('open');
+                dropdownList.classList.remove('hidden');
+            }
+
+            function closeDropdown() {
+                isOpen = false;
+                searchableDropdown.classList.remove('open');
+                dropdownList.classList.add('hidden');
+                highlightedIndex = -1;
+                updateHighlight();
+            }
+
+            function selectOption(value, text) {
+                departmentHidden.value = value;
+                departmentSearch.value = text;
+                closeDropdown();
+            }
+
+            // Event listeners
+            departmentSearch.addEventListener('focus', () => {
+                filterOptions(departmentSearch.value);
+                openDropdown();
+            });
+
+            departmentSearch.addEventListener('input', (e) => {
+                const searchTerm = e.target.value;
+                filterOptions(searchTerm);
+                if (!isOpen) openDropdown();
+                
+                // If exact match, select it
+                const exactMatch = branches.find(branch => 
+                    branch.toLowerCase() === searchTerm.toLowerCase()
+                );
+                if (exactMatch) {
+                    departmentHidden.value = exactMatch;
+                } else {
+                    departmentHidden.value = '';
+                }
+            });
+
+            departmentSearch.addEventListener('keydown', (e) => {
+                if (!isOpen) return;
+                
+                const options = dropdownList.querySelectorAll('.dropdown-option:not(.no-results)');
+                
+                switch (e.key) {
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        highlightedIndex = Math.min(highlightedIndex + 1, options.length - 1);
+                        updateHighlight();
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        highlightedIndex = Math.max(highlightedIndex - 1, -1);
+                        updateHighlight();
+                        break;
+                    case 'Enter':
+                        e.preventDefault();
+                        if (highlightedIndex >= 0 && options[highlightedIndex]) {
+                            const selectedOption = options[highlightedIndex];
+                            selectOption(selectedOption.dataset.value, selectedOption.textContent);
+                        } else if (filteredBranches.length === 1) {
+                            selectOption(filteredBranches[0], filteredBranches[0]);
+                        }
+                        break;
+                    case 'Escape':
+                        closeDropdown();
+                        departmentSearch.blur();
+                        break;
+                }
+            });
+
+            // Click on dropdown options
+            dropdownList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('dropdown-option') && e.target.dataset.value !== undefined) {
+                    selectOption(e.target.dataset.value, e.target.textContent);
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!searchableDropdown.contains(e.target)) {
+                    closeDropdown();
+                }
+            });
+
+            // Handle dropdown arrow click
+            searchableDropdown.addEventListener('click', (e) => {
+                if (e.target.closest('.dropdown-arrow')) {
+                    if (isOpen) {
+                        closeDropdown();
+                    } else {
+                        departmentSearch.focus();
+                    }
+                }
+            });
+
             // State for storing attachments
             let attachments = {};
             let summaryData = {};
