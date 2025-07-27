@@ -725,6 +725,156 @@
         }
     }
 
+    // Global notification checker - can be called from any page
+    window.updateGlobalNotifications = async function() {
+        try {
+            const currentUser = getCurrentUser();
+            if (!currentUser) return;
+
+            // Initialize Firebase if not already done
+            await initializeFirebase();
+            
+            // Get all issues from Firestore
+            const issuesSnapshot = await db.collection('issues').get();
+            const allIssues = issuesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Check for overdue issues for current user
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const userOverdueIssues = allIssues.filter(issue => {
+                // Only check issues assigned to current user
+                if (issue.assignee !== currentUser.name) return false;
+                
+                // Only check non-completed issues
+                if (issue.status === 'เสร็จสิ้น') return false;
+                
+                // Check if due date exists and is in the past
+                if (!issue.dueDate) return false;
+                
+                const dueDate = new Date(issue.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                
+                return dueDate < today;
+            });
+
+            // Wait for notification elements to exist with retry logic
+            let retries = 0;
+            const maxRetries = 10;
+            let notificationBell, notificationBadge;
+            
+            while (retries < maxRetries) {
+                notificationBell = document.getElementById('spvi-notification-bell');
+                notificationBadge = document.getElementById('spvi-notification-badge');
+                
+                if (notificationBell && notificationBadge) {
+                    break;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+                retries++;
+            }
+
+            if (notificationBell && notificationBadge) {
+                if (userOverdueIssues.length > 0) {
+                    notificationBadge.textContent = userOverdueIssues.length;
+                    notificationBadge.style.display = 'flex';
+                    notificationBell.style.color = '#ef4444'; // red-500
+                } else {
+                    notificationBadge.style.display = 'none';
+                    notificationBell.style.color = '#9ca3af'; // gray-400
+                }
+            }
+            
+            // Store notifications globally
+            window.spviOverdueNotifications = userOverdueIssues;
+            
+            return userOverdueIssues;
+        } catch (error) {
+            console.error('Error updating notifications:', error);
+            return [];
+        }
+    };
+
+    // Global notification modal function
+    window.showNotificationModal = function() {
+        // Check if we have overdue notifications stored
+        const overdueIssues = window.spviOverdueNotifications || [];
+        
+        if (overdueIssues.length === 0) {
+            alert('ไม่มีประเด็นที่ค้างครบกำหนดสำหรับคุณ');
+            return;
+        }
+
+        // Create modal if it doesn't exist
+        let modal = document.getElementById('notification-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'notification-modal';
+            modal.className = 'modal-backdrop';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                padding: 1rem;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 8px; max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto; padding: 1.5rem;">
+                    <div style="display: flex; justify-content: between-content; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem;">
+                        <h2 style="font-size: 1.25rem; font-weight: 600; color: #dc2626;">🔔 ประเด็นที่ค้างครบกำหนด</h2>
+                        <button onclick="this.closest('#notification-modal').style.display='none'" style="background: #f3f4f6; border: none; border-radius: 4px; padding: 0.5rem; cursor: pointer; color: #6b7280;">✕</button>
+                    </div>
+                    <div id="notification-content"></div>
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; text-align: right;">
+                        <button onclick="this.closest('#notification-modal').style.display='none'" style="background: #6b7280; color: white; border: none; border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; margin-right: 0.5rem;">ปิด</button>
+                        <button onclick="window.location.href='${window.location.pathname.includes('/tools/') ? '../' : './'}tools/issue-tracker.html'" style="background: #dc2626; color: white; border: none; border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer;">ไปที่ Issue Tracker</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Close modal when clicking backdrop
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        // Update modal content
+        const content = document.getElementById('notification-content');
+        if (overdueIssues.length > 0) {
+            content.innerHTML = overdueIssues.map(issue => {
+                const daysOverdue = Math.floor((new Date() - new Date(issue.dueDate)) / (1000 * 60 * 60 * 24));
+                return `
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 1rem; margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <h3 style="font-weight: 600; color: #dc2626; margin-bottom: 0.25rem;">${issue.branch}</h3>
+                                <p style="color: #7f1d1d; margin-bottom: 0.5rem;">${issue.issue}</p>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <span style="background: #dc2626; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-weight: 600; white-space: nowrap;">⏰ เกิน ${daysOverdue} วัน</span>
+                                    <span style="background: #fecaca; padding: 0.25rem 0.5rem; border-radius: 0.25rem; white-space: nowrap;">📊 ${issue.status}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        modal.style.display = 'flex';
+    };
+
     // Add user info bar to pages
     function addUserInfo() {
         // Check if this page should skip the user info bar
@@ -839,6 +989,12 @@
                     </div>
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
                         ${userManagementButton}
+                        <button id="spvi-notification-bell" class="spvi-notification-btn" onclick="showNotificationModal()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: #9ca3af; padding: 0.4rem; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; position: relative; display: flex; align-items: center; justify-content: center;">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                            <span id="spvi-notification-badge" style="position: absolute; top: -4px; right: -4px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; font-weight: bold; display: none; align-items: center; justify-content: center; line-height: 1;"></span>
+                        </button>
                         <button id="spvi-logout-btn" class="spvi-logout-btn">
                             ออกจากระบบ
                         </button>
@@ -957,6 +1113,26 @@
                 }
             });
         }
+        
+        // Initialize notification system with retry logic
+        const initNotifications = async () => {
+            let attempts = 0;
+            const maxAttempts = 5;
+            
+            while (attempts < maxAttempts) {
+                attempts++;
+                
+                if (window.updateGlobalNotifications) {
+                    await window.updateGlobalNotifications();
+                    break;
+                } else {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+        };
+        
+        // Start notification initialization
+        setTimeout(initNotifications, 500);
     }
 
     // Refresh user info display in navigation bar
@@ -1007,6 +1183,82 @@
         }
     }
 
+    // Global notification functions
+    window.showNotificationModal = function() {
+        // Check if we have overdue notifications stored
+        const overdueIssues = window.spviOverdueNotifications || [];
+        
+        if (overdueIssues.length === 0) {
+            alert('ไม่มีประเด็นที่ค้างครบกำหนดสำหรับคุณ');
+            return;
+        }
+
+        // Create modal if it doesn't exist
+        let modal = document.getElementById('notification-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'notification-modal';
+            modal.className = 'modal-backdrop';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+            modal.innerHTML = `
+                <div style="background-color: white; padding: 1.5rem; border-radius: 1rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); width: 95%; max-width: 600px; max-height: 85vh; overflow-y: auto; margin: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                        <h2 style="font-size: 1.25rem; font-weight: bold; color: #ef4444; margin: 0; flex: 1; min-width: 200px;">🔔 ประเด็นที่ค้างครบกำหนด</h2>
+                        <button id="close-notification-modal" style="color: #9ca3af; background: none; border: none; cursor: pointer; font-size: 1.5rem; padding: 0.25rem; border-radius: 0.25rem; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">&times;</button>
+                    </div>
+                    <div id="notification-content" style="margin-bottom: 1.5rem; max-height: 400px; overflow-y: auto;">
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; flex-wrap: wrap;">
+                        <button id="dismiss-notifications" style="background: #e2e8f0; color: #475569; font-weight: 600; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; transition: background 0.2s; min-width: 80px;" onmouseover="this.style.background='#cbd5e1'" onmouseout="this.style.background='#e2e8f0'">ปิด</button>
+                        <button id="go-to-issues" style="background: #3b82f6; color: white; font-weight: 600; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; transition: background 0.2s; min-width: 120px;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">ไปที่หน้าติดตามประเด็น</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // Add event listeners
+            document.getElementById('close-notification-modal').addEventListener('click', function() {
+                modal.remove();
+            });
+            document.getElementById('dismiss-notifications').addEventListener('click', function() {
+                modal.remove();
+            });
+            document.getElementById('go-to-issues').addEventListener('click', function() {
+                modal.remove();
+                // Check if we're already on the issue tracker page
+                const isInTools = window.location.pathname.includes('/tools/');
+                const issueTrackerPath = isInTools ? 'issue-tracker.html' : 'tools/issue-tracker.html';
+                
+                if (!window.location.pathname.includes('issue-tracker.html')) {
+                    window.location.href = issueTrackerPath;
+                }
+            });
+        }
+
+        // Populate modal content
+        const content = document.getElementById('notification-content');
+        if (content) {
+            content.innerHTML = overdueIssues.map(issue => {
+                const daysOverdue = Math.floor((new Date() - new Date(issue.dueDate)) / (1000 * 60 * 60 * 24));
+                return `
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 0.5rem; padding: 1rem; margin-bottom: 0.75rem; position: relative;">
+                        <div>
+                            <h3 style="font-weight: 600; color: #991b1b; margin: 0 0 0.5rem 0; font-size: 0.95rem; line-height: 1.3;">${issue.branch || 'ไม่ระบุสาขา'}</h3>
+                            <p style="font-size: 0.85rem; color: #7f1d1d; margin: 0 0 0.75rem 0; line-height: 1.4;">${issue.issue || 'ไม่มีรายละเอียด'}</p>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.75rem; color: #dc2626;">
+                                <span style="background: #fecaca; padding: 0.25rem 0.5rem; border-radius: 0.25rem; white-space: nowrap;">📅 ${new Date(issue.dueDate).toLocaleDateString('th-TH')}</span>
+                                <span style="background: #dc2626; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-weight: 600; white-space: nowrap;">⏰ เกิน ${daysOverdue} วัน</span>
+                                <span style="background: #fecaca; padding: 0.25rem 0.5rem; border-radius: 0.25rem; white-space: nowrap;">📊 ${issue.status}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        modal.style.display = 'flex';
+    };
+
     // Initialize authentication when DOM loads
     function init() {
         const currentPage = window.location.pathname;
@@ -1025,6 +1277,13 @@
             if (!window.skipUserInfoBar) {
                 addUserInfo();
             }
+            
+            // Start periodic notification checks (every 2 minutes)
+            setInterval(() => {
+                if (window.updateGlobalNotifications) {
+                    window.updateGlobalNotifications();
+                }
+            }, 2 * 60 * 1000);
         }
     }
 

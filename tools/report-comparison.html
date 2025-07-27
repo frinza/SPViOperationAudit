@@ -213,8 +213,8 @@
                 return;
             }
             
-            // Add user info to navigation
-            SPViAuth.addUserInfo();
+            // User info will be added automatically by firebase-auth.js init()
+            // No need to call addUserInfo() manually
             
             // Setup centralized devtools protection
             SPViAuth.setupDevToolsProtection();

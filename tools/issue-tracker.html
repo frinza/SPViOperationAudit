@@ -64,6 +64,34 @@
             background-color: #dcfce7; /* green-100 */
         }
 
+        /* Notification Bell Styling */
+        .spvi-notification-btn:hover {
+            background: rgba(255,255,255,0.3) !important;
+            transform: scale(1.05);
+        }
+        
+        .spvi-notification-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Modal styling for notifications */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-backdrop.hidden {
+            display: none;
+        }
+
         /* Mobile Responsive Table Enhancements */
         @media (max-width: 768px) {
             /* Hide traditional table structure on mobile */
@@ -76,58 +104,59 @@
                 display: block !important;
             }
             
-            /* ULTRA COMPACT MOBILE CARDS - OVERRIDE ALL EXTERNAL CSS */
+            /* ENHANCED MOBILE CARDS - IMPROVED UI/UX */
             .issue-card {
                 background: white !important;
-                border-radius: 0.5rem !important;
+                border-radius: 0.75rem !important;
                 border: 1px solid #e2e8f0 !important;
-                margin-bottom: 0.5rem !important;
+                margin-bottom: 0.75rem !important;
                 margin-top: 0 !important;
                 margin-left: 0 !important;
                 margin-right: 0 !important;
-                padding: 0.5rem !important;
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-                transition: all 0.2s ease !important;
+                padding: 1rem !important;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+                transition: all 0.3s ease !important;
                 position: relative !important;
+                min-height: 44px !important; /* iOS touch target minimum */
             }
             
             .issue-card:hover {
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                transform: translateY(-2px);
             }
             
             .issue-card.status-pending {
-                border-left: 4px solid #ef4444;
+                border-left: 6px solid #ef4444;
                 background-color: #fef2f2;
             }
             
             .issue-card.status-in-progress {
-                border-left: 4px solid #eab308;
+                border-left: 6px solid #eab308;
                 background-color: #fefce8;
             }
             
             .issue-card.status-completed {
-                border-left: 4px solid #22c55e;
+                border-left: 6px solid #22c55e;
                 background-color: #f0fdf4;
             }
             
-            /* ULTRA COMPACT SPACING - AGGRESSIVE OVERRIDES */
+            /* IMPROVED SPACING AND TYPOGRAPHY */
             .issue-card-header {
                 display: flex !important;
                 justify-content: space-between !important;
-                align-items: center !important;
-                margin-bottom: 0.5rem !important;
+                align-items: flex-start !important;
+                margin-bottom: 0.75rem !important;
                 margin-top: 0 !important;
-                gap: 0.5rem !important;
+                gap: 0.75rem !important;
                 padding: 0 !important;
             }
             
             .issue-card-title {
-                font-weight: 600 !important;
+                font-weight: 700 !important;
                 color: #1f2937 !important;
                 flex: 1 !important;
-                font-size: 0.85rem !important;
-                line-height: 1.1 !important;
+                font-size: 1rem !important;
+                line-height: 1.3 !important;
                 margin: 0 !important;
                 padding: 0 !important;
             }
@@ -135,14 +164,17 @@
             .status-indicator-container {
                 display: flex !important;
                 align-items: center !important;
-                gap: 0.375rem !important;
+                gap: 0.5rem !important;
                 margin: 0 !important;
-                padding: 0 !important;
+                padding: 0.25rem 0.75rem !important;
+                background: rgba(255, 255, 255, 0.8) !important;
+                border-radius: 1rem !important;
+                backdrop-filter: blur(4px) !important;
             }
             
             .status-dot {
-                width: 8px !important;
-                height: 8px !important;
+                width: 10px !important;
+                height: 10px !important;
                 border-radius: 50% !important;
                 display: inline-block !important;
                 margin: 0 !important;
@@ -152,20 +184,23 @@
             
             .status-dot.pending {
                 background-color: #ef4444 !important;
+                box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
             }
             
             .status-dot.in-progress {
                 background-color: #eab308 !important;
+                box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2) !important;
             }
             
             .status-dot.completed {
                 background-color: #22c55e !important;
+                box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2) !important;
             }
             
             .status-text {
-                font-size: 0.75rem !important;
-                font-weight: 500 !important;
-                color: #64748b !important;
+                font-size: 0.875rem !important;
+                font-weight: 600 !important;
+                color: #374151 !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 line-height: 1 !important;
@@ -173,14 +208,14 @@
             
             .issue-card-content {
                 color: #4b5563 !important;
-                margin-bottom: 0.5rem !important;
+                margin-bottom: 0.75rem !important;
                 margin-top: 0 !important;
-                line-height: 1.4 !important;
-                font-size: 0.875rem !important;
+                line-height: 1.5 !important;
+                font-size: 0.9rem !important;
                 background: rgba(0, 0, 0, 0.02) !important;
-                padding: 0.375rem !important;
-                border-radius: 0.375rem !important;
-                border-left: 2px solid #e5e7eb !important;
+                padding: 0.75rem !important;
+                border-radius: 0.5rem !important;
+                border-left: 3px solid #e5e7eb !important;
                 border-top: none !important;
                 border-right: none !important;
                 border-bottom: none !important;
@@ -189,43 +224,44 @@
             .issue-card-meta {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 0.5rem;
-                margin-bottom: 0.5rem;
+                gap: 0.75rem;
+                margin-bottom: 0.75rem;
             }
             
-            /* ULTRA COMPACT SINGLE ROW - AGGRESSIVE OVERRIDES */
+            /* IMPROVED MOBILE CONTROLS */
             .issue-card-single-row {
                 display: flex !important;
-                gap: 0.375rem !important;
+                gap: 0.5rem !important;
                 align-items: end !important;
                 flex-wrap: wrap !important;
-                margin-top: 0.375rem !important;
+                margin-top: 0.75rem !important;
                 margin-bottom: 0 !important;
-                padding: 0 !important;
+                padding: 0.75rem 0 0 0 !important;
+                border-top: 1px solid #e5e7eb !important;
             }
             
             .issue-card-field-inline {
                 display: flex !important;
                 flex-direction: column !important;
-                gap: 0.125rem !important;
-                min-width: 85px !important;
-                max-width: 85px !important;
-                flex: 0 0 85px !important;
+                gap: 0.25rem !important;
+                min-width: 100px !important;
+                max-width: 100px !important;
+                flex: 0 0 100px !important;
                 margin: 0 !important;
                 padding: 0 !important;
             }
             
             .issue-card-field-inline.flex-grow {
-                flex: 0 0 95px !important;
-                min-width: 95px !important;
-                max-width: 95px !important;
+                flex: 1 !important;
+                min-width: 120px !important;
+                max-width: none !important;
             }
             
             .issue-card-actions-inline {
                 display: flex !important;
-                gap: 0.125rem !important;
+                gap: 0.5rem !important;
                 margin-left: auto !important;
-                margin-top: 0.125rem !important;
+                margin-top: 0.25rem !important;
                 margin-bottom: 0 !important;
                 margin-right: 0 !important;
                 padding: 0 !important;
@@ -254,15 +290,17 @@
             .issue-card-field-inline select,
             .issue-card-field-inline input {
                 width: 100%;
-                padding: 0.25rem !important;
-                border: 1px solid #d1d5db;
-                border-radius: 0.25rem;
-                font-size: 0.75rem !important;
+                padding: 0.5rem !important;
+                border: 2px solid #d1d5db;
+                border-radius: 0.5rem;
+                font-size: 0.875rem !important;
                 background: white;
                 transition: all 0.2s ease;
-                min-height: 28px !important;
-                height: 28px !important;
+                min-height: 44px !important;
+                height: 44px !important;
                 box-sizing: border-box;
+                -webkit-appearance: none;
+                appearance: none;
             }
             
             .issue-card-field select:focus,
@@ -271,73 +309,80 @@
             .issue-card-field-inline input:focus {
                 outline: none;
                 border-color: #3b82f6;
-                box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
                 background: #fafbff;
             }
             
             .issue-card-field-inline label {
-                font-size: 0.6rem !important;
-                font-weight: 600;
-                color: #6b7280;
+                font-size: 0.75rem !important;
+                font-weight: 700;
+                color: #374151;
                 text-transform: uppercase;
-                letter-spacing: 0.025em;
-                margin-bottom: 0.0625rem !important;
+                letter-spacing: 0.05em;
+                margin-bottom: 0.25rem !important;
                 line-height: 1 !important;
             }
             
             .issue-card-actions {
                 display: flex;
                 justify-content: flex-end;
-                gap: 0.375rem;
-                padding-top: 0.5rem;
+                gap: 0.5rem;
+                padding-top: 0.75rem;
                 border-top: 1px solid #e5e7eb;
-                margin-top: 0.5rem;
+                margin-top: 0.75rem;
             }
             
+            /* ENHANCED MOBILE BUTTONS */
             .issue-card-btn {
-                padding: 0.1875rem 0.375rem !important;
-                border-radius: 0.25rem;
-                font-size: 0.7rem !important;
-                font-weight: 600;
+                padding: 0.75rem 1rem !important;
+                border-radius: 0.5rem;
+                font-size: 0.875rem !important;
+                font-weight: 700;
                 border: none;
                 cursor: pointer;
-                transition: all 0.2s ease;
-                min-height: 26px !important;
-                min-width: 45px !important;
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+                transition: all 0.3s ease;
+                min-height: 44px !important;
+                min-width: 80px !important;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
             }
             
             .issue-card-btn:active {
                 transform: translateY(1px);
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
             }
             
             .issue-card-btn-edit {
-                background: #3b82f6;
+                background: linear-gradient(135deg, #3b82f6, #2563eb);
                 color: white;
             }
             
             .issue-card-btn-edit:hover {
-                background: #2563eb;
-                box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+                background: linear-gradient(135deg, #2563eb, #1d4ed8);
+                box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
             }
             
             .issue-card-btn-delete {
-                background: #ef4444;
+                background: linear-gradient(135deg, #ef4444, #dc2626);
                 color: white;
             }
             
             .issue-card-btn-delete:hover {
-                background: #dc2626;
-                box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+                background: linear-gradient(135deg, #dc2626, #b91c1c);
+                box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
             }
             
             /* Mobile-specific improvements */
             .container {
-                padding-left: 0.75rem !important;
-                padding-right: 0.75rem !important;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
             }
             
-            /* Ensure mobile card container has no extra spacing */
+            /* Ensure mobile card container has proper spacing */
             #issue-cards {
                 padding: 0 !important;
                 margin: 0 !important;
@@ -349,16 +394,17 @@
                 padding: 0 !important;
             }
             
-            /* Very small screens - stack the single row */
+            /* Enhanced responsive breakpoints */
             @media (max-width: 480px) {
                 .issue-card-single-row {
                     flex-direction: column;
-                    gap: 0.375rem !important;
+                    gap: 0.75rem !important;
                     align-items: stretch;
                 }
                 
                 .issue-card-field-inline {
                     min-width: unset;
+                    max-width: unset;
                     flex: 1;
                 }
                 
@@ -370,10 +416,15 @@
                 
                 .issue-card-actions-inline {
                     margin-left: 0;
-                    justify-content: flex-end;
-                    margin-top: 0.25rem !important;
-                    padding-top: 0.25rem !important;
+                    justify-content: center;
+                    margin-top: 0.75rem !important;
+                    padding-top: 0.75rem !important;
                     border-top: 1px solid #e5e7eb;
+                }
+                
+                .issue-card-btn {
+                    flex: 1;
+                    min-width: 120px !important;
                 }
             }
             
@@ -389,7 +440,8 @@
             
             /* Improve button and input layout on mobile */
             .bg-white.p-6 {
-                padding: 1rem !important;
+                padding: 1.25rem !important;
+                border-radius: 1rem !important;
             }
             
             .flex.flex-col.md\\:flex-row {
@@ -399,25 +451,64 @@
             
             #add-issue-btn {
                 width: 100% !important;
-                min-height: 48px !important;
-                font-size: 1rem !important;
+                min-height: 52px !important;
+                font-size: 1.1rem !important;
+                font-weight: 700 !important;
+                border-radius: 0.75rem !important;
+                background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+                transition: all 0.3s ease !important;
+            }
+            
+            #add-issue-btn:hover {
+                background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4) !important;
+            }
+            
+            #add-issue-btn:active {
+                transform: translateY(0) !important;
             }
             
             #filter-input {
-                min-height: 48px !important;
+                min-height: 52px !important;
                 font-size: 1rem !important;
+                padding: 0.75rem !important;
+                border-radius: 0.75rem !important;
+                border: 2px solid #d1d5db !important;
+                transition: all 0.2s ease !important;
             }
             
-            /* Filter controls on mobile */
+            #filter-input:focus {
+                border-color: #3b82f6 !important;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+            }
+            
+            /* Enhanced filter controls on mobile */
             #status-filter, #assignee-filter {
-                min-height: 48px !important;
+                min-height: 52px !important;
                 font-size: 1rem !important;
+                padding: 0.75rem !important;
+                border-radius: 0.75rem !important;
+                border: 2px solid #d1d5db !important;
+                background: white !important;
+                -webkit-appearance: none !important;
+                appearance: none !important;
+                transition: all 0.2s ease !important;
+            }
+            
+            #status-filter:focus, #assignee-filter:focus {
+                border-color: #3b82f6 !important;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
             }
             
             #clear-filters-btn {
-                min-height: 48px !important;
+                min-height: 52px !important;
                 font-size: 1rem !important;
+                font-weight: 600 !important;
                 width: 100% !important;
+                border-radius: 0.75rem !important;
+                transition: all 0.3s ease !important;
             }
             
             /* Make filter row stack on mobile */
@@ -426,25 +517,42 @@
                 gap: 1rem !important;
             }
             
+            /* Enhanced modal on mobile */
             .modal-content {
                 margin: 1rem;
                 max-height: 90vh;
                 overflow-y: auto;
-                padding: 1.5rem !important;
+                padding: 2rem !important;
+                border-radius: 1rem !important;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
             }
             
             /* Improve modal form on mobile */
             .modal-content input,
-            .modal-content textarea {
-                min-height: 48px !important;
+            .modal-content textarea,
+            .modal-content select {
+                min-height: 52px !important;
                 font-size: 1rem !important;
                 padding: 0.75rem !important;
+                border-radius: 0.75rem !important;
+                border: 2px solid #d1d5db !important;
+                transition: all 0.2s ease !important;
+            }
+            
+            .modal-content input:focus,
+            .modal-content textarea:focus,
+            .modal-content select:focus {
+                border-color: #3b82f6 !important;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
             }
             
             .modal-content button {
-                min-height: 48px !important;
+                min-height: 52px !important;
                 font-size: 1rem !important;
+                font-weight: 600 !important;
                 padding: 0.75rem 1.5rem !important;
+                border-radius: 0.75rem !important;
+                transition: all 0.3s ease !important;
             }
         }
         
@@ -659,18 +767,42 @@
         @media (max-width: 768px) {
             .dropdown-search {
                 font-size: 16px; /* Prevent iOS zoom */
-                min-height: 44px; /* Touch-friendly */
+                min-height: 52px; /* Enhanced touch-friendly */
+                padding: 0.75rem;
+                border-radius: 0.75rem;
             }
             
             .dropdown-input {
-                min-height: 48px;
+                min-height: 52px;
+                border-radius: 0.75rem;
+                border: 2px solid #d1d5db;
+                transition: all 0.2s ease;
+            }
+            
+            .dropdown-input:focus-within {
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
             }
             
             .dropdown-item {
                 padding: 1rem 0.75rem;
-                min-height: 44px;
+                min-height: 52px;
                 display: flex;
                 align-items: center;
+                font-size: 1rem;
+                transition: all 0.2s ease;
+            }
+            
+            .dropdown-item:hover {
+                background-color: #f1f5f9;
+                transform: translateX(4px);
+            }
+            
+            .dropdown-menu {
+                border-radius: 0 0 0.75rem 0.75rem;
+                border: 2px solid #d1d5db;
+                border-top: none;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
             }
         }
         
@@ -860,6 +992,8 @@
         // --- Firestore Configuration ---
         let allIssues = [];
         let issueToDeleteId = null;
+        let allUsers = []; // Store all users for assignee dropdown
+        let overdueNotifications = []; // Store overdue notifications
         const issueListEl = document.getElementById('issue-list');
         const issueCardsEl = document.getElementById('issue-cards');
         const filterInput = document.getElementById('filter-input');
@@ -1179,6 +1313,149 @@
             statusEl.className = `mt-4 text-sm ${isError ? 'text-red-500' : 'text-slate-400'}`;
         }
 
+        // --- Notification System ---
+        function checkOverdueIssues() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const currentUser = window.SPViAuth ? window.SPViAuth.getCurrentUser() : null;
+            if (!currentUser) return [];
+
+            // Find issues assigned to current user that are overdue
+            const userOverdueIssues = allIssues.filter(issue => {
+                // Only check issues assigned to current user
+                if (issue.assignee !== currentUser.name) return false;
+                
+                // Only check non-completed issues
+                if (issue.status === 'เสร็จสิ้น') return false;
+                
+                // Check if due date exists and is in the past
+                if (!issue.dueDate) return false;
+                
+                const dueDate = new Date(issue.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                
+                return dueDate < today;
+            });
+
+            return userOverdueIssues;
+        }
+
+        function updateNotificationBell() {
+            const overdueIssues = checkOverdueIssues();
+            const notificationBell = document.getElementById('spvi-notification-bell');
+            const notificationBadge = document.getElementById('spvi-notification-badge');
+            
+            if (notificationBell && notificationBadge) {
+                if (overdueIssues.length > 0) {
+                    notificationBadge.textContent = overdueIssues.length;
+                    notificationBadge.style.display = 'block';
+                    notificationBell.style.color = '#ef4444'; // red-500
+                } else {
+                    notificationBadge.style.display = 'none';
+                    notificationBell.style.color = '#9ca3af'; // gray-400
+                }
+            }
+            
+            // Store notifications globally for other pages to access
+            window.spviOverdueNotifications = overdueIssues;
+        }
+
+        function showNotificationModal() {
+            const overdueIssues = checkOverdueIssues();
+            
+            if (overdueIssues.length === 0) {
+                alert('ไม่มีประเด็นที่ค้างครบกำหนดสำหรับคุณ');
+                return;
+            }
+
+            // Create modal if it doesn't exist
+            let modal = document.getElementById('notification-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'notification-modal';
+                modal.className = 'modal-backdrop hidden';
+                modal.innerHTML = `
+                    <div class="modal-content max-w-2xl">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-red-600">ประเด็นที่ค้างครบกำหนด</h2>
+                            <button id="close-notification-modal" class="text-slate-400 hover:text-slate-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="notification-content" class="space-y-4 max-h-96 overflow-y-auto">
+                        </div>
+                        <div class="flex justify-end gap-4 mt-6 pt-4 border-t">
+                            <button id="dismiss-notifications" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">ปิด</button>
+                            <button id="go-to-issues" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">ไปที่หน้าติดตามประเด็น</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                // Add event listeners
+                document.getElementById('close-notification-modal').addEventListener('click', hideNotificationModal);
+                document.getElementById('dismiss-notifications').addEventListener('click', hideNotificationModal);
+                document.getElementById('go-to-issues').addEventListener('click', () => {
+                    hideNotificationModal();
+                    // Check if we're already on the issue tracker page
+                    if (!window.location.pathname.includes('issue-tracker.html')) {
+                        window.location.href = 'issue-tracker.html';
+                    }
+                });
+            }
+
+            // Populate modal content
+            const content = document.getElementById('notification-content');
+            content.innerHTML = overdueIssues.map(issue => {
+                const daysOverdue = Math.floor((new Date() - new Date(issue.dueDate)) / (1000 * 60 * 60 * 24));
+                return `
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-red-800">${issue.branch}</h3>
+                                <p class="text-sm text-red-700 mt-1">${issue.issue}</p>
+                                <div class="flex items-center gap-4 mt-2 text-xs text-red-600">
+                                    <span>ครบกำหนด: ${new Date(issue.dueDate).toLocaleDateString('th-TH')}</span>
+                                    <span class="font-semibold">เกินกำหนด ${daysOverdue} วัน</span>
+                                    <span class="px-2 py-1 bg-red-100 rounded">${issue.status}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            modal.classList.remove('hidden');
+        }
+
+        function hideNotificationModal() {
+            const modal = document.getElementById('notification-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // --- Load Users ---
+        async function loadUsers() {
+            try {
+                if (window.SPViAuth && typeof window.SPViAuth.getAllUsers === 'function') {
+                    const users = await window.SPViAuth.getAllUsers();
+                    // Filter only approved users
+                    allUsers = users.filter(user => user.status === 'approved');
+                    console.log('Loaded users for assignee dropdown:', allUsers.length);
+                } else {
+                    console.warn('SPViAuth not available, users dropdown will be empty');
+                    allUsers = [];
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                allUsers = [];
+            }
+        }
+
         async function loadData() {
             showStatus('Loading data from Firestore...');
             try {
@@ -1186,6 +1463,7 @@
                 allIssues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 updateAssigneeFilter();
                 renderIssues();
+                updateNotificationBell(); // Update notification status
                 showStatus('Data loaded successfully.', false);
             } catch (error) {
                 // Error loading data handled silently for production
@@ -1341,7 +1619,14 @@
                         </select>
                     </td>
                     <td class="px-3 py-3">
-                        <input type="text" class="field-input w-full p-1 border border-slate-300 rounded-md text-xs" data-id="${issue.id}" data-field="assignee" value="${issue.assignee || ''}" placeholder="ระบุผู้รับผิดชอบ">
+                        <select class="field-input w-full p-1 border border-slate-300 rounded-md text-xs" data-id="${issue.id}" data-field="assignee">
+                            <option value="">เลือกผู้รับผิดชอบ</option>
+                            ${allUsers.map(user => `
+                                <option value="${user.name}" ${issue.assignee === user.name ? 'selected' : ''}>
+                                    ${user.name} (${user.department})
+                                </option>
+                            `).join('')}
+                        </select>
                     </td>
                     <td class="px-3 py-3">
                         <input type="date" class="field-input w-full p-1 border border-slate-300 rounded-md text-xs" data-id="${issue.id}" data-field="dueDate" value="${issue.dueDate || ''}">
@@ -1425,7 +1710,14 @@
                         
                         <div class="issue-card-field-inline flex-grow">
                             <label>ผู้รับผิดชอบ</label>
-                            <input type="text" class="field-input" data-id="${issue.id}" data-field="assignee" value="${issue.assignee || ''}" placeholder="ระบุผู้รับผิดชอบ">
+                            <select class="field-input" data-id="${issue.id}" data-field="assignee">
+                                <option value="">เลือกผู้รับผิดชอบ</option>
+                                ${allUsers.map(user => `
+                                    <option value="${user.name}" ${issue.assignee === user.name ? 'selected' : ''}>
+                                        ${user.name} (${user.department})
+                                    </option>
+                                `).join('')}
+                            </select>
                         </div>
                         
                         <div class="issue-card-actions-inline">
@@ -1657,6 +1949,14 @@
                     if (target.dataset.field === 'assignee') {
                         updateAssigneeFilter();
                     }
+                    // Update notifications if assignee or dueDate changed
+                    if (target.dataset.field === 'assignee' || target.dataset.field === 'dueDate') {
+                        updateNotificationBell();
+                        // Also update global notifications
+                        if (window.updateGlobalNotifications) {
+                            window.updateGlobalNotifications();
+                        }
+                    }
                 }
             }, 750);
         }
@@ -1709,7 +2009,20 @@
                 const firebaseInstances = await SPViAuth.initializeFirebase();
                 firestore = firebaseInstances.db || window.firebase.app().firestore();
                 issuesCollection = firestore.collection('issues');
+                
+                // Load users first, then load data
+                await loadUsers();
                 await loadData();
+                
+                // Set up periodic refresh every 5 minutes to keep data current
+                setInterval(async () => {
+                    try {
+                        await loadData();
+                        console.log('Data refreshed automatically');
+                    } catch (error) {
+                        console.error('Auto-refresh failed:', error);
+                    }
+                }, 5 * 60 * 1000); // 5 minutes
             } catch (error) {
                 showStatus('Firestore connection failed: ' + error.message, true);
             }
@@ -1730,8 +2043,8 @@
                     return;
                 }
                 
-                // Add user info to navigation
-                SPViAuth.addUserInfo();
+                // User info will be added automatically by firebase-auth.js init()
+                // No need to call addUserInfo() manually
                 
                 // Setup centralized devtools protection
                 SPViAuth.setupDevToolsProtection();
