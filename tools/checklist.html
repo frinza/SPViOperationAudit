@@ -143,6 +143,12 @@
                 border: 1px solid #bbb !important;
                 background: #fafafa !important;
             }
+            .auditor-name-dropdown input {
+                padding: 1px 4px !important;
+                font-size: 11pt !important;
+                border: 1px solid #bbb !important;
+                background: #fafafa !important;
+            }
             .signature-section {
                 break-inside: avoid-page !important;
                 page-break-inside: avoid !important;
@@ -399,7 +405,16 @@
                 'B112 Head Office <AIS Telewiz Lotus Samkong>'
             ];
 
-            // Initialize searchable dropdown
+            // Auditor data
+            const auditors = [
+                { name: 'นายกันต์กฤช พุ่มเจริญ', position: 'เจ้าหน้าที่การตรวจสอบระดับปฏิบัติการ' },
+                { name: 'นายนพรัตน์ แก้วสกุลณี', position: 'เจ้าหน้าที่การตรวจสอบระดับปฏิบัติการ' },
+                { name: 'นายรัชภูมิ อาจเอี่ยม', position: 'เจ้าหน้าที่การตรวจสอบระดับปฏิบัติการ' },
+                { name: 'นายอนุวัฒน์ จันทร์เลิง', position: 'เจ้าหน้าที่การตรวจสอบระดับปฏิบัติการ' },
+                { name: 'นายประเสริฐ สุขสงวน', position: 'เจ้าหน้าที่การตรวจสอบระดับปฏิบัติการ' }
+            ];
+
+            // Initialize searchable dropdown for branches
             const branchSearchInput = document.getElementById('branch-search');
             const branchHiddenInput = document.getElementById('branch-name');
             const branchDropdownList = document.getElementById('branch-dropdown-list');
@@ -603,11 +618,210 @@
             };
 
             const addAuditorRow = (auditor = { name: '', position: '' }) => {
+                const rowId = 'auditor-row-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                 const row = document.createElement('div');
                 row.className = 'auditor-row grid grid-cols-12 gap-2 items-center';
-                row.innerHTML = `<div class="col-span-6"><input type="text" value="${auditor.name}" class="auditor-name-input mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="ชื่อ-สกุล ผู้ตรวจสอบ"></div><div class="col-span-5"><input type="text" value="${auditor.position}" class="auditor-position-input mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="ตำแหน่ง"></div><div class="col-span-1"><button class="remove-auditor-btn no-print text-red-500 hover:text-red-700">&times;</button></div>`;
+                row.id = rowId;
+                row.innerHTML = `
+                    <div class="col-span-6">
+                        <div class="relative">
+                            <div class="searchable-dropdown auditor-name-dropdown">
+                                <input type="text" value="${auditor.name}" 
+                                       class="auditor-name-search mt-1 w-full p-2 pr-8 border border-gray-300 rounded-md shadow-sm bg-white" 
+                                       placeholder="ค้นหาหรือกรอกชื่อผู้ตรวจสอบ..." autocomplete="off">
+                                <div class="dropdown-arrow">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                                <div class="auditor-dropdown-list dropdown-list hidden">
+                                    <div class="dropdown-option" data-name="" data-position="">-- เลือกผู้ตรวจสอบ --</div>
+                                </div>
+                            </div>
+                            <input type="hidden" class="auditor-name-input" value="${auditor.name}">
+                        </div>
+                    </div>
+                    <div class="col-span-5">
+                        <input type="text" value="${auditor.position}" 
+                               class="auditor-position-input mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" 
+                               placeholder="ตำแหน่ง">
+                    </div>
+                    <div class="col-span-1">
+                        <button class="remove-auditor-btn no-print text-red-500 hover:text-red-700 text-xl">&times;</button>
+                    </div>
+                `;
                 auditorListContainer.appendChild(row);
-                row.querySelector('.remove-auditor-btn').addEventListener('click', () => { row.remove(); saveState(); });
+                
+                // Setup searchable dropdown for this row
+                setupAuditorDropdown(row);
+                
+                // Remove button functionality
+                row.querySelector('.remove-auditor-btn').addEventListener('click', () => { 
+                    row.remove(); 
+                    saveState(); 
+                });
+            };
+
+            // Setup auditor dropdown functionality
+            const setupAuditorDropdown = (row) => {
+                const searchInput = row.querySelector('.auditor-name-search');
+                const hiddenInput = row.querySelector('.auditor-name-input');
+                const positionInput = row.querySelector('.auditor-position-input');
+                const dropdownList = row.querySelector('.auditor-dropdown-list');
+                const searchableDropdown = row.querySelector('.auditor-name-dropdown');
+                
+                // Populate dropdown options
+                auditors.forEach(auditor => {
+                    const option = document.createElement('div');
+                    option.className = 'dropdown-option';
+                    option.setAttribute('data-name', auditor.name);
+                    option.setAttribute('data-position', auditor.position);
+                    option.textContent = auditor.name;
+                    dropdownList.appendChild(option);
+                });
+
+                let filteredAuditors = [...auditors];
+                let highlightedIndex = -1;
+                let isOpen = false;
+
+                function filterOptions(searchTerm) {
+                    filteredAuditors = auditors.filter(auditor => 
+                        auditor.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+                    
+                    // Clear existing options
+                    dropdownList.innerHTML = '<div class="dropdown-option" data-name="" data-position="">-- เลือกผู้ตรวจสอบ --</div>';
+                    
+                    if (filteredAuditors.length === 0 && searchTerm) {
+                        const noResults = document.createElement('div');
+                        noResults.className = 'no-results';
+                        noResults.textContent = 'ไม่พบผู้ตรวจสอบที่ตรงกับการค้นหา';
+                        dropdownList.appendChild(noResults);
+                    } else {
+                        filteredAuditors.forEach(auditor => {
+                            const option = document.createElement('div');
+                            option.className = 'dropdown-option';
+                            option.setAttribute('data-name', auditor.name);
+                            option.setAttribute('data-position', auditor.position);
+                            option.textContent = auditor.name;
+                            dropdownList.appendChild(option);
+                        });
+                    }
+                    
+                    highlightedIndex = -1;
+                    updateHighlight();
+                }
+
+                function updateHighlight() {
+                    const options = dropdownList.querySelectorAll('.dropdown-option:not(.no-results)');
+                    options.forEach((option, index) => {
+                        option.classList.toggle('highlighted', index === highlightedIndex);
+                    });
+                }
+
+                function openDropdown() {
+                    isOpen = true;
+                    searchableDropdown.classList.add('open');
+                    dropdownList.classList.remove('hidden');
+                }
+
+                function closeDropdown() {
+                    isOpen = false;
+                    searchableDropdown.classList.remove('open');
+                    dropdownList.classList.add('hidden');
+                    highlightedIndex = -1;
+                    updateHighlight();
+                }
+
+                function selectOption(name, position) {
+                    hiddenInput.value = name;
+                    searchInput.value = name;
+                    positionInput.value = position;
+                    closeDropdown();
+                    saveState();
+                }
+
+                // Event listeners
+                searchInput.addEventListener('focus', () => {
+                    filterOptions(searchInput.value);
+                    openDropdown();
+                });
+
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value;
+                    filterOptions(searchTerm);
+                    if (!isOpen) openDropdown();
+                    
+                    // If exact match, select it
+                    const exactMatch = auditors.find(auditor => 
+                        auditor.name.toLowerCase() === searchTerm.toLowerCase()
+                    );
+                    if (exactMatch) {
+                        hiddenInput.value = exactMatch.name;
+                        positionInput.value = exactMatch.position;
+                    } else {
+                        hiddenInput.value = searchTerm;
+                        // Don't auto-fill position if it's not an exact match
+                    }
+                    saveState();
+                });
+
+                searchInput.addEventListener('keydown', (e) => {
+                    if (!isOpen) return;
+                    
+                    const options = dropdownList.querySelectorAll('.dropdown-option:not(.no-results)');
+                    
+                    switch (e.key) {
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            highlightedIndex = Math.min(highlightedIndex + 1, options.length - 1);
+                            updateHighlight();
+                            break;
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            highlightedIndex = Math.max(highlightedIndex - 1, -1);
+                            updateHighlight();
+                            break;
+                        case 'Enter':
+                            e.preventDefault();
+                            if (highlightedIndex >= 0 && options[highlightedIndex]) {
+                                const selectedOption = options[highlightedIndex];
+                                selectOption(selectedOption.dataset.name, selectedOption.dataset.position);
+                            } else if (filteredAuditors.length === 1) {
+                                selectOption(filteredAuditors[0].name, filteredAuditors[0].position);
+                            }
+                            break;
+                        case 'Escape':
+                            closeDropdown();
+                            searchInput.blur();
+                            break;
+                    }
+                });
+
+                // Click on dropdown options
+                dropdownList.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('dropdown-option') && e.target.dataset.name !== undefined) {
+                        selectOption(e.target.dataset.name, e.target.dataset.position);
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!row.contains(e.target)) {
+                        closeDropdown();
+                    }
+                });
+
+                // Handle dropdown arrow click
+                searchableDropdown.addEventListener('click', (e) => {
+                    if (e.target.closest('.dropdown-arrow')) {
+                        if (isOpen) {
+                            closeDropdown();
+                        } else {
+                            searchInput.focus();
+                        }
+                    }
+                });
             };
 
             const getInitialState = () => {
