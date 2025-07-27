@@ -394,37 +394,198 @@
                 padding: 0 !important;
             }
             
-            /* Enhanced responsive breakpoints */
-            @media (max-width: 480px) {
+            /* Enhanced responsive breakpoints for very small screens */
+            @media (max-width: 500px) {
+                /* Fix container padding for small screens */
+                .container {
+                    padding-left: 0.5rem !important;
+                    padding-right: 0.5rem !important;
+                }
+                
+                /* Ensure main content container has proper margins */
+                .bg-white.p-6 {
+                    margin-left: 0 !important;
+                    margin-right: 0 !important;
+                    padding: 0.75rem !important;
+                }
+                
+                /* Fix input containers alignment */
                 .issue-card-single-row {
-                    flex-direction: column;
-                    gap: 0.75rem !important;
-                    align-items: stretch;
+                    flex-direction: column !important;
+                    gap: 0.5rem !important;
+                    align-items: stretch !important;
+                    padding: 0.5rem 0 0 0 !important;
+                    overflow: hidden !important;
                 }
                 
                 .issue-card-field-inline {
-                    min-width: unset;
-                    max-width: unset;
-                    flex: 1;
+                    min-width: unset !important;
+                    max-width: 100% !important;
+                    flex: 1 !important;
+                    width: 100% !important;
+                    box-sizing: border-box !important;
                 }
                 
                 .issue-card-field-inline.flex-grow {
-                    min-width: unset;
-                    max-width: unset;
-                    flex: 1;
+                    min-width: unset !important;
+                    max-width: 100% !important;
+                    flex: 1 !important;
+                    width: 100% !important;
+                }
+                
+                /* Ensure input fields don't overflow */
+                .issue-card-field-inline select,
+                .issue-card-field-inline input {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    box-sizing: border-box !important;
+                    font-size: 0.875rem !important;
+                    padding: 0.625rem !important;
                 }
                 
                 .issue-card-actions-inline {
-                    margin-left: 0;
-                    justify-content: center;
+                    margin-left: 0 !important;
+                    justify-content: center !important;
                     margin-top: 0.75rem !important;
                     padding-top: 0.75rem !important;
-                    border-top: 1px solid #e5e7eb;
+                    border-top: 1px solid #e5e7eb !important;
+                    width: 100% !important;
+                    flex-wrap: wrap !important;
                 }
                 
                 .issue-card-btn {
-                    flex: 1;
+                    flex: 1 !important;
                     min-width: 120px !important;
+                    max-width: 100% !important;
+                    margin-bottom: 0.25rem !important;
+                }
+                
+                /* Fix header alignment on small screens */
+                header h1 {
+                    font-size: 1.5rem !important;
+                    line-height: 1.2 !important;
+                    padding: 0 0.5rem !important;
+                }
+                
+                header p {
+                    font-size: 0.875rem !important;
+                    padding: 0 0.5rem !important;
+                }
+                
+                /* Ensure issue cards don't overflow */
+                .issue-card {
+                    margin-left: 0 !important;
+                    margin-right: 0 !important;
+                    padding: 0.75rem !important;
+                    overflow: hidden !important;
+                    word-wrap: break-word !important;
+                }
+                
+                /* Fix modal on very small screens */
+                .modal-content {
+                    margin: 0.5rem !important;
+                    padding: 1rem !important;
+                    max-width: calc(100vw - 1rem) !important;
+                    width: calc(100vw - 1rem) !important;
+                }
+            }
+            
+            /* Ultra-small screen support for iPhone SE and similar devices */
+            @media (max-width: 375px) {
+                /* More aggressive padding reduction */
+                .container {
+                    padding-left: 0.25rem !important;
+                    padding-right: 0.25rem !important;
+                }
+                
+                .bg-white.p-6 {
+                    padding: 0.5rem !important;
+                }
+                
+                /* Tighter spacing for issue cards */
+                .issue-card {
+                    padding: 0.5rem !important;
+                    margin-bottom: 0.5rem !important;
+                }
+                
+                /* Smaller font sizes for ultra-small screens */
+                .issue-card-title {
+                    font-size: 0.8rem !important;
+                    line-height: 1.1 !important;
+                }
+                
+                .issue-card-content {
+                    font-size: 0.8rem !important;
+                    padding: 0.5rem !important;
+                }
+                
+                /* Compact input fields */
+                .issue-card-field-inline select,
+                .issue-card-field-inline input {
+                    font-size: 0.8rem !important;
+                    padding: 0.5rem !important;
+                    min-height: 40px !important;
+                }
+                
+                /* Smaller buttons */
+                .issue-card-btn {
+                    font-size: 0.8rem !important;
+                    padding: 0.5rem 0.75rem !important;
+                    min-height: 40px !important;
+                    min-width: 100px !important;
+                }
+                
+                /* Compact header */
+                header h1 {
+                    font-size: 1.25rem !important;
+                    padding: 0 0.25rem !important;
+                }
+                
+                header p {
+                    font-size: 0.8rem !important;
+                    padding: 0 0.25rem !important;
+                }
+                
+                /* Compact modal for ultra-small screens */
+                .modal-content {
+                    margin: 0.25rem !important;
+                    padding: 0.75rem !important;
+                    max-width: calc(100vw - 0.5rem) !important;
+                    width: calc(100vw - 0.5rem) !important;
+                }
+                
+                .modal-content input,
+                .modal-content textarea,
+                .modal-content select {
+                    font-size: 0.8rem !important;
+                    padding: 0.5rem !important;
+                    min-height: 40px !important;
+                }
+                
+                /* Tighter spacing for inline actions */
+                .issue-card-single-row {
+                    gap: 0.25rem !important;
+                    padding: 0.25rem 0 0 0 !important;
+                }
+                
+                .issue-card-actions-inline {
+                    margin-top: 0.5rem !important;
+                    padding-top: 0.5rem !important;
+                    gap: 0.25rem !important;
+                }
+                
+                /* Compact meta grid */
+                .issue-card-meta {
+                    gap: 0.5rem !important;
+                    margin-bottom: 0.5rem !important;
+                }
+                
+                /* Ensure proper text wrapping on ultra-small screens */
+                .issue-card-content,
+                .issue-card-title {
+                    word-break: break-word !important;
+                    overflow-wrap: break-word !important;
+                    hyphens: auto !important;
                 }
             }
             
