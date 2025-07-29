@@ -4,18 +4,20 @@
 (function() {
     'use strict';
 
-    // Development mode fallback credentials (should match .env file)
+    // Development mode fallback credentials (MASKED FOR SECURITY - use .env file)
+    // ⚠️  SECURITY WARNING: Never use these fallback values in production!
+    // ⚠️  Always set proper environment variables via .env file or server config
     const FALLBACK_CONFIG = {
-        FIREBASE_API_KEY: 'AIzaSyBiNqHECmqDg0uk6fsR66qfldBCTK76OQE',
-        FIREBASE_AUTH_DOMAIN: 'spvi-operations-audit.firebaseapp.com',
-        FIREBASE_PROJECT_ID: 'spvi-operations-audit',
-        FIREBASE_STORAGE_BUCKET: 'spvi-operations-audit.firebasestorage.app',
-        FIREBASE_MESSAGING_SENDER_ID: '179262645525',
-        FIREBASE_APP_ID: '1:179262645525:web:95c002a6df7552220e351c',
-        FIREBASE_MEASUREMENT_ID: 'G-XBZVKJPDZQ',
-        GEMINI_API_KEY: 'AIzaSyAuWkWlmGv0AqizfxpOxDgIK4SmrJrDBHU',
+        FIREBASE_API_KEY: 'AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Replace with your API key
+        FIREBASE_AUTH_DOMAIN: 'your-project.firebaseapp.com',
+        FIREBASE_PROJECT_ID: 'your-project-id',
+        FIREBASE_STORAGE_BUCKET: 'your-project.firebasestorage.app',
+        FIREBASE_MESSAGING_SENDER_ID: '000000000000',
+        FIREBASE_APP_ID: '1:000000000000:web:xxxxxxxxxxxxxxxx',
+        FIREBASE_MEASUREMENT_ID: 'G-XXXXXXXXXX',
+        GEMINI_API_KEY: 'AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Replace with your API key
         ADMIN_EMAIL: 'admin@spvi.co.th',
-        ADMIN_DEFAULT_PASSWORD: 'admin123',
+        ADMIN_DEFAULT_PASSWORD: 'CHANGE_THIS_PASSWORD_IN_ENV_FILE', // SECURITY: Must be changed in production
         APP_NAME: 'SPVi Operations Audit',
         APP_VERSION: '1.0.0',
         

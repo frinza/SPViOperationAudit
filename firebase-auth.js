@@ -218,6 +218,7 @@
 
     function clearCurrentUser() {
         localStorage.removeItem('spvi_current_user');
+        localStorage.removeItem('spvi_auth_token'); // Also clear the JWT token
     }
 
     // Check if current page is login page
@@ -320,110 +321,39 @@
         },
 
         async loginUser(email, password) {
-            await initializeFirebase();
-            
             try {
-                if (!email || !password) {
-                    throw new Error('Email and password are required');
+                // Use server-side authentication instead of direct Firebase
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Login failed');
                 }
+
+                const result = await response.json();
                 
-                console.log('Attempting login for email:', email);
-                
-                // First, get the user by email to check what password format they have
-                const emailOnlySnapshot = await db.collection('users')
-                    .where('email', '==', email)
-                    .get();
-                
-                if (emailOnlySnapshot.empty) {
-                    console.log('No user found with email:', email);
-                    return null;
+                if (!result.success) {
+                    throw new Error('Login failed');
                 }
-                
-                const userDoc = emailOnlySnapshot.docs[0];
-                const userData = userDoc.data();
-                console.log('User found, checking password format...');
-                
-                // Check if user exists but password is missing
-                if (!userData.password || userData.password === null || userData.password === undefined || userData.password === '') {
-                    console.log('User found but password is missing - user needs admin assistance');
-                    throw new Error('Account found but password not set. Please contact administrator.');
+
+                // Store the JWT token for subsequent API calls
+                if (result.token) {
+                    localStorage.setItem('spvi_auth_token', result.token);
                 }
-                
-                let passwordMatches = false;
-                let needsMigration = false;
-                
-                // Check if password is in old format (numeric only without prefix)
-                if (/^-?\d+$/.test(userData.password)) {
-                    console.log('User has old password format - checking with old hash function');
-                    
-                    // Try old hash function (exact match)
-                    const oldHash = hashPasswordOldFormat(password);
-                    console.log('Old hash check:', oldHash, 'vs stored:', userData.password);
-                    
-                    if (userData.password === oldHash) {
-                        passwordMatches = true;
-                        needsMigration = true;
-                        console.log('Old password format matched - migration needed');
-                    } else {
-                        // Also try with trimmed password in case there were whitespace issues
-                        const oldHashTrimmed = hashPasswordOldFormat(password.trim());
-                        console.log('Old hash (trimmed) check:', oldHashTrimmed, 'vs stored:', userData.password);
-                        
-                        if (userData.password === oldHashTrimmed) {
-                            passwordMatches = true;
-                            needsMigration = true;
-                            console.log('Old password format (trimmed) matched - migration needed');
-                        }
-                    }
-                }
-                
-                // If old format didn't match, try new format
-                if (!passwordMatches) {
-                    const newHash = hashPassword(password);
-                    console.log('New hash check:', newHash, 'vs stored:', userData.password);
-                    
-                    if (userData.password === newHash) {
-                        passwordMatches = true;
-                        console.log('New password format matched');
-                    }
-                }
-                
-                // If still no match, check if it's stored in plain text (emergency fallback)
-                if (!passwordMatches && userData.password === password) {
-                    passwordMatches = true;
-                    needsMigration = true;
-                    console.log('Plain text password matched - migration needed');
-                }
-                
-                if (!passwordMatches) {
-                    console.log('Password does not match any format');
-                    return null;
-                }
-                
-                // Password matched, proceed with login
-                const user = { id: userDoc.id, ...userData };
-                
-                // Migrate password if needed
-                if (needsMigration) {
-                    console.log('Migrating password to new format...');
-                    const newHash = hashPassword(password);
-                    await this.updateUser(userDoc.id, { password: newHash });
-                    console.log('Password migrated successfully');
-                }
-                
-                // Update last login
-                await this.updateUser(user.id, { lastLogin: new Date().toISOString() });
-                user.lastLogin = new Date().toISOString();
-                
-                console.log('Login successful for user:', user.name);
-                return user;
+
+                console.log('Server-side login successful for user:', result.user.name);
+                return result.user;
                 
             } catch (error) {
                 console.error('Login error:', error);
-                // Handle Firebase-specific errors gracefully
-                if (error.code === 'permission-denied') {
-                    throw new Error('Access denied - insufficient permissions');
-                } else if (error.message.includes('CORS') || error.message.includes('fetch')) {
+                // Handle specific error cases
+                if (error.message.includes('network') || error.message.includes('fetch')) {
                     throw new Error('Connection error - please check your network');
                 } else {
                     throw error;
@@ -432,20 +362,33 @@
         },
 
         async getAllUsers() {
-            await initializeFirebase();
-            
             try {
-                const snapshot = await db.collection('users')
-                    .orderBy('createdAt', 'desc')
-                    .get();
+                const token = localStorage.getItem('spvi_auth_token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch('/api/admin/users', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to fetch users');
+                }
+
+                const result = await response.json();
+                return result.users || [];
                 
-                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             } catch (error) {
-                // Handle Firebase-specific errors gracefully
-                if (error.code === 'permission-denied') {
-                    throw new Error('Access denied - insufficient permissions to view users');
-                } else if (error.message.includes('CORS') || error.message.includes('fetch')) {
-                    console.warn('Firebase connectivity limited - user data may not be current');
+                console.error('Get users error:', error);
+                // Handle specific error cases
+                if (error.message.includes('network') || error.message.includes('fetch')) {
+                    console.warn('Network connectivity limited - user data may not be current');
                     return []; // Return empty array for graceful degradation
                 } else {
                     throw error;
@@ -1301,57 +1244,61 @@
     }
 
     async function disconnectUserSession(userId) {
-        await initializeFirebase();
-        const userRef = db.collection('users').doc(userId);
-        
-        // Set both force logout flag and clear session info
-        await userRef.update({
-            'sessionInfo.isOnline': false,
-            'sessionInfo.sessionId': null,
-            'sessionInfo.lastActivity': new Date().toISOString(),
-            'restrictions.forceLogout': true,
-            'restrictions.forceLogoutTime': new Date().toISOString()
-        });
-        
-        console.log(`User ${userId} session disconnected by admin`);
+        try {
+            const token = localStorage.getItem('spvi_auth_token');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const response = await fetch(`/api/admin/users/${userId}/disconnect`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to disconnect user');
+            }
+
+            console.log(`User ${userId} session disconnected by admin`);
+            return true;
+            
+        } catch (error) {
+            console.error('Disconnect user session error:', error);
+            throw error;
+        }
     }
 
     async function getOnlineUsers() {
-        await initializeFirebase();
-        
-        // Get all approved users first, then filter by session activity
-        const usersSnapshot = await db.collection('users')
-            .where('status', '==', 'approved')
-            .get();
-        
-        const now = new Date().getTime();
-        const onlineThreshold = 5 * 60 * 1000; // 5 minutes
-        
-        const onlineUsers = [];
-        
-        usersSnapshot.docs.forEach(doc => {
-            const userData = doc.data();
-            const sessionInfo = userData.sessionInfo;
-            
-            // Check if user has recent session activity
-            if (sessionInfo && sessionInfo.lastActivity) {
-                const lastActivity = new Date(sessionInfo.lastActivity).getTime();
-                const timeSinceActivity = now - lastActivity;
-                
-                // Consider user online if:
-                // 1. They have an active session ID AND
-                // 2. Their last activity was within the threshold OR they're marked as online
-                if (sessionInfo.sessionId && 
-                    (timeSinceActivity < onlineThreshold || sessionInfo.isOnline === true)) {
-                    onlineUsers.push({
-                        id: doc.id,
-                        ...userData
-                    });
-                }
+        try {
+            const token = localStorage.getItem('spvi_auth_token');
+            if (!token) {
+                throw new Error('No authentication token found');
             }
-        });
-        
-        return onlineUsers;
+
+            const response = await fetch('/api/admin/users/online', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to fetch online users');
+            }
+
+            const result = await response.json();
+            return result.users || [];
+            
+        } catch (error) {
+            console.error('Get online users error:', error);
+            throw error;
+        }
     }
 
     async function clearForceLogout(userId) {
@@ -1436,10 +1383,26 @@
         clearCurrentUser,
         checkAuth,
         checkAuthentication: checkAuth, // Alias for compatibility
-        logout: function() {
+        logout: async function() {
             // Clear session data from session manager
             if (window.SPViSessionManager) {
                 window.SPViSessionManager.clearSessionData();
+            }
+            
+            // Perform server-side logout
+            try {
+                const token = localStorage.getItem('spvi_auth_token');
+                if (token) {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                }
+            } catch (error) {
+                console.warn('Server logout failed:', error);
             }
             
             clearCurrentUser();

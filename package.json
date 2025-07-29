@@ -8,12 +8,16 @@
     "start": "node server.js",
     "build": "echo 'Building for production...'",
     "test": "echo 'No tests specified'",
+    "test:auth": "node server.js & sleep 2 && open http://localhost:3000/test-server-auth.html",
     "config:debug": "node -e \"require('dotenv').config(); console.log('Environment Variables:', Object.keys(process.env).filter(k => k.startsWith('FIREBASE_') || k.startsWith('GEMINI_') || k.startsWith('ADMIN_')))\""
   },
   "dependencies": {
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "bcrypt": "^6.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "firebase-admin": "^13.4.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

@@ -1,6 +1,21 @@
 # Setup files
 setup.sh
 add-permission-checks.sh
+setup-server-auth.sh
+test-auth-endpoints.sh
+
+# Test and development files
+test-*.html
+test-*.js
+*-test.html
+
+# Firebase service account keys (SECURITY CRITICAL)
+firebase-service-account.json
+*-service-account.json
+firebase-adminsdk-*.json
+firebase-service-account.json.template
+firebase-service-account.json.backup
+
 # Environment variables
 .env
 .env.local

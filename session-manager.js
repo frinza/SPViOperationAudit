@@ -246,57 +246,62 @@
             return;
         }
 
-        // Check if user is still authenticated
+        // Get current user locally first
         const currentUser = window.SPViAuth?.getCurrentUser();
         if (!currentUser || currentUser.status !== 'approved') {
             logoutUser('User authentication invalid');
             return;
         }
 
-        // Check for force logout from admin
+        // Verify session with server-side Firebase verification
         try {
-            if (window.SPViAuth?.initializeFirebase) {
-                const firebaseInstances = await window.SPViAuth.initializeFirebase();
-                const db = firebaseInstances.db || window.firebase.app().firestore();
-                const userDoc = await db.collection('users').doc(currentUser.id).get();
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    if (userData.restrictions?.forceLogout) {
-                        // Clear the force logout flag
-                        await window.SPViAuth.clearForceLogout(currentUser.id);
-                        logoutUser('Session terminated by administrator');
-                        return;
-                    }
-                    
-                    // Check if account is locked
-                    if (userData.restrictions?.accountLocked) {
-                        logoutUser(`Account locked: ${userData.restrictions.lockReason || 'No reason provided'}`);
-                        return;
-                    }
-                }
+            const token = localStorage.getItem('spvi_auth_token');
+            if (!token) {
+                logoutUser('No authentication token found');
+                return;
             }
+
+            const response = await fetch('/api/auth/verify', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                if (response.status === 401) {
+                    logoutUser(error.error || 'Session expired');
+                } else if (response.status === 403) {
+                    logoutUser(error.error || 'Account access denied');
+                } else {
+                    console.warn('Session verification failed:', error.error);
+                }
+                return;
+            }
+
+            const result = await response.json();
+            if (!result.success) {
+                logoutUser('Session verification failed');
+                return;
+            }
+
+            // Update current user data with server response
+            if (result.user) {
+                window.SPViAuth.setCurrentUser(result.user);
+            }
+
         } catch (error) {
-            console.warn('Could not check force logout status:', error);
+            console.warn('Could not verify session with server:', error);
+            // Don't logout on network errors, but log the issue
         }
 
-        // Update session info in database if available - but only occasionally to reduce load
-        const currentTime = Date.now();
-        if (currentTime - lastDatabaseUpdate >= SESSION_CONFIG.UPDATE_INTERVAL) {
-            try {
-                if (window.SPViAuth?.updateUserSession && sessionData.sessionId) {
-                    await window.SPViAuth.updateUserSession(currentUser.id, {
-                        isOnline: true,
-                        sessionId: sessionData.sessionId,
-                        lastActivity: new Date().toISOString(),
-                        loginTime: new Date(sessionData.startTime).toISOString(),
-                        ipAddress: await getCurrentIP(),
-                        userAgent: navigator.userAgent
-                    });
-                    lastDatabaseUpdate = currentTime;
-                }
-            } catch (error) {
-                console.warn('Could not update session info:', error);
-            }
+        // Update session activity with server
+        try {
+            await updateSessionInDatabase();
+        } catch (error) {
+            console.warn('Could not update session activity:', error);
         }
     }
 
@@ -308,17 +313,23 @@
         if (!currentUser) return;
 
         try {
-            if (window.SPViAuth?.updateUserSession && sessionData.sessionId) {
-                await window.SPViAuth.updateUserSession(currentUser.id, {
-                    isOnline: true,
+            const token = localStorage.getItem('spvi_auth_token');
+            if (!token) return;
+
+            await fetch('/api/auth/activity', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
                     sessionId: sessionData.sessionId,
-                    lastActivity: new Date().toISOString(),
-                    loginTime: new Date(sessionData.startTime).toISOString(),
                     ipAddress: await getCurrentIP(),
                     userAgent: navigator.userAgent
-                });
-                lastDatabaseUpdate = Date.now();
-            }
+                })
+            });
+            
+            lastDatabaseUpdate = Date.now();
         } catch (error) {
             console.warn('Could not update session info in database:', error);
         }
@@ -604,13 +615,37 @@
         // Show logout notification
         showSessionToast(`Session ended: ${reason}`, 'warning');
         
-        // Logout using SPViAuth
-        if (window.SPViAuth) {
-            window.SPViAuth.logout();
-        } else {
-            // Fallback logout
-            localStorage.removeItem('spvi_current_user');
-            window.location.href = isInTools() ? '../index.html' : 'index.html';
+        // Logout using server-side API first, then SPViAuth
+        performServerLogout().finally(() => {
+            if (window.SPViAuth) {
+                window.SPViAuth.logout();
+            } else {
+                // Fallback logout
+                localStorage.removeItem('spvi_current_user');
+                localStorage.removeItem('spvi_auth_token');
+                window.location.href = isInTools() ? '../index.html' : 'index.html';
+            }
+        });
+    }
+
+    // Perform server-side logout
+    async function performServerLogout() {
+        try {
+            const token = localStorage.getItem('spvi_auth_token');
+            if (token) {
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            }
+        } catch (error) {
+            console.warn('Server logout failed:', error);
+        } finally {
+            // Always clear the token
+            localStorage.removeItem('spvi_auth_token');
         }
     }
 
