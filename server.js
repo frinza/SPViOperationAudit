@@ -115,9 +115,21 @@ try {
 // Middleware
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? ['https://your-domain.com'] // Update with your actual domain
-        : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500'],
-    credentials: true
+        ? [
+            process.env.FRONTEND_URL || 'https://your-domain.com',
+            'https://spvi-operations-audit.web.app',
+            'https://spvi-operations-audit.firebaseapp.com'
+        ]
+        : [
+            'http://localhost:3000', 
+            'http://127.0.0.1:3000', 
+            'http://localhost:5500',
+            'http://localhost:8080',
+            'http://localhost:5000'
+        ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname)));
@@ -514,33 +526,40 @@ app.get('/api/admin/users/online', authenticateToken, async (req, res) => {
 // Configuration endpoint
 app.get('/api/config', (req, res) => {
     try {
+        // Check if running in development mode
+        const isDevelopment = process.env.NODE_ENV !== 'production';
+        
         // Only send necessary configuration to client
         const config = {
-            FIREBASE_API_KEY: process.env.FIREBASE_API_KEY,
-            FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN,
-            FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
-            FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET,
-            FIREBASE_MESSAGING_SENDER_ID: process.env.FIREBASE_MESSAGING_SENDER_ID,
-            FIREBASE_APP_ID: process.env.FIREBASE_APP_ID,
-            FIREBASE_MEASUREMENT_ID: process.env.FIREBASE_MEASUREMENT_ID,
-            GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-            ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+            FIREBASE_API_KEY: process.env.FIREBASE_API_KEY || (isDevelopment ? 'AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' : null),
+            FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN || (isDevelopment ? 'your-project.firebaseapp.com' : null),
+            FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || (isDevelopment ? 'your-project-id' : null),
+            FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET || (isDevelopment ? 'your-project.firebasestorage.app' : null),
+            FIREBASE_MESSAGING_SENDER_ID: process.env.FIREBASE_MESSAGING_SENDER_ID || (isDevelopment ? '000000000000' : null),
+            FIREBASE_APP_ID: process.env.FIREBASE_APP_ID || (isDevelopment ? '1:000000000000:web:xxxxxxxxxxxxxxxx' : null),
+            FIREBASE_MEASUREMENT_ID: process.env.FIREBASE_MEASUREMENT_ID || (isDevelopment ? 'G-XXXXXXXXXX' : null),
+            GEMINI_API_KEY: process.env.GEMINI_API_KEY || (isDevelopment ? 'AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' : null),
+            ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'admin@spvi.co.th',
             APP_NAME: process.env.APP_NAME || 'SPVi Operations Audit',
             APP_VERSION: process.env.APP_VERSION || '1.0.0'
             // Note: Never send passwords to client
         };
 
-        // Validate that all required variables are present
-        const required = [
-            'FIREBASE_API_KEY', 'FIREBASE_AUTH_DOMAIN', 'FIREBASE_PROJECT_ID',
-            'FIREBASE_STORAGE_BUCKET', 'FIREBASE_MESSAGING_SENDER_ID', 
-            'FIREBASE_APP_ID', 'ADMIN_EMAIL'
-        ];
+        // In production, validate that all required variables are present
+        if (!isDevelopment) {
+            const required = [
+                'FIREBASE_API_KEY', 'FIREBASE_AUTH_DOMAIN', 'FIREBASE_PROJECT_ID',
+                'FIREBASE_STORAGE_BUCKET', 'FIREBASE_MESSAGING_SENDER_ID', 
+                'FIREBASE_APP_ID', 'ADMIN_EMAIL'
+            ];
 
-        for (const key of required) {
-            if (!config[key]) {
+            const missing = required.filter(key => !config[key]);
+            if (missing.length > 0) {
+                console.error('Missing required environment variables:', missing);
                 return res.status(500).json({ 
-                    error: `Missing environment variable: ${key}` 
+                    error: 'Server configuration incomplete',
+                    missing: missing,
+                    message: 'Please configure environment variables for production deployment'
                 });
             }
         }
@@ -553,7 +572,10 @@ app.get('/api/config', (req, res) => {
         res.json(config);
     } catch (error) {
         console.error('Configuration endpoint error:', error);
-        res.status(500).json({ error: 'Configuration load failed' });
+        res.status(500).json({ 
+            error: 'Configuration load failed',
+            message: isDevelopment ? error.message : 'Internal server error'
+        });
     }
 });
 

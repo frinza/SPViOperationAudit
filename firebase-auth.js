@@ -331,15 +331,24 @@
                     body: JSON.stringify({ email, password })
                 });
 
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Login failed');
+                let result;
+                const contentType = response.headers.get('content-type');
+                
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    // Handle non-JSON responses (like HTML error pages)
+                    const text = await response.text();
+                    console.error('Non-JSON response received:', text);
+                    throw new Error('Server returned invalid response format');
                 }
 
-                const result = await response.json();
-                
+                if (!response.ok) {
+                    throw new Error(result.error || `Server error: ${response.status}`);
+                }
+
                 if (!result.success) {
-                    throw new Error('Login failed');
+                    throw new Error(result.error || 'Login failed');
                 }
 
                 // Store the JWT token for subsequent API calls
@@ -355,6 +364,10 @@
                 // Handle specific error cases
                 if (error.message.includes('network') || error.message.includes('fetch')) {
                     throw new Error('Connection error - please check your network');
+                } else if (error.message.includes('CORS')) {
+                    throw new Error('Cross-origin request blocked - check server configuration');
+                } else if (error.message.includes('invalid response format')) {
+                    throw new Error('Server configuration error - contact administrator');
                 } else {
                     throw error;
                 }

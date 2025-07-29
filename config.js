@@ -17,7 +17,7 @@
         FIREBASE_MEASUREMENT_ID: 'G-XXXXXXXXXX',
         GEMINI_API_KEY: 'AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Replace with your API key
         ADMIN_EMAIL: 'admin@spvi.co.th',
-        ADMIN_DEFAULT_PASSWORD: 'CHANGE_THIS_PASSWORD_IN_ENV_FILE', // SECURITY: Must be changed in production
+        ADMIN_DEFAULT_PASSWORD: 'Oxxxx5', // ⚠️ PRODUCTION PASSWORD - Handle with care
         APP_NAME: 'SPVi Operations Audit',
         APP_VERSION: '1.0.0',
         
