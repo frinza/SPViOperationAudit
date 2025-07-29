@@ -4019,8 +4019,20 @@ def calculate_serial_sku_score(text, pattern_type):
                     if (useAdvancedMode) {
                         isDemo = detectAdvancedDemo(originalSku, desc, family, groupCode, subclassCode, isIStudio);
                     } else {
-                        // Standard DEMO detection logic
+                        // Exclusion list for items that should NOT be flagged as DEMO
+                        const demoExclusions = [
+                            'AIS DYNAMIC SIM',
+                            'DYNAMIC SIM'
+                        ];
+                        
+                        // Check if SKU or description contains any exclusion patterns
+                        const isExcluded = demoExclusions.some(exclusion => 
+                            originalSku.includes(exclusion) || desc.includes(exclusion)
+                        );
+                        
+                        // Standard DEMO detection logic with exclusions
                         isDemo = (
+                            !isExcluded && 
                             !originalSku.startsWith('DLCGZ') && (
                                 originalSku.startsWith('D') ||           // Condition 1: First character is 'D'
                                 originalSku.includes('DEMO') ||          // Condition 2: SKU contains "DEMO" anywhere
