@@ -13,15 +13,25 @@ test-*.js
 firebase-service-account.json
 *-service-account.json
 firebase-adminsdk-*.json
-firebase-service-account.json.template
 firebase-service-account.json.backup
 
-# Environment variables
+# Environment variables (SECURITY CRITICAL)
 .env
 .env.local
 .env.development
 .env.production
 .env.test
+
+# macOS system files
+.DS_Store
+.DS_Store?
+._*
+
+# Backup and temporary files
+*.backup
+*.bak
+*.tmp
+*.temp
 
 # Node modules
 node_modules/
