@@ -739,16 +739,138 @@
         }, 3000);
     }
 
-    // Get current IP address
+    // Get current IP address with fallback methods
     async function getCurrentIP() {
         try {
-            // Try to get IP from a public API
-            const response = await fetch('https://api.ipify.org?format=json');
-            const data = await response.json();
-            return data.ip;
+            // Method 1: Try to get IP from our own server endpoint (if available)
+            try {
+                const response = await fetch('/api/client-ip', { 
+                    method: 'GET',
+                    timeout: 3000 
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.ip) return data.ip;
+                }
+            } catch (e) {
+                // Server endpoint not available, continue to other methods
+            }
+
+            // Method 2: Use WebRTC to get local IP (works for LAN detection)
+            const localIP = await getLocalIP();
+            if (localIP && localIP !== '127.0.0.1') {
+                return localIP;
+            }
+
+            // Method 3: Try alternative IP service (with timeout and rate limiting protection)
+            const ipServices = [
+                'https://ipapi.co/ip/',
+                'https://icanhazip.com/',
+                'https://ident.me/'
+            ];
+            
+            for (const service of ipServices) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2000);
+                    
+                    const response = await fetch(service, {
+                        signal: controller.signal,
+                        headers: { 'Accept': 'application/json, text/plain' }
+                    });
+                    clearTimeout(timeoutId);
+                    
+                    if (response.ok) {
+                        const ip = await response.text();
+                        if (ip && ip.trim().match(/^\d+\.\d+\.\d+\.\d+$/)) {
+                            return ip.trim();
+                        }
+                    }
+                } catch (e) {
+                    // Continue to next service
+                    continue;
+                }
+            }
+
+            // Fallback: Use a deterministic client identifier
+            return getClientIdentifier();
+            
         } catch (error) {
-            console.warn('Could not get IP address:', error);
-            return 'unknown';
+            console.warn('Could not determine IP address, using client identifier:', error);
+            return getClientIdentifier();
+        }
+    }
+
+    // Get local IP using WebRTC (for LAN detection)
+    function getLocalIP() {
+        return new Promise((resolve) => {
+            try {
+                const rtc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+                
+                rtc.createDataChannel('');
+                rtc.createOffer().then(offer => rtc.setLocalDescription(offer));
+                
+                rtc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        const ip = event.candidate.candidate.split(' ')[4];
+                        if (ip && ip.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+                            rtc.close();
+                            resolve(ip);
+                        }
+                    }
+                };
+                
+                // Timeout after 3 seconds
+                setTimeout(() => {
+                    rtc.close();
+                    resolve(null);
+                }, 3000);
+                
+            } catch (error) {
+                resolve(null);
+            }
+        });
+    }
+
+    // Generate a unique client identifier as fallback
+    function getClientIdentifier() {
+        try {
+            // Use browser fingerprinting as fallback identifier
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillText('Client ID', 2, 2);
+            
+            const fingerprint = [
+                navigator.userAgent,
+                navigator.language,
+                screen.width + 'x' + screen.height,
+                new Date().getTimezoneOffset(),
+                canvas.toDataURL()
+            ].join('|');
+            
+            // Create a hash of the fingerprint
+            let hash = 0;
+            for (let i = 0; i < fingerprint.length; i++) {
+                const char = fingerprint.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            
+            // Convert to pseudo-IP format for consistency
+            const a = (hash >>> 24) & 255;
+            const b = (hash >>> 16) & 255;
+            const c = (hash >>> 8) & 255;
+            const d = hash & 255;
+            
+            return `${a}.${b}.${c}.${d}`;
+            
+        } catch (error) {
+            // Ultimate fallback
+            return '127.0.0.1';
         }
     }
 

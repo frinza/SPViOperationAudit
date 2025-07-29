@@ -589,6 +589,275 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Test Firebase collections endpoint
+app.get('/api/test/collections', authenticateToken, async (req, res) => {
+    try {
+        if (!firebaseApp) {
+            return res.status(503).json({ 
+                error: 'Firebase not available',
+                message: 'Server running in test mode'
+            });
+        }
+
+        const db = admin.firestore();
+        
+        // Test issues collection
+        try {
+            console.log('Testing issues collection...');
+            const issuesSnapshot = await db.collection('issues').limit(5).get();
+            console.log('Issues collection query successful, found:', issuesSnapshot.size, 'documents');
+            
+            const issues = issuesSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            res.json({
+                status: 'success',
+                collections: {
+                    issues: {
+                        exists: true,
+                        count: issuesSnapshot.size,
+                        sample: issues
+                    }
+                }
+            });
+        } catch (firestoreError) {
+            console.error('Firestore collection test failed:', firestoreError);
+            res.status(500).json({
+                error: 'Firestore access failed',
+                message: firestoreError.message,
+                code: firestoreError.code
+            });
+        }
+        
+    } catch (error) {
+        console.error('Collection test error:', error);
+        res.status(500).json({ 
+            error: 'Collection test failed',
+            message: error.message
+        });
+    }
+});
+
+// Issues API endpoints for Issue Tracker
+app.get('/api/issues', authenticateToken, async (req, res) => {
+    try {
+        if (!firebaseApp) {
+            // Return test data when Firebase is not available
+            const testIssues = [
+                {
+                    id: 'test-issue-1',
+                    branch: 'สาขาทดสอบ 001',
+                    issue: 'ทดสอบระบบ Issue Tracker',
+                    status: 'กำลังดำเนินการ',
+                    priority: 'สูง',
+                    assignee: 'Test Admin',
+                    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+                    createdAt: new Date().toISOString(),
+                    createdBy: req.user.name
+                },
+                {
+                    id: 'test-issue-2',
+                    branch: 'สาขาทดสอบ 002',
+                    issue: 'ทดสอบการแสดงผลข้อมูล',
+                    status: 'รอดำเนินการ',
+                    priority: 'ปานกลาง',
+                    assignee: 'Test User 2',
+                    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+                    createdAt: new Date().toISOString(),
+                    createdBy: req.user.name
+                }
+            ];
+            
+            return res.json({
+                success: true,
+                issues: testIssues,
+                count: testIssues.length,
+                source: 'test_data'
+            });
+        }
+
+        // Use Firebase when available
+        const db = admin.firestore();
+        const snapshot = await db.collection('issues').orderBy('createdAt', 'desc').get();
+        
+        const issues = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        res.json({
+            success: true,
+            issues: issues,
+            count: issues.length,
+            source: 'firebase'
+        });
+        
+    } catch (error) {
+        console.error('Get issues error:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch issues',
+            message: error.message
+        });
+    }
+});
+
+app.post('/api/issues', authenticateToken, async (req, res) => {
+    try {
+        const { branch, issue, priority, assignee, dueDate } = req.body;
+        
+        if (!branch || !issue || !priority) {
+            return res.status(400).json({ error: 'Branch, issue, and priority are required' });
+        }
+
+        const newIssue = {
+            branch,
+            issue,
+            priority,
+            assignee: assignee || req.user.name,
+            dueDate,
+            status: 'รอดำเนินการ',
+            createdAt: new Date().toISOString(),
+            createdBy: req.user.name,
+            updatedAt: new Date().toISOString()
+        };
+
+        if (!firebaseApp) {
+            // In test mode, just return the issue with a generated ID
+            newIssue.id = 'test-' + Date.now();
+            return res.json({
+                success: true,
+                issue: newIssue,
+                source: 'test_data'
+            });
+        }
+
+        // Use Firebase when available
+        const db = admin.firestore();
+        const docRef = await db.collection('issues').add(newIssue);
+        
+        res.json({
+            success: true,
+            issue: { id: docRef.id, ...newIssue },
+            source: 'firebase'
+        });
+        
+    } catch (error) {
+        console.error('Create issue error:', error);
+        res.status(500).json({ 
+            error: 'Failed to create issue',
+            message: error.message
+        });
+    }
+});
+
+app.put('/api/issues/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        
+        if (!id) {
+            return res.status(400).json({ error: 'Issue ID is required' });
+        }
+
+        updates.updatedAt = new Date().toISOString();
+        updates.updatedBy = req.user.name;
+
+        if (!firebaseApp) {
+            // In test mode, just return the updated issue
+            return res.json({
+                success: true,
+                issue: { id, ...updates },
+                source: 'test_data'
+            });
+        }
+
+        // Use Firebase when available
+        const db = admin.firestore();
+        await db.collection('issues').doc(id).update(updates);
+        
+        const updatedDoc = await db.collection('issues').doc(id).get();
+        const updatedIssue = { id: updatedDoc.id, ...updatedDoc.data() };
+        
+        res.json({
+            success: true,
+            issue: updatedIssue,
+            source: 'firebase'
+        });
+        
+    } catch (error) {
+        console.error('Update issue error:', error);
+        res.status(500).json({ 
+            error: 'Failed to update issue',
+            message: error.message
+        });
+    }
+});
+
+app.delete('/api/issues/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        if (!id) {
+            return res.status(400).json({ error: 'Issue ID is required' });
+        }
+
+        if (!firebaseApp) {
+            // In test mode, just return success
+            return res.json({
+                success: true,
+                message: 'Issue deleted (test mode)',
+                source: 'test_data'
+            });
+        }
+
+        // Use Firebase when available
+        const db = admin.firestore();
+        await db.collection('issues').doc(id).delete();
+        
+        res.json({
+            success: true,
+            message: 'Issue deleted successfully',
+            source: 'firebase'
+        });
+        
+    } catch (error) {
+        console.error('Delete issue error:', error);
+        res.status(500).json({ 
+            error: 'Failed to delete issue',
+            message: error.message
+        });
+    }
+});
+
+// Client IP endpoint
+app.get('/api/client-ip', (req, res) => {
+    try {
+        // Get client IP from various possible sources
+        const forwarded = req.headers['x-forwarded-for'];
+        const real = req.headers['x-real-ip'];
+        const clientIP = forwarded ? forwarded.split(',')[0] : 
+                        real || 
+                        req.connection.remoteAddress || 
+                        req.socket.remoteAddress ||
+                        (req.connection.socket ? req.connection.socket.remoteAddress : null) ||
+                        req.ip ||
+                        '127.0.0.1';
+
+        res.json({ 
+            ip: clientIP,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Client IP endpoint error:', error);
+        res.status(500).json({ 
+            error: 'Failed to determine client IP',
+            ip: '127.0.0.1'
+        });
+    }
+});
+
 // Serve static files for all routes (SPA fallback)
 app.get('*', (req, res) => {
     // Don't serve API routes as static files

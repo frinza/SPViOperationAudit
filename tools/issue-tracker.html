@@ -1618,18 +1618,80 @@
         }
 
         async function loadData() {
-            showStatus('Loading data from Firestore...');
+            console.log('Issue Tracker: Starting loadData function...');
+            showStatus('Loading data from server...');
+            
             try {
-                const snapshot = await issuesCollection.orderBy('createdAt', 'desc').get();
-                allIssues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                console.log('Issue Tracker: Fetching issues from API...');
+                
+                const token = localStorage.getItem('spvi_auth_token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+                
+                const response = await fetch('/api/issues', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || `Server error: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to load issues');
+                }
+                
+                allIssues = result.issues || [];
+                console.log(`Issue Tracker: Loaded ${allIssues.length} issues from ${result.source || 'server'}`);
+                
                 updateAssigneeFilter();
                 renderIssues();
                 updateNotificationBell(); // Update notification status
-                showStatus('Data loaded successfully.', false);
+                showStatus(`Data loaded successfully (${allIssues.length} issues).`, false);
+                console.log('Issue Tracker: loadData completed successfully');
+                
             } catch (error) {
-                // Error loading data handled silently for production
-                issueListEl.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500">Failed to load data: ${error.message}</td></tr>`;
-                showStatus(`Load failed: ${error.message}`, true);
+                console.error('Issue Tracker: loadData error:', error);
+                
+                // Handle specific error types
+                if (error.message.includes('No authentication token')) {
+                    const errorMsg = 'Authentication required - please log in again';
+                    issueListEl.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500">${errorMsg}</td></tr>`;
+                    showStatus(errorMsg, true);
+                    // Redirect to login
+                    setTimeout(() => {
+                        window.location.href = '../index.html';
+                    }, 2000);
+                } else if (error.message.includes('Server error: 401')) {
+                    const errorMsg = 'Session expired - please log in again';
+                    issueListEl.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500">${errorMsg}</td></tr>`;
+                    showStatus(errorMsg, true);
+                    // Clear auth and redirect
+                    localStorage.removeItem('spvi_auth_token');
+                    window.SPViAuth?.clearCurrentUser();
+                    setTimeout(() => {
+                        window.location.href = '../index.html';
+                    }, 2000);
+                } else if (error.message.includes('Server error: 403')) {
+                    const errorMsg = 'Access denied - insufficient permissions';
+                    issueListEl.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500">${errorMsg}</td></tr>`;
+                    showStatus(errorMsg, true);
+                } else if (error.message.includes('fetch')) {
+                    const errorMsg = 'Network error - check your connection';
+                    issueListEl.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500">${errorMsg}</td></tr>`;
+                    showStatus(errorMsg, true);
+                } else {
+                    const errorMsg = `Failed to load data: ${error.message}`;
+                    issueListEl.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500">${errorMsg}</td></tr>`;
+                    showStatus(errorMsg, true);
+                }
             }
         }
 
@@ -1672,29 +1734,101 @@
 
         async function saveIssueToFirestore(issue) {
             try {
-                if (issue.id && typeof issue.id === 'string') {
-                    // Update
-                    const { id, ...data } = issue;
-                    await issuesCollection.doc(id).set(data, { merge: true });
-                } else {
-                    // Add new
-                    const { id, ...data } = issue;
-                    const docRef = await issuesCollection.add({
-                        ...data,
-                        createdAt: new Date()
-                    });
-                    issue.id = docRef.id;
+                const token = localStorage.getItem('spvi_auth_token');
+                if (!token) {
+                    throw new Error('No authentication token found');
                 }
+
+                let response;
+                if (issue.id && typeof issue.id === 'string' && !issue.id.startsWith('temp-')) {
+                    // Update existing issue
+                    const { id, ...data } = issue;
+                    response = await fetch(`/api/issues/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+                } else {
+                    // Create new issue
+                    const { id, isNew, ...data } = issue;
+                    response = await fetch('/api/issues', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+                }
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || `Server error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error || 'Save failed');
+                }
+
+                // Update the issue with the returned data
+                if (result.issue) {
+                    Object.assign(issue, result.issue);
+                }
+
+                showStatus('Saved successfully', false);
             } catch (error) {
-                showStatus(`Save failed: ${error.message}`, true);
+                console.error('Save error:', error);
+                if (error.message.includes('No authentication token')) {
+                    showStatus('Authentication required - please log in again', true);
+                    setTimeout(() => {
+                        window.location.href = '../index.html';
+                    }, 2000);
+                } else {
+                    showStatus(`Save failed: ${error.message}`, true);
+                }
             }
         }
 
         async function deleteIssueFromFirestore(id) {
             try {
-                await issuesCollection.doc(id).delete();
+                const token = localStorage.getItem('spvi_auth_token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch(`/api/issues/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || `Server error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error || 'Delete failed');
+                }
+
+                showStatus('Deleted successfully', false);
             } catch (error) {
-                showStatus(`Delete failed: ${error.message}`, true);
+                console.error('Delete error:', error);
+                if (error.message.includes('No authentication token')) {
+                    showStatus('Authentication required - please log in again', true);
+                    setTimeout(() => {
+                        window.location.href = '../index.html';
+                    }, 2000);
+                } else {
+                    showStatus(`Delete failed: ${error.message}`, true);
+                }
             }
         }
 
@@ -1987,26 +2121,27 @@
             }
             
             if (id) {
+                // Update existing issue
                 const issue = allIssues.find(i => i.id === id);
                 if (issue) {
                     issue.branch = branch;
                     issue.issue = issueText;
                     await saveIssueToFirestore(issue);
+                    await loadData(); // Reload to get updated data
                 }
             } else {
+                // Create new issue
                 const newIssue = {
                     branch: branch,
                     issue: issueText,
+                    priority: 'ปานกลาง', // Default priority
                     status: 'รอดำเนินการ',
                     assignee: '',
-                    dueDate: '',
-                    isNew: true,
-                    createdAt: new Date()
+                    dueDate: ''
                 };
                 await saveIssueToFirestore(newIssue);
-                allIssues.unshift(newIssue);
+                await loadData(); // Reload to get updated data with proper ID
             }
-            await loadData();
             hideIssueModal();
         });
         document.getElementById('modal-cancel-btn').addEventListener('click', hideIssueModal);
@@ -2153,79 +2288,72 @@
         // --- Initial Load ---
         window.addEventListener('DOMContentLoaded', async () => {
             try {
-                // Wait a bit for all DOM elements to be fully rendered
+                console.log('Issue Tracker: Starting initialization...');
+                
+                // Step 1: Initialize Firebase for authentication only
+                console.log('Issue Tracker: Initializing Firebase for authentication...');
+                await SPViAuth.initializeFirebase();
+                console.log('Issue Tracker: Firebase initialized successfully');
+                
+                // Step 2: Check authentication
+                console.log('Issue Tracker: Checking authentication...');
+                if (!SPViAuth.checkAuthentication()) {
+                    console.log('Issue Tracker: Authentication failed, redirecting...');
+                    window.location.href = '../index.html';
+                    return;
+                }
+                console.log('Issue Tracker: Authentication successful');
+                
+                // Step 3: Check tool access permission
+                console.log('Issue Tracker: Checking tool permissions...');
+                if (window.SPViSessionManager && window.SPViSessionManager.checkToolAccess) {
+                    const hasAccess = window.SPViSessionManager.checkToolAccess('issueTracker');
+                    if (!hasAccess) {
+                        console.log('Issue Tracker: Access denied');
+                        document.querySelector('main')?.style.setProperty('display', 'none');
+                        return;
+                    }
+                }
+                console.log('Issue Tracker: Access permission granted');
+                
+                // Step 4: Setup dev tools protection
+                SPViAuth.setupDevToolsProtection();
+                
+                // Step 5: Initialize UI components
+                console.log('Issue Tracker: Initializing UI components...');
                 setTimeout(() => {
-                    // Initialize branch dropdown with retry mechanism
                     initializeBranchDropdown();
-                    
-                    // Double-check initialization after another short delay
                     setTimeout(() => {
                         if (!isDropdownInitialized) {
-                            console.log('Retrying dropdown initialization...');
+                            console.log('Issue Tracker: Retrying dropdown initialization...');
                             initializeBranchDropdown();
                         }
                     }, 200);
                 }, 100);
                 
-                const firebaseInstances = await SPViAuth.initializeFirebase();
-                firestore = firebaseInstances.db || window.firebase.app().firestore();
-                issuesCollection = firestore.collection('issues');
-                
-                // Load users first, then load data
+                // Step 6: Load data
+                console.log('Issue Tracker: Loading users and data...');
                 await loadUsers();
+                console.log('Issue Tracker: Users loaded, loading issues...');
                 await loadData();
+                console.log('Issue Tracker: Data loaded successfully');
                 
-                // Set up periodic refresh every 5 minutes to keep data current
+                // Step 7: Set up periodic refresh
+                console.log('Issue Tracker: Setting up auto-refresh...');
                 setInterval(async () => {
                     try {
                         await loadData();
-                        console.log('Data refreshed automatically');
+                        console.log('Issue Tracker: Data refreshed automatically');
                     } catch (error) {
-                        console.error('Auto-refresh failed:', error);
+                        console.error('Issue Tracker: Auto-refresh failed:', error);
                     }
                 }, 5 * 60 * 1000); // 5 minutes
+                
+                console.log('Issue Tracker: Initialization completed successfully');
+                
             } catch (error) {
-                showStatus('Firestore connection failed: ' + error.message, true);
-            }
-        });
-    </script>
-    <script>
-
-
-        // Initialize user display when page loads
-        document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                // Initialize Firebase
-                await SPViAuth.initializeFirebase();
-                
-                // Check authentication - redirect to login if not authenticated
-                if (!SPViAuth.checkAuthentication()) {
-                    window.location.href = '../index.html';
-                    return;
-                }
-                
-                // User info will be added automatically by firebase-auth.js init()
-                // No need to call addUserInfo() manually
-                
-                // Setup centralized devtools protection
-                SPViAuth.setupDevToolsProtection();
-
-        // Check tool access permission
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if user has permission to access issueTracker tool
-            if (window.SPViSessionManager && window.SPViSessionManager.checkToolAccess) {
-                const hasAccess = window.SPViSessionManager.checkToolAccess('issueTracker');
-                if (!hasAccess) {
-                    // Access denied - modal will be shown by checkToolAccess function
-                    // Optionally hide main content
-                    document.querySelector('main')?.style.setProperty('display', 'none');
-                }
-            }
-        });
-            } catch (error) {
-                // Authentication error handled silently for production
-                // If authentication fails, redirect to login
-                window.location.href = '../index.html';
+                console.error('Issue Tracker: Initialization failed:', error);
+                showStatus('Initialization failed: ' + error.message, true);
             }
         });
     </script>

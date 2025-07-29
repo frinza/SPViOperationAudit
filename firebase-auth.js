@@ -687,12 +687,26 @@
             const currentUser = getCurrentUser();
             if (!currentUser) return;
 
-            // Initialize Firebase if not already done
-            await initializeFirebase();
-            
-            // Get all issues from Firestore
-            const issuesSnapshot = await db.collection('issues').get();
-            const allIssues = issuesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Get all issues from API instead of direct Firestore
+            const token = localStorage.getItem('spvi_auth_token');
+            if (!token) {
+                console.warn('No auth token found for notifications');
+                return;
+            }
+
+            const response = await fetch('/api/issues', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch issues: ${response.status}`);
+            }
+
+            const allIssues = await response.json();
             
             // Check for overdue issues for current user
             const today = new Date();
