@@ -6040,9 +6040,14 @@ def calculate_serial_sku_score(text, pattern_type):
                     // SUBCLASS filter
                     if (subclassFilter !== 'all' && item.SUBCLASS_CODE !== subclassFilter) return false;
                     
-                    return true;
-                });
+                    return true;                });
                 const { column, direction } = state.finalReportSort;                dataView.sort((a, b) => {
+                    // First level sort: non-DEMO items first, then DEMO items
+                    if (a.isDemo !== b.isDemo) {
+                        return a.isDemo - b.isDemo;
+                    }
+                    
+                    // Second level sort: by the selected column
                     let valA = column === 'FinalDiff' ? Math.abs(a[column]) : a[column];
                     let valB = column === 'FinalDiff' ? Math.abs(b[column]) : b[column];
                     
