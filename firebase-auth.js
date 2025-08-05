@@ -196,17 +196,33 @@
         return hash.toString();
     }
 
-    // Local storage management for current user session
+    // Secure session management - Firebase only storage
+    let currentUserCache = null;
+    let sessionToken = null;
+
     function getCurrentUser() {
-        try {
-            return JSON.parse(localStorage.getItem('spvi_current_user') || 'null');
-        } catch (e) {
-            return null;
+        // Return cached user if available and valid
+        if (currentUserCache && sessionToken) {
+            return currentUserCache;
         }
+        
+        // Try to recover from session data if available
+        if (window.SPViSessionManager && window.SPViSessionManager.getSessionInfo) {
+            const sessionInfo = window.SPViSessionManager.getSessionInfo();
+            if (sessionInfo && sessionInfo.sessionId && currentUserCache) {
+                return currentUserCache;
+            }
+        }
+        
+        return null;
     }
 
     function setCurrentUser(user) {
-        localStorage.setItem('spvi_current_user', JSON.stringify(user));
+        // Store user in memory cache only
+        currentUserCache = user;
+        
+        // Generate secure session token
+        sessionToken = generateSecureToken();
         
         // Initialize session manager when user logs in
         if (window.SPViSessionManager && !isLoginPage()) {
@@ -214,10 +230,62 @@
                 window.SPViSessionManager.initialize();
             }, 100);
         }
+        
+        // Store session info in Firebase instead of localStorage
+        if (user && user.id) {
+            updateUserSessionInFirebase(user.id, {
+                isOnline: true,
+                sessionId: sessionToken,
+                lastActivity: new Date().toISOString(),
+                loginTime: new Date().toISOString(),
+                userAgent: navigator.userAgent
+            }).catch(error => {
+                console.warn('Could not update Firebase session:', error);
+            });
+        }
     }
 
     function clearCurrentUser() {
-        localStorage.removeItem('spvi_current_user');
+        // Clear user session from Firebase
+        if (currentUserCache && currentUserCache.id && sessionToken) {
+            updateUserSessionInFirebase(currentUserCache.id, {
+                isOnline: false,
+                sessionId: null,
+                lastActivity: new Date().toISOString()
+            }).catch(error => {
+                console.warn('Could not clear Firebase session:', error);
+            });
+        }
+        
+        // Clear memory cache
+        currentUserCache = null;
+        sessionToken = null;
+    }
+
+    // Generate secure session token
+    function generateSecureToken() {
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(2, 15);
+        const userAgent = navigator.userAgent.slice(0, 20);
+        return `spvi_${timestamp}_${random}_${btoa(userAgent).slice(0, 8)}`;
+    }
+
+    // Update user session in Firebase
+    async function updateUserSessionInFirebase(userId, sessionData) {
+        try {
+            await initializeFirebase();
+            const userRef = db.collection('users').doc(userId);
+            await userRef.update({
+                sessionInfo: {
+                    ...sessionData,
+                    lastUpdated: new Date().toISOString()
+                },
+                lastLogin: sessionData.loginTime || new Date().toISOString()
+            });
+        } catch (error) {
+            console.warn('Firebase session update failed:', error);
+            throw error;
+        }
     }
 
     // Check if current page is login page
@@ -246,6 +314,94 @@
             } else {
                 console.error('Error updating current user data:', error);
             }
+        }
+        return null;
+    }
+
+    // Restore session from Firebase
+    async function restoreUserSession() {
+        try {
+            await initializeFirebase();
+            
+            // Get all users to find active sessions
+            const usersSnapshot = await db.collection('users')
+                .where('status', '==', 'approved')
+                .where('sessionInfo.isOnline', '==', true)
+                .get();
+            
+            const currentFingerprint = generateBrowserFingerprint();
+            const now = new Date().getTime();
+            const sessionTimeout = 30 * 60 * 1000; // 30 minutes
+            
+            // Find user with valid session for current browser
+            for (const doc of usersSnapshot.docs) {
+                const userData = doc.data();
+                const sessionInfo = userData.sessionInfo;
+                
+                if (sessionInfo && sessionInfo.sessionId && sessionInfo.lastActivity) {
+                    const lastActivity = new Date(sessionInfo.lastActivity).getTime();
+                    const timeSinceActivity = now - lastActivity;
+                    
+                    // Check if session is still valid
+                    if (timeSinceActivity < sessionTimeout) {
+                        // Additional validation using browser fingerprint
+                        const sessionFingerprint = extractFingerprintFromSession(sessionInfo);
+                        if (sessionFingerprint === currentFingerprint) {
+                            const user = { id: doc.id, ...userData };
+                            currentUserCache = user;
+                            sessionToken = sessionInfo.sessionId;
+                            
+                            // Update last activity
+                            await updateUserSessionInFirebase(user.id, {
+                                ...sessionInfo,
+                                lastActivity: new Date().toISOString()
+                            });
+                            
+                            return user;
+                        }
+                    }
+                }
+            }
+            
+            return null;
+        } catch (error) {
+            console.warn('Could not restore session from Firebase:', error);
+            return null;
+        }
+    }
+
+    // Generate browser fingerprint for additional security
+    function generateBrowserFingerprint() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.fillText('Browser fingerprint', 2, 2);
+        
+        const fingerprint = [
+            navigator.userAgent,
+            navigator.language,
+            screen.width + 'x' + screen.height,
+            new Date().getTimezoneOffset(),
+            canvas.toDataURL()
+        ].join('|');
+        
+        return btoa(fingerprint).slice(0, 16);
+    }
+
+    // Extract fingerprint from session for validation
+    function extractFingerprintFromSession(sessionInfo) {
+        if (sessionInfo.userAgent) {
+            const mockCanvas = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+            const fingerprint = [
+                sessionInfo.userAgent,
+                navigator.language,
+                screen.width + 'x' + screen.height,
+                new Date().getTimezoneOffset(),
+                mockCanvas
+            ].join('|');
+            
+            return btoa(fingerprint).slice(0, 16);
         }
         return null;
     }
@@ -403,6 +559,9 @@
                 // Password matched, proceed with login
                 const user = { id: userDoc.id, ...userData };
                 
+                // Clean up any legacy localStorage data first
+                cleanupLegacyStorage();
+                
                 // Migrate password if needed
                 if (needsMigration) {
                     console.log('Migrating password to new format...');
@@ -411,9 +570,16 @@
                     console.log('Password migrated successfully');
                 }
                 
-                // Update last login
-                await this.updateUser(user.id, { lastLogin: new Date().toISOString() });
+                // Update last login and clear any existing sessions
+                await this.updateUser(user.id, { 
+                    lastLogin: new Date().toISOString(),
+                    'sessionInfo.isOnline': false, // Clear any existing session first
+                    'sessionInfo.sessionId': null
+                });
                 user.lastLogin = new Date().toISOString();
+                
+                // Set user in memory and establish secure session
+                setCurrentUser(user);
                 
                 console.log('Login successful for user:', user.name);
                 return user;
@@ -682,12 +848,24 @@
     };
 
     // Authentication checker
-    function checkAuth() {
+    async function checkAuth() {
         const currentUser = getCurrentUser();
         
+        // If no user in memory, try to restore from Firebase
         if (!currentUser) {
-            redirectToLogin();
-            return false;
+            const restoredUser = await restoreUserSession();
+            if (!restoredUser) {
+                redirectToLogin();
+                return false;
+            }
+            
+            if (restoredUser.status !== 'approved') {
+                clearCurrentUser();
+                redirectToLogin();
+                return false;
+            }
+            
+            return true;
         }
 
         if (currentUser.status !== 'approved') {
@@ -1260,7 +1438,10 @@
     };
 
     // Initialize authentication when DOM loads
-    function init() {
+    async function init() {
+        // Clean up any legacy localStorage data
+        cleanupLegacyStorage();
+        
         const currentPage = window.location.pathname;
         
         // Skip auth check if we're on the login page
@@ -1272,7 +1453,8 @@
             return;
         }
 
-        if (checkAuth()) {
+        const isAuthenticated = await checkAuth();
+        if (isAuthenticated) {
             // Only add user info if not explicitly skipped
             if (!window.skipUserInfoBar) {
                 addUserInfo();
@@ -1284,6 +1466,19 @@
                     window.updateGlobalNotifications();
                 }
             }, 2 * 60 * 1000);
+        }
+    }
+
+    // Clean up legacy localStorage data
+    function cleanupLegacyStorage() {
+        try {
+            // Remove old user data from localStorage
+            if (localStorage.getItem('spvi_current_user')) {
+                console.log('Migrating from localStorage to Firebase-only storage...');
+                localStorage.removeItem('spvi_current_user');
+            }
+        } catch (error) {
+            console.warn('Could not clean up legacy storage:', error);
         }
     }
 
@@ -1434,8 +1629,9 @@
         getCurrentUser,
         setCurrentUser,
         clearCurrentUser,
-        checkAuth,
-        checkAuthentication: checkAuth, // Alias for compatibility
+        checkAuth: () => checkAuth(), // Make async compatible
+        checkAuthentication: () => checkAuth(), // Alias for compatibility
+        restoreUserSession, // New function for session restoration
         logout: function() {
             // Clear session data from session manager
             if (window.SPViSessionManager) {
@@ -1474,6 +1670,7 @@
         setupDevToolsProtection,
         hashPassword, // Expose hash function for testing
         hashPasswordOldFormat, // Expose old hash function for migration
+        cleanupLegacyStorage, // Expose cleanup function
 
         // Session Management
         updateUserSession,
@@ -1562,9 +1759,9 @@
 
     // Auto-initialize when DOM loads
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', () => init().catch(console.warn));
     } else {
-        init();
+        init().catch(console.warn);
     }
 
 })();

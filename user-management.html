@@ -25,6 +25,14 @@
 </head>
 <body class="bg-slate-50 min-h-screen">
 
+    <!-- Authentication Check Loading -->
+    <div id="auth-loading" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-gray-600 font-medium">กำลังตรวจสอบสิทธิ์การเข้าถึง...</p>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
@@ -1042,17 +1050,42 @@
             return icons[type] || icons['info'];
         }
 
-        // Check admin access
-        function checkAdminAccess() {
-            const currentUser = SPViAuth.getCurrentUser();
-            if (!currentUser || currentUser.role !== 'admin' || currentUser.status !== 'approved') {
-                showToast('Access denied. Admin privileges required.', 'error');
+        // Check admin access - async version to properly wait for session restoration
+        async function checkAdminAccess() {
+            try {
+                // Wait for authentication system to restore session if needed
+                const isAuthenticated = await SPViAuth.checkAuthentication();
+                if (!isAuthenticated) {
+                    document.getElementById('auth-loading').style.display = 'none';
+                    showToast('Access denied. Please log in first.', 'error');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                    return false;
+                }
+
+                const currentUser = SPViAuth.getCurrentUser();
+                if (!currentUser || currentUser.role !== 'admin' || currentUser.status !== 'approved') {
+                    document.getElementById('auth-loading').style.display = 'none';
+                    showToast('Access denied. Admin privileges required.', 'error');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                    return false;
+                }
+                
+                // Hide loading screen on success
+                document.getElementById('auth-loading').style.display = 'none';
+                return true;
+            } catch (error) {
+                console.error('Error checking admin access:', error);
+                document.getElementById('auth-loading').style.display = 'none';
+                showToast('Authentication error. Please try logging in again.', 'error');
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 2000);
                 return false;
             }
-            return true;
         }
 
         // Load all users
@@ -2090,7 +2123,9 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async function() {
-            if (!checkAdminAccess()) return;
+            // Wait for admin access check to complete
+            const hasAdminAccess = await checkAdminAccess();
+            if (!hasAdminAccess) return;
 
             try {
                 await SPViAuth.initializeFirebase();

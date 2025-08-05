@@ -608,8 +608,7 @@
         if (window.SPViAuth) {
             window.SPViAuth.logout();
         } else {
-            // Fallback logout
-            localStorage.removeItem('spvi_current_user');
+            // Fallback logout - only clear session data, not user data
             window.location.href = isInTools() ? '../index.html' : 'index.html';
         }
     }
@@ -717,10 +716,22 @@
         }
     }
 
-    // Tool access permission check
-    function checkToolAccess(toolName) {
+    // Tool access permission check - async to ensure auth is ready
+    async function checkToolAccess(toolName) {
         if (!window.SPViAuth) {
             console.warn('SPViAuth not available');
+            return false;
+        }
+
+        // Wait for authentication to be ready
+        try {
+            const isAuthenticated = await window.SPViAuth.checkAuthentication();
+            if (!isAuthenticated) {
+                console.warn('User not authenticated for tool access check');
+                return false;
+            }
+        } catch (error) {
+            console.warn('Authentication check failed:', error);
             return false;
         }
 

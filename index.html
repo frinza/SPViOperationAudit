@@ -420,20 +420,21 @@
         }
 
         // Check if user is already logged in
-        function checkAuth() {
-            const currentUser = SPViAuth.getCurrentUser();
-            
-            if (currentUser && currentUser.status === 'approved') {
-                window.location.href = 'dashboard.html';
+        async function checkAuth() {
+            // Try to restore session from Firebase
+            const isAuthenticated = await SPViAuth.checkAuthentication();
+            if (isAuthenticated) {
+                const currentUser = SPViAuth.getCurrentUser();
+                if (currentUser && currentUser.status === 'approved') {
+                    window.location.href = 'dashboard.html';
+                }
             }
         }
         
         // Clear any corrupted auth state if we're on login page
         function clearCorruptedAuthState() {
-            const currentUser = SPViAuth.getCurrentUser();
-            if (currentUser && (!currentUser.status || currentUser.status !== 'approved')) {
-                SPViAuth.clearCurrentUser();
-            }
+            // Clean up any legacy localStorage data
+            SPViAuth.cleanupLegacyStorage();
         }
 
         // Initialize app
@@ -447,7 +448,7 @@
                 clearCorruptedAuthState();
                 
                 // Then check if user is properly authenticated
-                checkAuth();
+                await checkAuth();
                 
                 // Setup centralized devtools protection
                 SPViAuth.setupDevToolsProtection();

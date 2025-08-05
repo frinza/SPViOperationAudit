@@ -1126,7 +1126,8 @@
                 await SPViAuth.initializeFirebase();
                 
                 // Check authentication - redirect to login if not authenticated
-                if (!SPViAuth.checkAuthentication()) {
+                const isAuthenticated = await SPViAuth.checkAuthentication();
+                if (!isAuthenticated) {
                     window.location.href = '../index.html';
                     return;
                 }
@@ -1137,18 +1138,15 @@
                 // Setup centralized devtools protection
                 SPViAuth.setupDevToolsProtection();
 
-        // Check tool access permission
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if user has permission to access cashControl tool
-            if (window.SPViSessionManager && window.SPViSessionManager.checkToolAccess) {
-                const hasAccess = window.SPViSessionManager.checkToolAccess('cashControl');
-                if (!hasAccess) {
-                    // Access denied - modal will be shown by checkToolAccess function
-                    // Optionally hide main content
-                    document.querySelector('main')?.style.setProperty('display', 'none');
+                // Check tool access permission after authentication is confirmed
+                if (window.SPViSessionManager && window.SPViSessionManager.checkToolAccess) {
+                    const hasAccess = await window.SPViSessionManager.checkToolAccess('cashControl');
+                    if (!hasAccess) {
+                        // Access denied - modal will be shown by checkToolAccess function
+                        // Optionally hide main content
+                        document.querySelector('main')?.style.setProperty('display', 'none');
+                    }
                 }
-            }
-        });
             } catch (error) {
                 // Authentication error handled silently for production
                 // If authentication fails, redirect to login

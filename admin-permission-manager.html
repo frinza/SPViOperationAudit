@@ -285,35 +285,36 @@
         let allUsers = [];
 
         // Check admin permission on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Prevent the blue navigation bar from appearing on this page
-            window.skipUserInfoBar = true;
-            
-            // Wait for auth system to be ready
-            const checkAuthReady = setInterval(() => {
-                if (window.SPViAuth && window.SPViAuth.getCurrentUser()) {
-                    clearInterval(checkAuthReady);
-                    const currentUser = window.SPViAuth.getCurrentUser();
-                    
-                    if (currentUser.role !== 'admin') {
-                        showError('คุณไม่มีสิทธิ์เข้าถึงหน้านี้ เฉพาะผู้ดูแลระบบเท่านั้น');
-                        setTimeout(() => {
-                            window.location.href = 'dashboard.html';
-                        }, 2000);
-                        return;
-                    }
-                    
-                    loadUsers();
-                }
-            }, 100);
-
-            // Timeout after 5 seconds
-            setTimeout(() => {
-                clearInterval(checkAuthReady);
-                if (!window.SPViAuth || !window.SPViAuth.getCurrentUser()) {
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Initialize Firebase first
+                await SPViAuth.initializeFirebase();
+                
+                // Check authentication - redirect to login if not authenticated
+                const isAuthenticated = await SPViAuth.checkAuthentication();
+                if (!isAuthenticated) {
                     window.location.href = 'index.html';
+                    return;
                 }
-            }, 5000);
+                
+                const currentUser = SPViAuth.getCurrentUser();
+                if (!currentUser || currentUser.role !== 'admin' || currentUser.status !== 'approved') {
+                    showError('คุณไม่มีสิทธิ์เข้าถึงหน้านี้ เฉพาะผู้ดูแลระบบเท่านั้น');
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 2000);
+                    return;
+                }
+                
+                // Load users after authentication is confirmed
+                loadUsers();
+            } catch (error) {
+                // Authentication error handled silently for production
+                showError('เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+            }
         });
 
         // Load all users
