@@ -1747,8 +1747,7 @@
                          <!-- Desktop table view -->
                          <div id="demo-count-container" class="table-container border rounded-lg mobile-hidden"></div>
                          <!-- Mobile card view -->
-                         <div id="demo-count-cards" class="mobile-card-view space-y-4"></div>
-                         <div class="flex gap-2 mt-2">
+                         <div id="demo-count-cards" class="mobile-card-view space-y-4"></div>                         <div class="flex gap-2 mt-2">
                              <button id="exportDemoCsvButton" class="flex-1 bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm text-sm">
                                  Export DEMO Table as CSV
                              </button>
@@ -1757,7 +1756,10 @@
                                  <button id="importDemoCsvButton" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm">
                                      Import DEMO Count CSV
                                  </button>
-                             </div>                         
+                             </div>
+                             <button id="debugDataButton" class="bg-orange-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-orange-600 transition-colors shadow-sm text-xs">
+                                 Debug
+                             </button>                         
                         </div>
                      </div>
                 </div><!-- SPP Panel Section -->
@@ -3550,10 +3552,9 @@ def calculate_serial_sku_score(text, pattern_type):
                         }
                         if (item) break;
                     }
-                }
-
-                return item;
-            }            
+                                }                return item;
+            }
+            
             function getInitialState() {
                 return {
                     sohData: [], sohLookup: {}, scannerMaster: [], demoMaster: [],
@@ -3568,7 +3569,8 @@ def calculate_serial_sku_score(text, pattern_type):
                     charts: { cost: null, qty: null, category: null },
                     branchName: null, branchCode: null, countDate: null,
                     sohUpdatedSkus: new Set(), // Track SKUs that had SOH updated
-                };            }
+                };
+            }
             
             function showLoader(message = "Processing...") { 
                 getEl('loader-message').textContent = message;
@@ -4273,8 +4275,8 @@ def calculate_serial_sku_score(text, pattern_type):
                     populateSppToolsFilters();
                 }
                 
-                rebuildUiFromState();
-            }            
+                rebuildUiFromState();            }
+            
             function downloadFile(content, fileName) {
                 const blob = (typeof content === 'string') ? new Blob([content], { type: 'text/csv;charset=utf-8;' }) : content;
                 const link = document.createElement("a");
@@ -4286,14 +4288,16 @@ def calculate_serial_sku_score(text, pattern_type):
             }
 
             // SPP CSV Export Functions
+            
             function exportSppSparePartsTable() {
                 if (!state || !state.sppSparePartsMaster || !Array.isArray(state.sppSparePartsMaster) || state.sppSparePartsMaster.length === 0) {
                     showModal("Export Error", "No SPP Spare Parts data available to export.");
                     return;
-                }
-
-                try {
-                    const dataToExport = state.sppSparePartsMaster.map((item, idx) => ({ 
+                }                try {
+                    // Sort data alphabetically by SKU for consistent output
+                    const sortedData = [...state.sppSparePartsMaster].sort((a, b) => a.SKU.localeCompare(b.SKU));
+                    
+                    const dataToExport = sortedData.map((item, idx) => ({ 
                         NO: idx + 1, 
                         SKU: item.SKU, 
                         Description: item.Description, 
@@ -4305,22 +4309,22 @@ def calculate_serial_sku_score(text, pattern_type):
                         Remark: item.remark || ''
                     }));
                     const csv = Papa.unparse(dataToExport, { header: true });
-                    const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : (state.branchName ? state.branchName.replace(/\s+/g, '_') : 'Unknown_Branch');
-                    const fileName = `${state.countDate || 'Unknown_Date'}_SPP_SpareParts_Count_${branchInfo}.csv`;
+                    const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : (state.branchName ? state.branchName.replace(/\s+/g, '_') : 'Unknown_Branch');                    const fileName = `${state.countDate || 'Unknown_Date'}_SPP_SpareParts_Count_${branchInfo}.csv`;
                     downloadFile(csv, fileName);
                 } catch (error) {
                     showModal("Export Error", `Failed to export SPP Spare Parts data: ${error.message}`);
                 }
             }
-
+            
             function exportSppGlueTable() {
                 if (!state || !state.sppGlueMaster || !Array.isArray(state.sppGlueMaster) || state.sppGlueMaster.length === 0) {
                     showModal("Export Error", "No SPP Glue/Adhesive data available to export.");
                     return;
-                }
-
-                try {
-                    const dataToExport = state.sppGlueMaster.map((item, idx) => ({ 
+                }                try {
+                    // Sort data alphabetically by SKU for consistent output
+                    const sortedData = [...state.sppGlueMaster].sort((a, b) => a.SKU.localeCompare(b.SKU));
+                    
+                    const dataToExport = sortedData.map((item, idx) => ({ 
                         NO: idx + 1, 
                         SKU: item.SKU, 
                         Description: item.Description, 
@@ -4332,21 +4336,22 @@ def calculate_serial_sku_score(text, pattern_type):
                         Remark: item.remark || ''
                     }));
                     const csv = Papa.unparse(dataToExport, { header: true });
-                    const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : (state.branchName ? state.branchName.replace(/\s+/g, '_') : 'Unknown_Branch');
-                    const fileName = `${state.countDate || 'Unknown_Date'}_SPP_Glue_Count_${branchInfo}.csv`;
+                    const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : (state.branchName ? state.branchName.replace(/\s+/g, '_') : 'Unknown_Branch');                    const fileName = `${state.countDate || 'Unknown_Date'}_SPP_Glue_Count_${branchInfo}.csv`;
                     downloadFile(csv, fileName);
                 } catch (error) {
                     showModal("Export Error", `Failed to export SPP Glue/Adhesive data: ${error.message}`);
                 }
-            }            
+            }
+            
             function exportSppToolsTable() {
                 if (!state || !state.sppToolsMaster || !Array.isArray(state.sppToolsMaster) || state.sppToolsMaster.length === 0) {
                     showModal("Export Error", "No SPP Tools data available to export.");
                     return;
-                }
-
-                try {
-                    const dataToExport = state.sppToolsMaster.map((item, idx) => ({ 
+                }                try {
+                    // Sort data alphabetically by SKU for consistent output
+                    const sortedData = [...state.sppToolsMaster].sort((a, b) => a.SKU.localeCompare(b.SKU));
+                    
+                    const dataToExport = sortedData.map((item, idx) => ({ 
                         NO: idx + 1, 
                         SKU: item.SKU, 
                         Description: item.Description, 
@@ -5046,9 +5051,11 @@ def calculate_serial_sku_score(text, pattern_type):
                 updateDemoSummary();
                 updateFinalReportSummary();
                 setUnsavedChanges(true);
-            }            
-            function exportDemoTable() {
-                const dataToExport = state.demoMaster.map((item, idx) => ({ 
+            }            function exportDemoTable() {
+                // Sort data alphabetically by SKU for consistent output
+                const sortedData = [...state.demoMaster].sort((a, b) => a.SKU.localeCompare(b.SKU));
+                
+                const dataToExport = sortedData.map((item, idx) => ({ 
                     NO: idx + 1, 
                     SKU: item.SKU, 
                     Description: item.Description, 
@@ -5358,13 +5365,13 @@ def calculate_serial_sku_score(text, pattern_type):
                     
                     if (hasSalesData) {
                         // Preserve sales data from existing reconciledData
-                        return {
-                            ...item,
+                        return {                        ...item,
                             Recount: existingReconciledItem.Recount,
                             FinalDiff: existingReconciledItem.FinalDiff,
                             ReasonFinal: item.ReasonFinal ? `${item.ReasonFinal} + ${existingReconciledItem.ReasonFinal}` : existingReconciledItem.ReasonFinal,
                             Remark: existingReconciledItem.Remark || ''
-                        };                    } else {
+                        };
+                    } else {
                         // No existing sales data - use item as is
                         return {...item};
                     }
@@ -6408,10 +6415,13 @@ def calculate_serial_sku_score(text, pattern_type):
                         }
                     } 
                 });
-            }
-            function exportFinalReport() {
+            }            function exportFinalReport() {
                 if (!state.reconciledData.length) return showModal("Info", "No data to export.");
-                const dataToExport = state.reconciledData.map((item, idx) => ({
+                
+                // Sort data to ensure non-DEMO items appear first, then DEMO items
+                const sortedData = [...state.reconciledData].sort((a, b) => a.isDemo - b.isDemo);
+                
+                const dataToExport = sortedData.map((item, idx) => ({
                     NO: idx + 1, 
                     SKU: item.SKU, 
                     Description: item.Description, 
@@ -6427,12 +6437,15 @@ def calculate_serial_sku_score(text, pattern_type):
                 }));
                 const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
                 downloadFile(Papa.unparse(dataToExport, { header: true }), `${state.countDate}_Report_${branchInfo}.csv`);
-            }
-            function exportStockCountToJSON() {
+            }            function exportStockCountToJSON() {
                 if (!state.reconciledData.length) {
                     alert('กรุณาประมวลผลข้อมูลให้ถึงขั้นตอนสุดท้ายก่อนทำการ Export');
                     return;
                 }
+                
+                // Sort data to ensure non-DEMO items appear first, then DEMO items
+                const sortedData = [...state.reconciledData].filter(item => item.FinalDiff !== 0).sort((a, b) => a.isDemo - b.isDemo);
+                
                 const exportData = {
                     tool: 'stock-count',
                     details: {
@@ -6441,7 +6454,7 @@ def calculate_serial_sku_score(text, pattern_type):
                         date: state.countDate,
                     },
                     summary: finalSummaryData,
-                    data: state.reconciledData.filter(item => item.FinalDiff !== 0)
+                    data: sortedData
                 };
                 const jsonString = JSON.stringify(exportData, null, 2);
                 const blob = new Blob([jsonString], { type: 'application/json' });
@@ -6930,10 +6943,24 @@ def calculate_serial_sku_score(text, pattern_type):
                           if (allItems.length === 0) {
                             showModal("Warning", "No SOH data available to export");
                             return;
-                        }
+                        }                        // Sort to ensure non-DEMO items appear first, then DEMO items, then by SKU within each group
+                        allItems.sort((a, b) => {
+                            // First sort by isDemo flag (non-DEMO first)
+                            if (a.isDemo !== b.isDemo) {
+                                return a.isDemo - b.isDemo;
+                            }
+                            // Then sort by SKU alphabetically within each group
+                            return a.SKU.localeCompare(b.SKU);
+                        });
 
-                        // Sort by SKU for consistency
-                        allItems.sort((a, b) => a.SKU.localeCompare(b.SKU));
+                        // Debug logging to verify sorting
+                        console.log('SOH Excel Export Debug:');
+                        console.log(`Total items: ${allItems.length}`);
+                        const demoCount = allItems.filter(item => item.isDemo).length;
+                        const nonDemoCount = allItems.length - demoCount;
+                        console.log(`Non-DEMO items: ${nonDemoCount}, DEMO items: ${demoCount}`);
+                        console.log('First 5 items:', allItems.slice(0, 5).map(item => ({ SKU: item.SKU, isDemo: item.isDemo })));
+                        console.log('Last 5 items:', allItems.slice(-5).map(item => ({ SKU: item.SKU, isDemo: item.isDemo })));
                           // Prepare data for export - use existing isDemo flag
                         const rows = allItems.map(item => {
                             return {
@@ -6960,7 +6987,8 @@ def calculate_serial_sku_score(text, pattern_type):
                     }
                 }
                   addListener('newJobButton', 'click', startNewJob);
-                addListener('save-progress-button', 'click', handleSaveProgressToFile);                addListener('main-tab-demo', 'click', () => switchMainTab('demo'));
+                addListener('save-progress-button', 'click', handleSaveProgressToFile);
+                addListener('main-tab-demo', 'click', () => switchMainTab('demo'));
                 addListener('main-tab-workflow', 'click', () => switchMainTab('workflow'));
                 addListener('main-tab-spp', 'click', () => switchMainTab('spp'));
                 addListener('downloadMasterForScan', 'click', downloadMasterForScan);
@@ -6973,7 +7001,9 @@ def calculate_serial_sku_score(text, pattern_type):
                 addListener('refreshChartsButton', 'click', renderFinalReportCharts);                addListener('exportDemoCsvButton', 'click', exportDemoTable);
                 addListener('importDemoCsvButton', 'click', () => getEl('importDemoCsvFile').click());
                 addListener('importDemoCsvFile', 'change', importDemoCountCsv);
-                addListener('exportSohExcelBtn', 'click', exportSohExcel);                addListener('openScannerBtn', 'click', openScannerModal);
+                addListener('debugDataButton', 'click', debugDataCategorization);
+                addListener('exportSohExcelBtn', 'click', exportSohExcel);
+                addListener('openScannerBtn', 'click', openScannerModal);
                 addListener('openScannerBtn-spp-spare-parts', 'click', () => openFloatingScanner('spp-spare-parts'));
                 addListener('openScannerBtn-spp-glue', 'click', () => openFloatingScanner('spp-glue'));
                 addListener('openScannerBtn-spp-tools', 'click', () => openFloatingScanner('spp-tools'));
@@ -7085,12 +7115,12 @@ def calculate_serial_sku_score(text, pattern_type):
                     if (input.matches('input[type="number"]')) updateSppGlueCount(sku, input.value); 
                     else if (input.matches('input[type="text"]')) updateSppGlueRemark(sku, input.value); 
                 });
-                
-                addListener('spp-tools-cards', 'input', e => { 
+                  addListener('spp-tools-cards', 'input', e => { 
                     const { target: input } = e; 
                     const sku = input.closest('[data-sku]').dataset.sku; 
                     if (input.matches('input[type="number"]')) updateSppToolsCount(sku, input.value); 
-                    else if (input.matches('input[type="text"]')) updateSppToolsRemark(sku, input.value);                });
+                    else if (input.matches('input[type="text"]')) updateSppToolsRemark(sku, input.value);
+                });
                 
                 // Demo and Final Report Mobile Card Event Listeners
                 addListener('demo-count-cards', 'input', e => { 
@@ -7136,13 +7166,13 @@ def calculate_serial_sku_score(text, pattern_type):
                         clearInterval(ocrStreamInterval);
                         ocrStreamInterval = setInterval(processOcrFrame, ocrSettings.demo.speed);
                     }
-                });
-                addListener('ocr-language-select', 'change', async (e) => {
+                });                addListener('ocr-language-select', 'change', async (e) => {
                     ocrSettings.demo.language = e.target.value;
                     if (tesseractWorker) {
                         await initTesseract(ocrSettings.demo.language, true);
                     }
-                });                
+                });
+                
                 addListener('ocr-preprocessing-select', 'change', (e) => {
                     ocrSettings.demo.preprocessing = e.target.value;
                 });
@@ -7160,10 +7190,10 @@ def calculate_serial_sku_score(text, pattern_type):
                     }
                 });
                 addListener('final-ocr-language-select', 'change', async (e) => {
-                    ocrSettings.final.language = e.target.value;
-                    if (finalTesseractWorker) {
+                    ocrSettings.final.language = e.target.value;                    if (finalTesseractWorker) {
                         await initTesseract(ocrSettings.final.language, false);
-                    }                });
+                    }
+                });
                 
                 addListener('final-ocr-preprocessing-select', 'change', (e) => {
                     ocrSettings.final.preprocessing = e.target.value;
@@ -7188,12 +7218,14 @@ def calculate_serial_sku_score(text, pattern_type):
                         floatingScanner = document.getElementById('floating-scanner');
                         if (floatingScanner) {
                             initializeFloatingScanner();
-                        }
-                    }, 100);                }
+                        }                    }, 100);
+                }
             }
             
             // Initialize floating scanner after DOM is ready
-            setupFloatingScanner();            // --- Final Report Scanner Logic ---
+            setupFloatingScanner();
+            
+            // --- Final Report Scanner Logic ---
               function finalOpenScannerModal() {
                 openFloatingScanner('final');
             }
@@ -7209,16 +7241,16 @@ def calculate_serial_sku_score(text, pattern_type):
                 const now = Date.now();
                 if (finalScanCooldown[code] && now - finalScanCooldown[code] < 10000) return;
                 finalScanCooldown[code] = now;
-                processFinalScannedCode(code, 'Barcode');
-            }            
+                processFinalScannedCode(code, 'Barcode');            }
+            
             function processFinalScannedCode(code, reason) {
                 const scannedText = code.toUpperCase();
-                
-                // Use shared matching function for enhanced Apple product matching
+                  // Use shared matching function for enhanced Apple product matching
                 let item = findItemByScannedText(state.reconciledData, scannedText);
-
+                
                 if (item) {
-                    playSound('success');                    finalScannerResultsEl.innerHTML = `<div class="text-left w-full space-y-1"><p class="font-medium text-slate-800">${item.Description}</p><p class="text-sm text-slate-500">SKU: ${item.SKU}</p><div class="flex justify-between items-baseline pt-1"><span class="text-lg font-bold text-slate-700">Counted: <span class="text-blue-600">${item.Recount}</span> / ${item.SOH}</span><span class="text-lg font-bold">${item.FinalDiff === 0 ? '<span class="text-green-600">Matched</span>' : item.FinalDiff > 0 ? '<span class="text-yellow-600">Overage</span>' : '<span class="text-blue-600">Shortage</span>'}</span></div></div>`;
+                    playSound('success');
+                    finalScannerResultsEl.innerHTML = `<div class="text-left w-full space-y-1"><p class="font-medium text-slate-800">${item.Description}</p><p class="text-sm text-slate-500">SKU: ${item.SKU}</p><div class="flex justify-between items-baseline pt-1"><span class="text-lg font-bold text-slate-700">Counted: <span class="text-blue-600">${item.Recount}</span> / ${item.SOH}</span><span class="text-lg font-bold">${item.FinalDiff === 0 ? '<span class="text-green-600">Matched</span>' : item.FinalDiff > 0 ? '<span class="text-yellow-600">Overage</span>' : '<span class="text-blue-600">Shortage</span>'}</span></div></div>`;
                     const row = document.querySelector(`#final-report-table-container tr[data-sku="${item.SKU}"]`);
                     if (row) {
                         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -7232,11 +7264,50 @@ def calculate_serial_sku_score(text, pattern_type):
                         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         card.classList.add('ring-2', 'ring-offset-2', 'ring-green-500');
                         setTimeout(() => card.classList.remove('ring-2', 'ring-offset-2', 'ring-green-500'), 800);
-                    }} else {
-                    playSound('error');
+                    }
+                } else {                    playSound('error');
                     finalScannerResultsEl.innerHTML = `<div class="text-center w-full"><p class="font-bold text-red-600">SKU Not Found</p><p class="text-sm text-slate-500">${scannedText}</p></div>`;
                 }
             }
+            // Debug function to verify data categorization
+            function debugDataCategorization() {
+                console.group('Data Categorization Debug');
+                
+                console.log('Demo Master Count:', state.demoMaster?.length || 0);
+                console.log('SPP Spare Parts Master Count:', state.sppSparePartsMaster?.length || 0);
+                console.log('SPP Glue Master Count:', state.sppGlueMaster?.length || 0);
+                console.log('SPP Tools Master Count:', state.sppToolsMaster?.length || 0);
+                console.log('Reconciled Data Count:', state.reconciledData?.length || 0);
+                
+                if (state.demoMaster?.length > 0) {
+                    const demoFlags = state.demoMaster.map(item => item.isDemo);
+                    console.log('Demo Master isDemo flags:', [...new Set(demoFlags)]);
+                    
+                    const nonDemoInDemo = state.demoMaster.filter(item => !item.isDemo);
+                    if (nonDemoInDemo.length > 0) {
+                        console.warn('Found non-DEMO items in DEMO master:', nonDemoInDemo.map(item => ({ SKU: item.SKU, isDemo: item.isDemo })));
+                    }
+                }
+                
+                if (state.sppSparePartsMaster?.length > 0) {
+                    const sppFlags = state.sppSparePartsMaster.map(item => item.isDemo);
+                    console.log('SPP Spare Parts isDemo flags:', [...new Set(sppFlags)]);
+                    
+                    const demoInSpp = state.sppSparePartsMaster.filter(item => item.isDemo);
+                    if (demoInSpp.length > 0) {
+                        console.warn('Found DEMO items in SPP Spare Parts master:', demoInSpp.map(item => ({ SKU: item.SKU, isDemo: item.isDemo })));
+                    }
+                }
+                
+                if (state.reconciledData?.length > 0) {
+                    const demoCount = state.reconciledData.filter(item => item.isDemo).length;
+                    const nonDemoCount = state.reconciledData.filter(item => !item.isDemo).length;
+                    console.log(`Reconciled Data: ${demoCount} DEMO, ${nonDemoCount} non-DEMO items`);
+                }
+                
+                console.groupEnd();
+            }
+
         });        
         // Initialize dev tools protection
         SPViAuth.setupDevToolsProtection();
