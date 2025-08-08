@@ -20,6 +20,10 @@
     <!-- Firebase Auth System -->
     <script src="../firebase-auth.js"></script>
     
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="../styles/spvi-main.css">
     <link rel="stylesheet" href="../styles/print-legal.css">
@@ -463,7 +467,12 @@
                     <div class="mt-6 space-y-2 no-print">
                          <button id="export-csv-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">Export to CSV</button>
                          <button id="export-json-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition">Export to JSON</button>
-                         <button id="print-btn" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg transition">พิมพ์รายงาน</button>
+                         <button id="export-pdf-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                             <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                             </svg>
+                             Export เป็น PDF
+                         </button>
                          <button id="reset-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition">เริ่มใหม่</button>
                     </div>
                 </div>
@@ -1033,6 +1042,289 @@
                 URL.revokeObjectURL(url);
             };
             
+            const exportToPDF = async () => {
+                const getVal = (id) => {
+                    const element = document.getElementById(id);
+                    return element ? element.value || '' : '';
+                };
+                const getTxt = (id) => {
+                    const element = document.getElementById(id);
+                    return element ? element.textContent || '0.00' : '0.00';
+                };
+                
+                if (!getVal('department')) {
+                    alert('กรุณากรอกชื่อสาขา/แผนกก่อนทำการ Export PDF');
+                    return;
+                }
+
+                try {
+                    // Show loading
+                    const button = document.getElementById('export-pdf-btn');
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<svg class="w-5 h-5 mr-2 inline animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>กำลังสร้าง PDF...';
+                    button.disabled = true;
+
+                    calculateAll(); // Ensure summary data is up-to-date
+
+                    // Validate required libraries
+                    if (typeof window.jspdf === 'undefined') {
+                        throw new Error('jsPDF library not loaded');
+                    }
+                    if (typeof html2canvas === 'undefined') {
+                        throw new Error('html2canvas library not loaded');
+                    }
+
+                    // Create temporary div for PDF content
+                    const pdfContent = document.createElement('div');
+                    pdfContent.style.width = '210mm';
+                    pdfContent.style.minHeight = '297mm';
+                    pdfContent.style.padding = '20mm';
+                    pdfContent.style.backgroundColor = 'white';
+                    pdfContent.style.fontFamily = 'Sarabun, sans-serif';
+                    pdfContent.style.fontSize = '12pt';
+                    pdfContent.style.lineHeight = '1.4';
+                    pdfContent.style.position = 'absolute';
+                    pdfContent.style.left = '-9999px';
+                    pdfContent.style.top = '0';
+
+                    // Get dynamic section data
+                    const getDynamicSectionData = (listId) => {
+                        const items = [];
+                        document.querySelectorAll(`#${listId} .dynamic-row`).forEach(row => {
+                            const description = row.querySelector('input[type="text"]').value;
+                            const amount = parseFloat(row.querySelector('input[type="number"]').value) || 0;
+                            if (description || amount > 0) {
+                                items.push({
+                                    description: description || '-',
+                                    amount: amount.toLocaleString('th-TH', { minimumFractionDigits: 2 }),
+                                    hasAttachment: !!attachments[row.id] ? 'มี' : 'ไม่มี'
+                                });
+                            }
+                        });
+                        return items;
+                    };
+
+                    const vouchers = getDynamicSectionData('voucher-list');
+                    const reimbursements = getDynamicSectionData('reimbursement-list');
+
+                    // Add header and content
+                    pdfContent.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                                <div style="text-align: left; font-size: 10pt; font-weight: bold;">
+                                    Operation Audit Division<br>
+                                    (ฝ่ายตรวจสอบปฏิบัติการ)
+                                </div>
+                                <div style="text-align: right; font-size: 8pt; max-width: 280px;">
+                                    บริษัท เอส พี วี ไอ จำกัด (มหาชน)<br>
+                                    1550/5 อาคารธนิยะ พลาซ่า ชั้น 12A ถนนเพลินจิต<br>
+                                    แขวงลุมพินี เขตปทุมวัน กรุงเทพมหานคร 10330<br>
+                                    โทร. 0-2658-8881 แฟกซ์ 0-2658-8870
+                                </div>
+                            </div>
+                            <h1 style="font-size: 18pt; font-weight: bold; margin: 0;">รายงานผลการตรวจนับเงินสด</h1>
+                            <p style="font-size: 12pt; color: #666; margin: 5px 0 0 0;">รายงานการตรวจสอบและกระทบยอดเงินสด</p>
+                        </div>
+                        
+                        <div style="margin-bottom: 25px;">
+                            <h2 style="font-size: 14pt; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">รายละเอียดการตรวจสอบ</h2>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div><strong>สาขา/แผนก:</strong> ${getVal('department') || '-'}</div>
+                                <div><strong>ผู้ดูแลเงินสด:</strong> ${getVal('custodian') || '-'}</div>
+                                <div><strong>วันที่ตรวจนับ:</strong> ${getVal('count-date') || '-'}</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 25px;">
+                            <h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 15px; color: #1e40af;">สรุปผลการตรวจนับ</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div>
+                                    <h4 style="font-size: 11pt; font-weight: bold; margin-bottom: 10px;">ยอดเงินที่ตรวจนับได้</h4>
+                                    <div style="background: #f8fafc; padding: 10px; border-radius: 5px; font-size: 10pt;">
+                                        <div>เงินสดย่อยทั้งหมด: ${getTxt('total-petty-cash')} บาท</div>
+                                        <div>เงินทอนที่นับได้: ${getVal('change-fund-counted') || '0.00'} บาท</div>
+                                        <div>เงินสดจากยอดขายวันก่อน: ${getVal('prev-sales-counted') || '0.00'} บาท</div>
+                                        <div>เงินสดจากยอดขายวันนี้: ${getVal('today-sales-counted') || '0.00'} บาท</div>
+                                        <div style="border-top: 1px solid #ccc; margin-top: 5px; padding-top: 5px; font-weight: bold;">
+                                            รวมเงินสดทั้งหมด: ${getTxt('total-assets-counted')} บาท
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 style="font-size: 11pt; font-weight: bold; margin-bottom: 10px;">ผลการกระทบยอด</h4>
+                                    <div style="background: #f8fafc; padding: 10px; border-radius: 5px; font-size: 10pt;">
+                                        <div>ยอดที่ควรจะมี: ${getTxt('expected-balance')} บาท</div>
+                                        <div>ยอดที่ตรวจนับได้: ${getTxt('total-assets-counted')} บาท</div>
+                                        <div>เอกสารจ่ายรอเบิก: ${getTxt('total-vouchers')} บาท</div>
+                                        <div>รายการรอโอนคืน: ${getTxt('total-reimbursements')} บาท</div>
+                                        <div style="border-top: 1px solid #ccc; margin-top: 5px; padding-top: 5px; font-weight: bold;">
+                                            ผลต่าง: <span style="color: ${(() => {
+                                                const diff = parseFloat(getTxt('difference').replace(/[^0-9.-]/g, '')) || 0;
+                                                return diff > 0.005 ? '#16a34a' : diff < -0.005 ? '#dc2626' : '#374151';
+                                            })()};">
+                                                ${getTxt('difference')} บาท
+                                            </span>
+                                        </div>
+                                        <div style="font-size: 9pt; color: #666; margin-top: 5px;">
+                                            สถานะ: ${getTxt('difference-label') || 'ยอดเงินถูกต้อง'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+
+                    // Add vouchers section if there are any
+                    if (vouchers.length > 0) {
+                        pdfContent.innerHTML += `
+                            <div style="margin-bottom: 25px; page-break-inside: avoid;">
+                                <h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 15px; color: #1e40af;">รายการเอกสารจ่ายรอเบิก</h3>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+                                    <thead>
+                                        <tr style="background: #f8fafc;">
+                                            <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">รายละเอียด</th>
+                                            <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: right;">จำนวนเงิน (บาท)</th>
+                                            <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">หลักฐาน</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${vouchers.map(item => `
+                                            <tr>
+                                                <td style="border: 1px solid #e2e8f0; padding: 8px;">${item.description}</td>
+                                                <td style="border: 1px solid #e2e8f0; padding: 8px; text-align: right;">${item.amount}</td>
+                                                <td style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">${item.hasAttachment}</td>
+                                            </tr>
+                                        `).join('')}
+                                        <tr style="background: #f8fafc; font-weight: bold;">
+                                            <td style="border: 1px solid #e2e8f0; padding: 8px;">รวม</td>
+                                            <td style="border: 1px solid #e2e8f0; padding: 8px; text-align: right;">${getTxt('total-vouchers') || '0.00'}</td>
+                                            <td style="border: 1px solid #e2e8f0; padding: 8px;"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>`;
+                    }
+
+                    // Add reimbursements section if there are any
+                    if (reimbursements.length > 0) {
+                        pdfContent.innerHTML += `
+                            <div style="margin-bottom: 25px; page-break-inside: avoid;">
+                                <h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 15px; color: #1e40af;">รายการรอโอนเงินคืน</h3>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+                                    <thead>
+                                        <tr style="background: #f8fafc;">
+                                            <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">รายละเอียด</th>
+                                            <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: right;">จำนวนเงิน (บาท)</th>
+                                            <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">หลักฐาน</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${reimbursements.map(item => `
+                                            <tr>
+                                                <td style="border: 1px solid #e2e8f0; padding: 8px;">${item.description}</td>
+                                                <td style="border: 1px solid #e2e8f0; padding: 8px; text-align: right;">${item.amount}</td>
+                                                <td style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">${item.hasAttachment}</td>
+                                            </tr>
+                                        `).join('')}
+                                        <tr style="background: #f8fafc; font-weight: bold;">
+                                            <td style="border: 1px solid #e2e8f0; padding: 8px;">รวม</td>
+                                            <td style="border: 1px solid #e2e8f0; padding: 8px; text-align: right;">${getTxt('total-reimbursements') || '0.00'}</td>
+                                            <td style="border: 1px solid #e2e8f0; padding: 8px;"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>`;
+                    }
+
+                    // Add legal declaration
+                    pdfContent.innerHTML += `
+                        <div style="margin-top: 40px; page-break-before: always;">
+                            <div style="border: 2px solid #222; border-radius: 8px; background: #f7f7f7; padding: 15px; text-align: center; margin-bottom: 30px;">
+                                <p style="margin: 0; font-size: 11pt; line-height: 1.4;">
+                                    <strong>คำรับรองและคำประกาศความถูกต้อง</strong><br>
+                                    ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องและครบถ้วนตามสภาพความเป็นจริง<br>
+                                    และได้ปฏิบัติตามมาตรฐานการตรวจสอบของบริษัทอย่างเคร่งครัด
+                                </p>
+                                <p style="margin: 10px 0 0 0; font-size: 10pt; color: #666;">
+                                    I certify that the information in this report is accurate and complete<br>
+                                    and conducted in accordance with company audit standards
+                                </p>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; margin-top: 40px;">
+                                <div style="text-align: center; width: 45%;">
+                                    <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 10px;"></div>
+                                    <div style="margin-bottom: 5px; font-weight: bold;">ลายเซ็นผู้ตรวจสอบ</div>
+                                    <div style="margin-bottom: 20px; font-size: 10pt;">Auditor Signature</div>
+                                    <div>วันที่ / Date: _______________</div>
+                                </div>
+                                <div style="text-align: center; width: 45%;">
+                                    <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 10px;"></div>
+                                    <div style="margin-bottom: 5px; font-weight: bold;">ลายเซ็นผู้ดูแลเงินสด</div>
+                                    <div style="margin-bottom: 20px; font-size: 10pt;">Cash Custodian Signature</div>
+                                    <div>วันที่ / Date: _______________</div>
+                                </div>
+                            </div>
+                        </div>`;
+
+                    document.body.appendChild(pdfContent);
+
+                    // Generate PDF
+                    const canvas = await html2canvas(pdfContent, {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: 'white',
+                        width: pdfContent.offsetWidth,
+                        height: pdfContent.offsetHeight
+                    });
+
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    
+                    const imgWidth = 210; // A4 width in mm
+                    const pageHeight = 297; // A4 height in mm
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    let heightLeft = imgHeight;
+                    let position = 0;
+
+                    // Add first page
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+
+                    // Add additional pages if needed
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+
+                    // Clean up
+                    document.body.removeChild(pdfContent);
+
+                    // Download PDF
+                    const departmentName = getVal('department').replace(/[^a-zA-Z0-9ก-๙\s]/g, '').replace(/\s+/g, '_').substring(0, 50);
+                    const dateStr = getVal('count-date') || new Date().toISOString().substring(0, 10);
+                    const fileName = `Cash-Control_${departmentName}_${dateStr}.pdf`;
+                    pdf.save(fileName);
+
+                } catch (error) {
+                    console.error('Error generating PDF:', error);
+                    alert('เกิดข้อผิดพลาดในการสร้าง PDF: ' + error.message);
+                } finally {
+                    // Restore button
+                    const button = document.getElementById('export-pdf-btn');
+                    if (button) {
+                        button.innerHTML = `
+                            <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                            </svg>
+                            Export เป็น PDF
+                        `;
+                        button.disabled = false;
+                    }
+                }
+            };
+            
             function exportToCSV() {
                 // This function remains the same
                 const csvRows = [];
@@ -1110,10 +1402,7 @@
                     window.location.reload();
                 }
             });
-            document.getElementById('print-btn').addEventListener('click', () => {
-                preparePrintAppendix();
-                window.print();
-            });
+            document.getElementById('export-pdf-btn').addEventListener('click', exportToPDF);
             document.getElementById('export-csv-btn').addEventListener('click', exportToCSV);
             document.getElementById('export-json-btn').addEventListener('click', exportToJSON); // New listener
             calculateAll();

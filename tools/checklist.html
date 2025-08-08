@@ -20,6 +20,10 @@
     <!-- Firebase Auth System -->
     <script src="../firebase-auth.js"></script>
     
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="../styles/spvi-main.css">
     <link rel="stylesheet" href="../styles/print-legal.css">
@@ -266,8 +270,11 @@
             </main>
         
         <footer class="max-w-5xl mx-auto mt-8 flex flex-col sm:flex-row gap-4 justify-center no-print">
-            <button id="print-button" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
-                พิมพ์รายงาน
+            <button id="export-pdf-button" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+                <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                Export เป็น PDF
             </button>
              <button id="export-json-button" class="w-full sm:w-auto bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 transition-colors shadow-md">
                 Export to JSON
@@ -988,6 +995,196 @@
                 URL.revokeObjectURL(url);
             };
 
+            const exportToPDF = async () => {
+                if (!appState.details || !appState.details.branch) {
+                    alert('กรุณากรอกชื่อสาขาก่อนทำการ Export PDF');
+                    return;
+                }
+
+                try {
+                    // Show loading
+                    const button = document.getElementById('export-pdf-button');
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<svg class="w-5 h-5 mr-2 inline animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>กำลังสร้าง PDF...';
+                    button.disabled = true;
+
+                    // Create temporary div for PDF content
+                    const pdfContent = document.createElement('div');
+                    pdfContent.style.width = '210mm';
+                    pdfContent.style.minHeight = '297mm';
+                    pdfContent.style.padding = '20mm';
+                    pdfContent.style.backgroundColor = 'white';
+                    pdfContent.style.fontFamily = 'Sarabun, sans-serif';
+                    pdfContent.style.fontSize = '12pt';
+                    pdfContent.style.lineHeight = '1.4';
+                    pdfContent.style.position = 'absolute';
+                    pdfContent.style.left = '-9999px';
+                    pdfContent.style.top = '0';
+
+                    // Add header
+                    pdfContent.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                                <div style="text-align: left; font-size: 10pt; font-weight: bold;">
+                                    Operation Audit Division<br>
+                                    (ฝ่ายตรวจสอบปฏิบัติการ)
+                                </div>
+                                <div style="text-align: right; font-size: 8pt; max-width: 280px;">
+                                    บริษัท เอส พี วี ไอ จำกัด (มหาชน)<br>
+                                    1550/5 อาคารธนิยะ พลาซ่า ชั้น 12A ถนนเพลินจิต<br>
+                                    แขวงลุมพินี เขตปทุมวัน กรุงเทพมหานคร 10330<br>
+                                    โทร. 0-2658-8881 แฟกซ์ 0-2658-8870
+                                </div>
+                            </div>
+                            <h1 style="font-size: 18pt; font-weight: bold; margin: 0;">ใบสรุปผลการตรวจสอบสาขา</h1>
+                            <p style="font-size: 12pt; color: #666; margin: 5px 0 0 0;">รายงานสรุปผลการดำเนินงานของสาขา</p>
+                        </div>
+                        
+                        <div style="margin-bottom: 25px;">
+                            <h2 style="font-size: 14pt; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">รายละเอียดการตรวจสอบ</h2>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div><strong>สาขา:</strong> ${appState.details.branch || '-'}</div>
+                                <div><strong>วันที่ตรวจสอบ:</strong> ${appState.details.date || '-'}</div>
+                                <div><strong>เวลาที่ตรวจสอบ:</strong> ${appState.details.time || '-'}</div>
+                            </div>
+                            <div style="margin-top: 15px;">
+                                <strong>คะแนนรวม:</strong> 
+                                <span style="font-size: 14pt; font-weight: bold; color: ${scoreSummary.score >= 80 ? '#16a34a' : scoreSummary.score >= 60 ? '#f59e0b' : '#dc2626'};">
+                                    ${scoreSummary.score.toFixed(2)}%
+                                </span>
+                                <span style="margin-left: 15px; padding: 3px 8px; border-radius: 4px; font-size: 10pt; background: ${scoreSummary.score >= 80 ? '#dcfce7' : scoreSummary.score >= 60 ? '#fef3c7' : '#fee2e2'}; color: ${scoreSummary.score >= 80 ? '#166534' : scoreSummary.score >= 60 ? '#92400e' : '#991b1b'};">
+                                    ${scoreSummary.score >= 80 ? 'ผ่าน' : scoreSummary.score >= 60 ? 'ต้องปรับปรุง' : 'ไม่ผ่าน'}
+                                </span>
+                            </div>
+                        </div>`;
+
+                    // Add auditors section
+                    if (appState.auditors && appState.auditors.length > 0) {
+                        pdfContent.innerHTML += `
+                            <div style="margin-bottom: 25px;">
+                                <h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 10px;">ผู้ตรวจสอบ</h3>
+                                ${appState.auditors.map((auditor, index) => `
+                                    <div style="margin-bottom: 5px;">${index + 1}. ${auditor.name || '-'} (${auditor.position || '-'})</div>
+                                `).join('')}
+                            </div>`;
+                    }
+
+                    // Add checklist sections
+                    Object.keys(appState.sections).forEach((sectionKey) => {
+                        const section = appState.sections[sectionKey];
+                        pdfContent.innerHTML += `
+                            <div style="margin-bottom: 25px; page-break-inside: avoid;">
+                                <h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 15px; color: #1e40af; border-left: 4px solid #3b82f6; padding-left: 10px;">${sectionKey}</h3>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 11pt;">
+                                    <thead>
+                                        <tr style="background: #f8fafc;">
+                                            <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left; width: 60%;">รายการตรวจสอบ</th>
+                                            <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: center; width: 15%;">สถานะ</th>
+                                            <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left; width: 25%;">หมายเหตุ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${section.map(item => `
+                                            <tr>
+                                                <td style="border: 1px solid #e2e8f0; padding: 8px;">${item.text}</td>
+                                                <td style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">
+                                                    <span style="padding: 2px 6px; border-radius: 3px; font-size: 10pt; font-weight: bold; background: ${
+                                                        item.status === 'pass' ? '#dcfce7; color: #166534' :
+                                                        item.status === 'fail' ? '#fee2e2; color: #991b1b' :
+                                                        '#f3f4f6; color: #374151'
+                                                    };">
+                                                        ${item.status === 'pass' ? 'ผ่าน' : item.status === 'fail' ? 'ไม่ผ่าน' : 'N/A'}
+                                                    </span>
+                                                </td>
+                                                <td style="border: 1px solid #e2e8f0; padding: 8px; font-size: 10pt;">${item.notes || '-'}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>`;
+                    });
+
+                    // Add legal declaration
+                    pdfContent.innerHTML += `
+                        <div style="margin-top: 40px; page-break-before: always;">
+                            <div style="border: 2px solid #222; border-radius: 8px; background: #f7f7f7; padding: 15px; text-align: center; margin-bottom: 30px;">
+                                <p style="margin: 0; font-size: 11pt; line-height: 1.4;">
+                                    <strong>คำรับรองและคำประกาศความถูกต้อง</strong><br>
+                                    ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องและครบถ้วนตามสภาพความเป็นจริง<br>
+                                    และได้ปฏิบัติตามมาตรฐานการตรวจสอบของบริษัทอย่างเคร่งครัด
+                                </p>
+                                <p style="margin: 10px 0 0 0; font-size: 10pt; color: #666;">
+                                    I certify that the information in this report is accurate and complete<br>
+                                    and conducted in accordance with company audit standards
+                                </p>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; margin-top: 40px;">
+                                <div style="text-align: center; width: 45%;">
+                                    <div style="height: 40px; margin-bottom: 10px;"></div>
+                                    <div style="border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 5px;">ลายเซ็นผู้ตรวจสอบ</div>
+                                    <div style="margin-bottom: 20px;">Auditor Signature</div>
+                                    <div>วันที่ / Date: _______________</div>
+                                </div>
+                                <div style="text-align: center; width: 45%;">
+                                    <div style="height: 40px; margin-bottom: 10px;"></div>
+                                    <div style="border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 5px;">ลายเซ็นผู้จัดการสาขา</div>
+                                    <div style="margin-bottom: 20px;">Branch Manager Signature</div>
+                                    <div>วันที่ / Date: _______________</div>
+                                </div>
+                            </div>
+                        </div>`;
+
+                    document.body.appendChild(pdfContent);
+
+                    // Generate PDF
+                    const canvas = await html2canvas(pdfContent, {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: 'white',
+                        width: pdfContent.offsetWidth,
+                        height: pdfContent.offsetHeight
+                    });
+
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    
+                    const imgWidth = 210; // A4 width in mm
+                    const pageHeight = 297; // A4 height in mm
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    let heightLeft = imgHeight;
+                    let position = 0;
+
+                    // Add first page
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+
+                    // Add additional pages if needed
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+
+                    // Clean up
+                    document.body.removeChild(pdfContent);
+
+                    // Download PDF
+                    const fileName = `Checklist_${appState.details.branch}_${appState.details.date}.pdf`;
+                    pdf.save(fileName);
+
+                } catch (error) {
+                    console.error('Error generating PDF:', error);
+                    alert('เกิดข้อผิดพลาดในการสร้าง PDF กรุณาลองใหม่อีกครั้ง');
+                } finally {
+                    // Restore button
+                    const button = document.getElementById('export-pdf-button');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            };
+
             const resetForm = (confirmReset = true) => { 
                 const doReset = () => { 
                     localStorage.removeItem(getStorageKey()); 
@@ -1019,7 +1216,7 @@
                 });
                 auditDateInput.addEventListener('change', loadState);
                 document.getElementById('reset-button').addEventListener('click', () => resetForm(true));
-                document.getElementById('print-button').addEventListener('click', () => window.print());
+                document.getElementById('export-pdf-button').addEventListener('click', exportToPDF);
                 document.getElementById('export-json-button').addEventListener('click', exportToJSON);
             };
             
