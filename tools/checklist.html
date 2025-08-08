@@ -1001,10 +1001,12 @@
                     return;
                 }
 
+                // Get button reference and store original text before try block
+                const button = document.getElementById('export-pdf-button');
+                const originalText = button.innerHTML;
+
                 try {
                     // Show loading
-                    const button = document.getElementById('export-pdf-button');
-                    const originalText = button.innerHTML;
                     button.innerHTML = '<svg class="w-5 h-5 mr-2 inline animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>กำลังสร้าง PDF...';
                     button.disabled = true;
 
@@ -1071,7 +1073,11 @@
 
                     // Add checklist sections
                     Object.keys(appState.sections).forEach((sectionKey) => {
-                        const section = appState.sections[sectionKey];
+                        const sectionState = appState.sections[sectionKey];
+                        const sectionTemplate = sections[sectionKey];
+                        
+                        if (!sectionTemplate) return; // Skip if section doesn't exist in template
+                        
                         pdfContent.innerHTML += `
                             <div style="margin-bottom: 25px; page-break-inside: avoid;">
                                 <h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 15px; color: #1e40af; border-left: 4px solid #3b82f6; padding-left: 10px;">${sectionKey}</h3>
@@ -1084,21 +1090,26 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${section.map(item => `
-                                            <tr>
-                                                <td style="border: 1px solid #e2e8f0; padding: 8px;">${item.text}</td>
-                                                <td style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">
-                                                    <span style="padding: 2px 6px; border-radius: 3px; font-size: 10pt; font-weight: bold; background: ${
-                                                        item.status === 'pass' ? '#dcfce7; color: #166534' :
-                                                        item.status === 'fail' ? '#fee2e2; color: #991b1b' :
-                                                        '#f3f4f6; color: #374151'
-                                                    };">
-                                                        ${item.status === 'pass' ? 'ผ่าน' : item.status === 'fail' ? 'ไม่ผ่าน' : 'N/A'}
-                                                    </span>
-                                                </td>
-                                                <td style="border: 1px solid #e2e8f0; padding: 8px; font-size: 10pt;">${item.notes || '-'}</td>
-                                            </tr>
-                                        `).join('')}
+                                        ${sectionState.map((stateItem, index) => {
+                                            const templateItem = sectionTemplate[index];
+                                            if (!templateItem) return ''; // Skip if template item doesn't exist
+                                            
+                                            return `
+                                                <tr>
+                                                    <td style="border: 1px solid #e2e8f0; padding: 8px;">${templateItem.text || '-'}</td>
+                                                    <td style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">
+                                                        <span style="padding: 2px 6px; border-radius: 3px; font-size: 10pt; font-weight: bold; background: ${
+                                                            stateItem.status === 'pass' ? '#dcfce7; color: #166534' :
+                                                            stateItem.status === 'fail' ? '#fee2e2; color: #991b1b' :
+                                                            '#f3f4f6; color: #374151'
+                                                        };">
+                                                            ${stateItem.status === 'pass' ? 'ผ่าน' : stateItem.status === 'fail' ? 'ไม่ผ่าน' : 'N/A'}
+                                                        </span>
+                                                    </td>
+                                                    <td style="border: 1px solid #e2e8f0; padding: 8px; font-size: 10pt;">${stateItem.notes || '-'}</td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
                                     </tbody>
                                 </table>
                             </div>`;
@@ -1121,15 +1132,15 @@
                             
                             <div style="display: flex; justify-content: space-between; margin-top: 40px;">
                                 <div style="text-align: center; width: 45%;">
-                                    <div style="height: 40px; margin-bottom: 10px;"></div>
-                                    <div style="border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 5px;">ลายเซ็นผู้ตรวจสอบ</div>
-                                    <div style="margin-bottom: 20px;">Auditor Signature</div>
+                                    <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 10px;"></div>
+                                    <div style="margin-bottom: 5px; font-weight: bold;">ลายเซ็นผู้ตรวจสอบ</div>
+                                    <div style="margin-bottom: 20px; font-size: 10pt;">Auditor Signature</div>
                                     <div>วันที่ / Date: _______________</div>
                                 </div>
                                 <div style="text-align: center; width: 45%;">
-                                    <div style="height: 40px; margin-bottom: 10px;"></div>
-                                    <div style="border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 5px;">ลายเซ็นผู้จัดการสาขา</div>
-                                    <div style="margin-bottom: 20px;">Branch Manager Signature</div>
+                                    <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 10px;"></div>
+                                    <div style="margin-bottom: 5px; font-weight: bold;">ลายเซ็นผู้จัดการสาขา</div>
+                                    <div style="margin-bottom: 20px; font-size: 10pt;">Branch Manager Signature</div>
                                     <div>วันที่ / Date: _______________</div>
                                 </div>
                             </div>
@@ -1178,10 +1189,11 @@
                     console.error('Error generating PDF:', error);
                     alert('เกิดข้อผิดพลาดในการสร้าง PDF กรุณาลองใหม่อีกครั้ง');
                 } finally {
-                    // Restore button
-                    const button = document.getElementById('export-pdf-button');
-                    button.innerHTML = originalText;
-                    button.disabled = false;
+                    // Restore button state
+                    if (button) {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }
                 }
             };
 
