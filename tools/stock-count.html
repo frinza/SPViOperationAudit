@@ -6523,15 +6523,15 @@ def calculate_serial_sku_score(text, pattern_type):
                 });
                 
                 yPosition += 10;
-                
-                // Table header
+                  // Table header
                 pdf.setFontSize(8);
-                pdf.text('SKU', margin, yPosition);
-                pdf.text('Description', margin + 30, yPosition);
-                pdf.text('SOH', margin + 80, yPosition);
-                pdf.text('Count', margin + 100, yPosition);
-                pdf.text('Diff', margin + 120, yPosition);
-                pdf.text('Reason', margin + 140, yPosition);
+                pdf.text('No.', margin, yPosition);
+                pdf.text('SKU', margin + 15, yPosition);
+                pdf.text('Description', margin + 40, yPosition);
+                pdf.text('SOH', margin + 85, yPosition);
+                pdf.text('Count', margin + 105, yPosition);
+                pdf.text('Diff', margin + 125, yPosition);
+                pdf.text('Reason', margin + 145, yPosition);
                 
                 yPosition += 8;
                 
@@ -6544,12 +6544,13 @@ def calculate_serial_sku_score(text, pattern_type):
                         yPosition = 20;
                     }
                     
-                    pdf.text(item.SKU.substring(0, 12), margin, yPosition);
-                    pdf.text(item.Description.substring(0, 25), margin + 30, yPosition);
-                    pdf.text(item.SOH.toString(), margin + 80, yPosition);
-                    pdf.text((item.Recount || 0).toString(), margin + 100, yPosition);
-                    pdf.text(item.FinalDiff.toString(), margin + 120, yPosition);
-                    pdf.text((item.ReasonFinal || '').substring(0, 15), margin + 140, yPosition);
+                    pdf.text((i + 1).toString(), margin, yPosition);
+                    pdf.text(item.SKU.substring(0, 12), margin + 15, yPosition);
+                    pdf.text(item.Description.substring(0, 22), margin + 40, yPosition);
+                    pdf.text(item.SOH.toString(), margin + 85, yPosition);
+                    pdf.text((item.Recount || 0).toString(), margin + 105, yPosition);
+                    pdf.text(item.FinalDiff.toString(), margin + 125, yPosition);
+                    pdf.text((item.ReasonFinal || '').substring(0, 12), margin + 145, yPosition);
                     
                     yPosition += 5;
                 }
@@ -6563,26 +6564,34 @@ def calculate_serial_sku_score(text, pattern_type):
                 
                 pdf.save(fileName);
                 showModal("Success", `PDF exported using simple format!\nNote: Formatting is simplified due to technical limitations.`);
-            }
-
-            async function exportToPDF() {
+            }            async function exportToPDF() {
                 if (!state.reconciledData || state.reconciledData.length === 0) {
                     showModal("Info", "No data available to export to PDF.");
                     return;
                 }
 
+                // Get button reference and store original content OUTSIDE try block
+                const exportBtn = document.getElementById('export-pdf-btn');
+                const originalContent = exportBtn ? exportBtn.innerHTML : `
+                    <!-- PDF icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    Export เป็น PDF
+                `;
+
                 try {
                     // Show loading
-                    const exportBtn = document.getElementById('export-pdf-btn');
-                    const originalContent = exportBtn.innerHTML;
-                    exportBtn.innerHTML = `
-                        <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        กำลังสร้าง PDF...
-                    `;
-                    exportBtn.disabled = true;
+                    if (exportBtn) {
+                        exportBtn.innerHTML = `
+                            <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            กำลังสร้าง PDF...
+                        `;
+                        exportBtn.disabled = true;
+                    }
 
                     // Validate required libraries
                     if (typeof window.jspdf === 'undefined') {
@@ -6728,10 +6737,10 @@ def calculate_serial_sku_score(text, pattern_type):
                     if (filteredData.length > 0) {
                         pdfContent.innerHTML += `
                             <div style="margin-bottom: 25px; page-break-inside: avoid;">
-                                <h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 15px; color: #1e40af;">รายละเอียดรายการที่มีผลต่าง</h3>
-                                <table style="width: 100%; border-collapse: collapse; font-size: 9pt;">
+                                <h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 15px; color: #1e40af;">รายละเอียดรายการที่มีผลต่าง</h3>                                <table style="width: 100%; border-collapse: collapse; font-size: 9pt;">
                                     <thead>
                                         <tr style="background: #f8fafc;">
+                                            <th style="border: 1px solid #e2e8f0; padding: 6px; text-align: center; width: 30px;">No.</th>
                                             <th style="border: 1px solid #e2e8f0; padding: 6px; text-align: left;">SKU</th>
                                             <th style="border: 1px solid #e2e8f0; padding: 6px; text-align: left;">รายการ</th>
                                             <th style="border: 1px solid #e2e8f0; padding: 6px; text-align: center;">SOH</th>
@@ -6742,8 +6751,9 @@ def calculate_serial_sku_score(text, pattern_type):
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${filteredData.map(item => `
+                                        ${filteredData.map((item, index) => `
                                             <tr style="${item.isDemo ? 'background: #faf5ff;' : ''}">
+                                                <td style="border: 1px solid #e2e8f0; padding: 6px; text-align: center; font-size: 8pt;">${index + 1}</td>
                                                 <td style="border: 1px solid #e2e8f0; padding: 6px; font-size: 8pt;">${item.SKU}</td>
                                                 <td style="border: 1px solid #e2e8f0; padding: 6px; font-size: 8pt;">${item.Description.substring(0, 40)}${item.Description.length > 40 ? '...' : ''}</td>
                                                 <td style="border: 1px solid #e2e8f0; padding: 6px; text-align: center;">${item.SOH.toLocaleString()}</td>
@@ -6903,8 +6913,7 @@ def calculate_serial_sku_score(text, pattern_type):
                     }
                     
                     showModal("Error", errorMessage);                } finally {
-                    // Restore button
-                    const exportBtn = document.getElementById('export-pdf-btn');
+                    // Restore button to original state
                     if (exportBtn) {
                         exportBtn.innerHTML = originalContent;
                         exportBtn.disabled = false;
