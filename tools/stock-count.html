@@ -6477,314 +6477,439 @@ def calculate_serial_sku_score(text, pattern_type):
                 const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
                 a.download = `${state.countDate}_Stock-Count_${branchInfo}.json`;
                 document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                a.click();                document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-            }            function exportToPDF() {
+            }
+
+            // Fallback PDF generation method using direct jsPDF
+            async function generateFallbackPDF(summary, filteredData) {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                let yPosition = 20;
+                const pageHeight = 297;
+                const pageWidth = 210;
+                const margin = 15;
+                
+                // Simple header
+                pdf.setFontSize(16);
+                pdf.setTextColor(0, 0, 0);
+                pdf.text('Stock Count Report', pageWidth / 2, yPosition, { align: 'center' });
+                yPosition += 10;
+                
+                pdf.setFontSize(10);
+                pdf.text(`Branch: ${state.branchName || 'N/A'}`, margin, yPosition);
+                yPosition += 5;
+                pdf.text(`Date: ${state.countDate || new Date().toLocaleDateString()}`, margin, yPosition);
+                yPosition += 15;
+                
+                // Summary
+                pdf.setFontSize(12);
+                pdf.text('Summary', margin, yPosition);
+                yPosition += 8;
+                
+                pdf.setFontSize(9);
+                const summaryLines = [
+                    `Total Items: ${summary.totalItems}`,
+                    `Items with Discrepancies: ${summary.discrepancyItems}`,
+                    `Overage: ${summary.overageQty} pcs`,
+                    `Shortage: ${summary.shortageQty} pcs`,
+                    `Demo Items: ${summary.demoItems}`
+                ];
+                
+                summaryLines.forEach(line => {
+                    pdf.text(line, margin, yPosition);
+                    yPosition += 4;
+                });
+                
+                yPosition += 10;
+                
+                // Table header
+                pdf.setFontSize(8);
+                pdf.text('SKU', margin, yPosition);
+                pdf.text('Description', margin + 30, yPosition);
+                pdf.text('SOH', margin + 80, yPosition);
+                pdf.text('Count', margin + 100, yPosition);
+                pdf.text('Diff', margin + 120, yPosition);
+                pdf.text('Reason', margin + 140, yPosition);
+                
+                yPosition += 8;
+                
+                // Data rows (limited to prevent overflow)
+                const maxRows = Math.min(filteredData.length, 30);
+                for (let i = 0; i < maxRows; i++) {
+                    const item = filteredData[i];
+                    if (yPosition > pageHeight - 20) {
+                        pdf.addPage();
+                        yPosition = 20;
+                    }
+                    
+                    pdf.text(item.SKU.substring(0, 12), margin, yPosition);
+                    pdf.text(item.Description.substring(0, 25), margin + 30, yPosition);
+                    pdf.text(item.SOH.toString(), margin + 80, yPosition);
+                    pdf.text((item.Recount || 0).toString(), margin + 100, yPosition);
+                    pdf.text(item.FinalDiff.toString(), margin + 120, yPosition);
+                    pdf.text((item.ReasonFinal || '').substring(0, 15), margin + 140, yPosition);
+                    
+                    yPosition += 5;
+                }
+                
+                // Save
+                const branchInfo = state.branchCode ? 
+                    `${state.branchCode}_${state.branchName.replace(/[^a-zA-Z0-9ก-๙\s]/g, '').replace(/\s+/g, '_')}` : 
+                    state.branchName.replace(/[^a-zA-Z0-9ก-๙\s]/g, '').replace(/\s+/g, '_');
+                const dateStr = state.countDate || new Date().toISOString().substring(0, 10);
+                const fileName = `Stock-Count_${branchInfo}_${dateStr}_Simple.pdf`;
+                
+                pdf.save(fileName);
+                showModal("Success", `PDF exported using simple format!\nNote: Formatting is simplified due to technical limitations.`);
+            }
+
+            async function exportToPDF() {
                 if (!state.reconciledData || state.reconciledData.length === 0) {
                     showModal("Info", "No data available to export to PDF.");
                     return;
                 }
 
-                // Show loading state
-                const exportBtn = document.getElementById('export-pdf-btn');
-                const originalContent = exportBtn.innerHTML;
-                exportBtn.innerHTML = `
-                    <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    กำลังสร้าง PDF...
-                `;
-                exportBtn.disabled = true;
+                try {
+                    // Show loading
+                    const exportBtn = document.getElementById('export-pdf-btn');
+                    const originalContent = exportBtn.innerHTML;
+                    exportBtn.innerHTML = `
+                        <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        กำลังสร้าง PDF...
+                    `;
+                    exportBtn.disabled = true;
 
-                // Prepare input values for PDF by copying them to parent cell data attributes
-                const inputs = document.querySelectorAll('#final-report-table-container input, #demo-count-container input, .print-hide input');
-                
-                inputs.forEach(input => {
-                    const parentCell = input.closest('td');
-                    if (parentCell) {
-                        const value = input.value || '';
-                        if (value.trim() !== '') {
-                            parentCell.setAttribute('data-print-value', value);
-                        } else {
-                            parentCell.setAttribute('data-print-value', '-');
+                    // Validate required libraries
+                    if (typeof window.jspdf === 'undefined') {
+                        throw new Error('jsPDF library not loaded');
+                    }
+                    if (typeof html2canvas === 'undefined') {
+                        throw new Error('html2canvas library not loaded');
+                    }
+
+                    // Calculate summary data
+                    const summary = state.reconciledData.reduce((acc, item) => {
+                        acc.totalItems++;
+                        acc.totalSOH += item.SOH;
+                        acc.totalCounted += item.Recount || 0;
+                        
+                        if (item.FinalDiff !== 0) {
+                            acc.discrepancyItems++;
+                            const diffCost = item.FinalDiff * (item.Price || 0);
+                            if (item.FinalDiff > 0) {
+                                acc.overageQty += item.FinalDiff;
+                                acc.overageCost += diffCost;
+                            } else {
+                                acc.shortageQty += Math.abs(item.FinalDiff);
+                                acc.shortageCost += Math.abs(diffCost);
+                            }
+                        }
+                        
+                        if (item.isDemo) {
+                            acc.demoItems++;
+                            acc.demoSOH += item.SOH;
+                            acc.demoCounted += item.Recount || 0;
+                        }
+                        
+                        return acc;
+                    }, {
+                        totalItems: 0,
+                        totalSOH: 0,
+                        totalCounted: 0,
+                        discrepancyItems: 0,
+                        overageQty: 0,
+                        shortageQty: 0,
+                        overageCost: 0,
+                        shortageCost: 0,
+                        demoItems: 0,
+                        demoSOH: 0,
+                        demoCounted: 0
+                    });
+
+                    // Filter and sort data - show discrepancies first, then demo items
+                    const sortedData = [...state.reconciledData].sort((a, b) => {
+                        // First sort by discrepancy status (discrepancies first)
+                        const aDiff = a.FinalDiff !== 0 ? 0 : 1;
+                        const bDiff = b.FinalDiff !== 0 ? 0 : 1;
+                        if (aDiff !== bDiff) return aDiff - bDiff;
+                        
+                        // Then by demo status (regular items first)
+                        if (a.isDemo !== b.isDemo) return a.isDemo - b.isDemo;
+                        
+                        // Finally by SKU
+                        return a.SKU.localeCompare(b.SKU);
+                    });
+                      // Only include items with discrepancies or demo items
+                    const filteredData = sortedData.filter(item => 
+                        item.FinalDiff !== 0 || item.isDemo
+                    );
+
+                    // Limit data size to prevent canvas issues
+                    const maxItemsForCanvas = 50; // Limit to prevent PNG corruption
+                    const limitedData = filteredData.slice(0, maxItemsForCanvas);
+                    const isDataLimited = filteredData.length > maxItemsForCanvas;// Create temporary div for PDF content
+                    const pdfContent = document.createElement('div');
+                    pdfContent.style.width = '210mm';
+                    pdfContent.style.maxWidth = '210mm';
+                    pdfContent.style.minHeight = '297mm';
+                    pdfContent.style.padding = '20mm';
+                    pdfContent.style.backgroundColor = 'white';
+                    pdfContent.style.fontFamily = 'Sarabun, sans-serif';
+                    pdfContent.style.fontSize = '12pt';
+                    pdfContent.style.lineHeight = '1.4';
+                    pdfContent.style.position = 'absolute';
+                    pdfContent.style.left = '-9999px';
+                    pdfContent.style.top = '0';
+                    pdfContent.style.overflow = 'hidden';
+                    pdfContent.style.wordWrap = 'break-word';
+                    pdfContent.style.boxSizing = 'border-box';
+
+                    // Add header and content using the standard format
+                    pdfContent.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                                <div style="text-align: left; font-size: 10pt; font-weight: bold;">
+                                    Operation Audit Division<br>
+                                    (ฝ่ายตรวจสอบปฏิบัติการ)
+                                </div>
+                                <div style="text-align: right; font-size: 8pt; max-width: 280px;">
+                                    บริษัท เอส พี วี ไอ จำกัด (มหาชน)<br>
+                                    1550/5 อาคารธนิยะ พลาซ่า ชั้น 12A ถนนเพลินจิต<br>
+                                    แขวงลุมพินี เขตปทุมวัน กรุงเทพมหานคร 10330<br>
+                                    โทร. 0-2658-8881 แฟกซ์ 0-2658-8870
+                                </div>
+                            </div>
+                            <h1 style="font-size: 18pt; font-weight: bold; margin: 0;">รายงานการตรวจนับสินค้า</h1>
+                            <p style="font-size: 12pt; color: #666; margin: 5px 0 0 0;">Stock Count Report</p>
+                        </div>
+                        
+                        <div style="margin-bottom: 25px;">
+                            <h2 style="font-size: 14pt; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">รายละเอียดการตรวจสอบ</h2>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div><strong>สาขา/Branch:</strong> ${state.branchName || 'N/A'}${state.branchCode ? ` (${state.branchCode})` : ''}</div>
+                                <div><strong>วันที่ตรวจนับ/Count Date:</strong> ${state.countDate || 'N/A'}</div>
+                                <div><strong>วันที่รายงาน/Report Date:</strong> ${new Date().toLocaleDateString('th-TH')}</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 25px;">
+                            <h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 15px; color: #1e40af;">สรุปผลการตรวจนับ</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div>
+                                    <h4 style="font-size: 11pt; font-weight: bold; margin-bottom: 10px;">ข้อมูลทั่วไป</h4>
+                                    <div style="background: #f8fafc; padding: 10px; border-radius: 5px; font-size: 10pt;">
+                                        <div>จำนวนรายการทั้งหมด: ${summary.totalItems.toLocaleString()} รายการ</div>
+                                        <div>ยอด SOH รวม: ${summary.totalSOH.toLocaleString()} ชิ้น</div>
+                                        <div>ยอดนับได้รวม: ${summary.totalCounted.toLocaleString()} ชิ้น</div>
+                                        <div>รายการที่มีผลต่าง: ${summary.discrepancyItems.toLocaleString()} รายการ</div>
+                                        <div>รายการ Demo: ${summary.demoItems.toLocaleString()} รายการ</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 style="font-size: 11pt; font-weight: bold; margin-bottom: 10px;">ผลการกระทบยอด</h4>
+                                    <div style="background: #f8fafc; padding: 10px; border-radius: 5px; font-size: 10pt;">
+                                        <div style="color: #16a34a;">เกิน: ${summary.overageQty.toLocaleString()} ชิ้น (${summary.overageCost.toLocaleString()} บาท)</div>
+                                        <div style="color: #dc2626;">ขาด: ${summary.shortageQty.toLocaleString()} ชิ้น (${summary.shortageCost.toLocaleString()} บาท)</div>
+                                        <div style="border-top: 1px solid #ccc; margin-top: 5px; padding-top: 5px; font-weight: bold;">
+                                            สุทธิ: ${(summary.overageQty - summary.shortageQty).toLocaleString()} ชิ้น 
+                                            (${(summary.overageCost - summary.shortageCost).toLocaleString()} บาท)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+
+                    // Add count details table if there are items to show
+                    if (filteredData.length > 0) {
+                        pdfContent.innerHTML += `
+                            <div style="margin-bottom: 25px; page-break-inside: avoid;">
+                                <h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 15px; color: #1e40af;">รายละเอียดรายการที่มีผลต่าง</h3>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 9pt;">
+                                    <thead>
+                                        <tr style="background: #f8fafc;">
+                                            <th style="border: 1px solid #e2e8f0; padding: 6px; text-align: left;">SKU</th>
+                                            <th style="border: 1px solid #e2e8f0; padding: 6px; text-align: left;">รายการ</th>
+                                            <th style="border: 1px solid #e2e8f0; padding: 6px; text-align: center;">SOH</th>
+                                            <th style="border: 1px solid #e2e8f0; padding: 6px; text-align: center;">นับได้</th>
+                                            <th style="border: 1px solid #e2e8f0; padding: 6px; text-align: center;">ผลต่าง</th>
+                                            <th style="border: 1px solid #e2e8f0; padding: 6px; text-align: left;">เหตุผล</th>
+                                            <th style="border: 1px solid #e2e8f0; padding: 6px; text-align: left;">หมายเหตุ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${filteredData.map(item => `
+                                            <tr style="${item.isDemo ? 'background: #faf5ff;' : ''}">
+                                                <td style="border: 1px solid #e2e8f0; padding: 6px; font-size: 8pt;">${item.SKU}</td>
+                                                <td style="border: 1px solid #e2e8f0; padding: 6px; font-size: 8pt;">${item.Description.substring(0, 40)}${item.Description.length > 40 ? '...' : ''}</td>
+                                                <td style="border: 1px solid #e2e8f0; padding: 6px; text-align: center;">${item.SOH.toLocaleString()}</td>
+                                                <td style="border: 1px solid #e2e8f0; padding: 6px; text-align: center;">${(item.Recount || 0).toLocaleString()}</td>
+                                                <td style="border: 1px solid #e2e8f0; padding: 6px; text-align: center; color: ${item.FinalDiff > 0 ? '#16a34a' : item.FinalDiff < 0 ? '#dc2626' : '#374151'}; font-weight: bold;">
+                                                    ${item.FinalDiff > 0 ? '+' : ''}${item.FinalDiff.toLocaleString()}
+                                                </td>
+                                                <td style="border: 1px solid #e2e8f0; padding: 6px; font-size: 8pt;">${(item.ReasonFinal || '').substring(0, 15)}</td>
+                                                <td style="border: 1px solid #e2e8f0; padding: 6px; font-size: 8pt;">${(item.Remark || '').substring(0, 20)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                                <div style="margin-top: 10px; font-size: 9pt; color: #666;">
+                                    * แสดงเฉพาะรายการที่มีผลต่างและรายการ Demo | Total: ${filteredData.length} รายการ
+                                </div>
+                            </div>`;
+                    }
+
+                    // Add legal declaration
+                    pdfContent.innerHTML += `
+                        <div style="margin-top: 40px; page-break-before: always;">
+                            <div style="border: 2px solid #222; border-radius: 8px; background: #f7f7f7; padding: 15px; text-align: center; margin-bottom: 30px;">
+                                <p style="margin: 0; font-size: 11pt; line-height: 1.4;">
+                                    <strong>คำรับรองและคำประกาศความถูกต้อง</strong><br>
+                                    ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องและครบถ้วนตามสภาพความเป็นจริง<br>
+                                    และได้ปฏิบัติตามมาตรฐานการตรวจสอบของบริษัทอย่างเคร่งครัด
+                                </p>
+                                <p style="margin: 10px 0 0 0; font-size: 10pt; color: #666;">
+                                    I certify that the information in this report is accurate and complete<br>
+                                    and conducted in accordance with company audit standards
+                                </p>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; margin-top: 40px;">
+                                <div style="text-align: center; width: 45%;">
+                                    <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 10px;"></div>
+                                    <div style="margin-bottom: 5px; font-weight: bold;">ลายเซ็นผู้ตรวจสอบ</div>
+                                    <div style="margin-bottom: 20px; font-size: 10pt;">Auditor Signature</div>
+                                    <div>วันที่ / Date: _______________</div>
+                                </div>
+                                <div style="text-align: center; width: 45%;">
+                                    <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 10px;"></div>
+                                    <div style="margin-bottom: 5px; font-weight: bold;">ลายเซ็นผู้จัดการสาขา</div>
+                                    <div style="margin-bottom: 20px; font-size: 10pt;">Branch Manager Signature</div>
+                                    <div>วันที่ / Date: _______________</div>
+                                </div>
+                            </div>
+                        </div>`;                    document.body.appendChild(pdfContent);
+
+                    // Wait for content to render
+                    await new Promise(resolve => setTimeout(resolve, 100));
+
+                    // Generate PDF with improved html2canvas settings
+                    const canvas = await html2canvas(pdfContent, {
+                        scale: 1.5, // Reduced scale to prevent memory issues
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: 'white',
+                        scrollX: 0,
+                        scrollY: 0,
+                        windowWidth: 1200,
+                        windowHeight: 1600,
+                        onclone: (clonedDoc) => {
+                            // Ensure fonts are loaded in cloned document
+                            const fontLink = clonedDoc.createElement('link');
+                            fontLink.href = 'https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap';
+                            fontLink.rel = 'stylesheet';
+                            clonedDoc.head.appendChild(fontLink);
+                        }
+                    });
+
+                    // Validate canvas before proceeding
+                    if (!canvas || canvas.width === 0 || canvas.height === 0) {
+                        throw new Error('Failed to generate canvas - content may be empty or too large');
+                    }                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    
+                    const imgWidth = 210; // A4 width in mm
+                    const pageHeight = 297; // A4 height in mm
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    
+                    // Generate image data with error handling
+                    let imageData;
+                    try {
+                        imageData = canvas.toDataURL('image/png', 0.92); // Slight compression to reduce size
+                        
+                        // Validate the image data
+                        if (!imageData || imageData === 'data:,') {
+                            throw new Error('Failed to generate image data from canvas');
+                        }
+                    } catch (canvasError) {
+                        throw new Error('Canvas to image conversion failed: ' + canvasError.message);
+                    }
+                    
+                    let heightLeft = imgHeight;
+                    let position = 0;
+
+                    // Add first page
+                    try {
+                        pdf.addImage(imageData, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+
+                        // Add additional pages if needed
+                        while (heightLeft >= 0) {
+                            position = heightLeft - imgHeight;
+                            pdf.addPage();
+                            pdf.addImage(imageData, 'PNG', 0, position, imgWidth, imgHeight);
+                            heightLeft -= pageHeight;
+                        }
+                    } catch (pdfError) {
+                        throw new Error('PDF generation failed: ' + pdfError.message);
+                    }
+
+                    // Clean up
+                    document.body.removeChild(pdfContent);
+
+                    // Generate filename and download PDF
+                    const branchInfo = state.branchCode ? 
+                        `${state.branchCode}_${state.branchName.replace(/[^a-zA-Z0-9ก-๙\s]/g, '').replace(/\s+/g, '_')}` : 
+                        state.branchName.replace(/[^a-zA-Z0-9ก-๙\s]/g, '').replace(/\s+/g, '_');
+                    const dateStr = state.countDate || new Date().toISOString().substring(0, 10);
+                    const fileName = `Stock-Count_${branchInfo}_${dateStr}.pdf`;
+                    
+                    pdf.save(fileName);
+                    
+                    showModal("Success", `PDF report exported successfully!\n\nItems included:\n• Total items: ${filteredData.length}\n• Discrepancy items: ${summary.discrepancyItems}\n• Demo items: ${summary.demoItems}`);                } catch (error) {
+                    console.error('Error generating PDF:', error);
+                    
+                    // Try fallback method for canvas/PNG errors
+                    if (error.message.includes('PNG') || error.message.includes('canvas') || error.message.includes('image')) {
+                        console.log('Attempting fallback PDF generation method...');
+                        try {
+                            // Clean up previous attempt
+                            if (document.body.contains(pdfContent)) {
+                                document.body.removeChild(pdfContent);
+                            }
+                            
+                            // Use direct jsPDF text method as fallback
+                            await generateFallbackPDF(summary, filteredData);
+                            return;
+                        } catch (fallbackError) {
+                            console.error('Fallback method also failed:', fallbackError);
                         }
                     }
-                });
-
-                setTimeout(async () => {
-                    try {
-                        const { jsPDF } = window.jspdf;
-                        const pdf = new jsPDF('p', 'mm', 'a4');
-                        
-                        // Set up Thai fonts
-                        pdf.addFont('https://fonts.gstatic.com/s/sarabun/v8/DtVmJx26TKEqsc3O9spN9BG7.woff2', 'Sarabun', 'normal');
-                        pdf.setFont('Sarabun');
-                        
-                        let yPosition = 20;
-                        const pageHeight = 297;
-                        const pageWidth = 210;
-                        const margin = 15;
-                        
-                        // Company Header
-                        pdf.setFontSize(18);
-                        pdf.setTextColor(220, 38, 127); // Pink color
-                        pdf.text('SPVi Operations Audit Toolkit', pageWidth / 2, yPosition, { align: 'center' });
-                        
-                        yPosition += 8;
-                        pdf.setFontSize(16);
-                        pdf.setTextColor(0, 0, 0);
-                        pdf.text('รายงานการตรวจนับสินค้า (Stock Count Report)', pageWidth / 2, yPosition, { align: 'center' });
-                        
-                        yPosition += 15;
-                        
-                        // Report details
-                        pdf.setFontSize(10);
-                        const reportDetails = [
-                            `สาขา: ${state.branchName || 'N/A'}${state.branchCode ? ` (${state.branchCode})` : ''}`,
-                            `วันที่ตรวจนับ: ${state.countDate || 'N/A'}`,
-                            `วันที่สร้างรายงาน: ${new Date().toLocaleDateString('th-TH')}`
-                        ];
-                        
-                        reportDetails.forEach(detail => {
-                            pdf.text(detail, margin, yPosition);
-                            yPosition += 5;
-                        });
-                        
-                        yPosition += 10;
-                        
-                        // Summary Section
-                        pdf.setFontSize(12);
-                        pdf.setTextColor(59, 130, 246);
-                        pdf.text('สรุปผลการตรวจนับ', margin, yPosition);
-                        yPosition += 8;
-                        
-                        // Calculate summary data
-                        const summary = state.reconciledData.reduce((acc, item) => {
-                            acc.totalItems++;
-                            acc.totalSOH += item.SOH;
-                            acc.totalCounted += item.Recount || 0;
-                            
-                            if (item.FinalDiff !== 0) {
-                                acc.discrepancyItems++;
-                                const diffCost = item.FinalDiff * (item.Price || 0);
-                                if (item.FinalDiff > 0) {
-                                    acc.overageQty += item.FinalDiff;
-                                    acc.overageCost += diffCost;
-                                } else {
-                                    acc.shortageQty += Math.abs(item.FinalDiff);
-                                    acc.shortageCost += Math.abs(diffCost);
-                                }
-                            }
-                            
-                            if (item.isDemo) {
-                                acc.demoItems++;
-                                acc.demoSOH += item.SOH;
-                                acc.demoCounted += item.Recount || 0;
-                            }
-                            
-                            return acc;
-                        }, {
-                            totalItems: 0,
-                            totalSOH: 0,
-                            totalCounted: 0,
-                            discrepancyItems: 0,
-                            overageQty: 0,
-                            shortageQty: 0,
-                            overageCost: 0,
-                            shortageCost: 0,
-                            demoItems: 0,
-                            demoSOH: 0,
-                            demoCounted: 0
-                        });
-                        
-                        pdf.setFontSize(9);
-                        pdf.setTextColor(0, 0, 0);
-                        
-                        const summaryData = [
-                            `รายการสินค้าทั้งหมด: ${summary.totalItems.toLocaleString()} รายการ`,
-                            `SOH รวม: ${summary.totalSOH.toLocaleString()} ชิ้น`,
-                            `นับได้รวม: ${summary.totalCounted.toLocaleString()} ชิ้น`,
-                            `รายการที่มีผลต่าง: ${summary.discrepancyItems.toLocaleString()} รายการ`,
-                            `สินค้าเกิน: ${summary.overageQty.toLocaleString()} ชิ้น (${summary.overageCost.toLocaleString()} บาท)`,
-                            `สินค้าขาด: ${summary.shortageQty.toLocaleString()} ชิ้น (${summary.shortageCost.toLocaleString()} บาท)`,
-                            `สินค้า DEMO: ${summary.demoItems.toLocaleString()} รายการ (SOH: ${summary.demoSOH.toLocaleString()}, นับได้: ${summary.demoCounted.toLocaleString()})`
-                        ];
-                        
-                        summaryData.forEach(data => {
-                            pdf.text(data, margin, yPosition);
-                            yPosition += 4;
-                        });
-                        
-                        yPosition += 10;
-                        
-                        // Check if we need a new page
-                        if (yPosition > pageHeight - 60) {
-                            pdf.addPage();
-                            yPosition = 20;
-                        }
-                        
-                        // Stock Count Data Table Header
-                        pdf.setFontSize(12);
-                        pdf.setTextColor(59, 130, 246);
-                        pdf.text('รายละเอียดการตรวจนับ', margin, yPosition);
-                        yPosition += 8;
-                        
-                        // Table header
-                        pdf.setFontSize(8);
-                        pdf.setTextColor(0, 0, 0);
-                        const headers = ['SKU', 'Description', 'SOH', 'Count', 'Diff', 'Reason', 'Remark'];
-                        const colWidths = [25, 60, 15, 15, 15, 25, 30];
-                        let xPosition = margin;
-                        
-                        // Draw header row
-                        headers.forEach((header, index) => {
-                            pdf.setFillColor(240, 240, 240);
-                            pdf.rect(xPosition, yPosition - 3, colWidths[index], 6, 'F');
-                            pdf.text(header, xPosition + 1, yPosition + 1);
-                            xPosition += colWidths[index];
-                        });
-                        
-                        yPosition += 8;
-                        
-                        // Filter and sort data - show discrepancies first, then demo items
-                        const sortedData = [...state.reconciledData].sort((a, b) => {
-                            // First sort by discrepancy status (discrepancies first)
-                            const aDiff = a.FinalDiff !== 0 ? 0 : 1;
-                            const bDiff = b.FinalDiff !== 0 ? 0 : 1;
-                            if (aDiff !== bDiff) return aDiff - bDiff;
-                            
-                            // Then by demo status (regular items first)
-                            if (a.isDemo !== b.isDemo) return a.isDemo - b.isDemo;
-                            
-                            // Finally by SKU
-                            return a.SKU.localeCompare(b.SKU);
-                        });
-                        
-                        // Only include items with discrepancies or demo items
-                        const filteredData = sortedData.filter(item => 
-                            item.FinalDiff !== 0 || item.isDemo
-                        );
-                        
-                        let itemCount = 0;
-                        const maxItemsPerPage = 25;
-                        
-                        for (const item of filteredData) {
-                            // Check if we need a new page
-                            if (yPosition > pageHeight - 40 || itemCount >= maxItemsPerPage) {
-                                pdf.addPage();
-                                yPosition = 20;
-                                itemCount = 0;
-                                
-                                // Redraw header on new page
-                                pdf.setFontSize(8);
-                                xPosition = margin;
-                                headers.forEach((header, index) => {
-                                    pdf.setFillColor(240, 240, 240);
-                                    pdf.rect(xPosition, yPosition - 3, colWidths[index], 6, 'F');
-                                    pdf.text(header, xPosition + 1, yPosition + 1);
-                                    xPosition += colWidths[index];
-                                });
-                                yPosition += 8;
-                            }
-                            
-                            // Draw row data
-                            xPosition = margin;
-                            const rowData = [
-                                item.SKU.substring(0, 15),
-                                item.Description.substring(0, 35),
-                                item.SOH.toString(),
-                                (item.Recount || 0).toString(),
-                                item.FinalDiff > 0 ? `+${item.FinalDiff}` : item.FinalDiff.toString(),
-                                (item.ReasonFinal || '').substring(0, 20),
-                                (item.Remark || '').substring(0, 25)
-                            ];
-                            
-                            rowData.forEach((data, index) => {
-                                // Color code based on item type and difference
-                                if (index === 4) { // Diff column
-                                    if (item.FinalDiff > 0) pdf.setTextColor(255, 165, 0); // Orange for overage
-                                    else if (item.FinalDiff < 0) pdf.setTextColor(59, 130, 246); // Blue for shortage
-                                    else pdf.setTextColor(34, 197, 94); // Green for exact match
-                                } else if (item.isDemo) {
-                                    pdf.setTextColor(147, 51, 234); // Purple for demo items
-                                } else {
-                                    pdf.setTextColor(0, 0, 0); // Black for regular items
-                                }
-                                
-                                pdf.text(data, xPosition + 1, yPosition);
-                                xPosition += colWidths[index];
-                            });
-                            
-                            yPosition += 5;
-                            itemCount++;
-                        }
-                        
-                        // Add legal declaration section
-                        if (yPosition > pageHeight - 80) {
-                            pdf.addPage();
-                            yPosition = 20;
-                        } else {
-                            yPosition += 20;
-                        }
-                        
-                        // Legal declaration
-                        pdf.setFontSize(10);
-                        pdf.setTextColor(0, 0, 0);
-                        pdf.text('การรับรองความถูกต้อง', margin, yPosition);
-                        yPosition += 8;
-                        
-                        pdf.setFontSize(9);
-                        const legalText = 'ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องตามที่ตรวจสอบและเป็นความจริงทุกประการ';
-                        pdf.text(legalText, margin, yPosition);
-                        yPosition += 5;
-                        
-                        const legalTextEn = '(I hereby certify that the information in this report is accurate and true to the best of my knowledge.)';
-                        pdf.text(legalTextEn, margin, yPosition);
-                        yPosition += 20;
-                        
-                        // Signature sections
-                        const signatureY = yPosition;
-                        
-                        // Auditor signature
-                        pdf.text('ลงชื่อ ....................................', margin, signatureY);
-                        pdf.text('(ผู้ตรวจสอบ / Auditor)', margin, signatureY + 8);
-                        pdf.text(`วันที่: ${new Date().toLocaleDateString('th-TH')}`, margin, signatureY + 16);
-                        
-                        // Manager signature
-                        pdf.text('ลงชื่อ ....................................', pageWidth - 80, signatureY);
-                        pdf.text('(ผู้จัดการสาขา / Branch Manager)', pageWidth - 80, signatureY + 8);
-                        pdf.text(`วันที่: ${new Date().toLocaleDateString('th-TH')}`, pageWidth - 80, signatureY + 16);
-                        
-                        // Generate filename
-                        const branchInfo = state.branchCode ? 
-                            `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : 
-                            state.branchName.replace(/\s+/g, '_');
-                        const fileName = `${state.countDate}_Stock-Count-Report_${branchInfo}.pdf`;
-                        
-                        // Save the PDF
-                        pdf.save(fileName);
-                        
-                        showModal("Success", `PDF report exported successfully!\n\nItems included:\n• Total items: ${filteredData.length}\n• Discrepancy items: ${summary.discrepancyItems}\n• Demo items: ${summary.demoItems}`);
-                        
-                    } catch (error) {
-                        console.error('PDF Export Error:', error);
-                        showModal("Error", `Failed to export PDF: ${error.message}`);
-                    } finally {
-                        // Clean up data attributes
-                        inputs.forEach(input => {
-                            const parentCell = input.closest('td');
-                            if (parentCell) {
-                                parentCell.removeAttribute('data-print-value');
-                            }
-                        });
-                        
-                        // Restore button
+                    
+                    let errorMessage = 'เกิดข้อผิดพลาดในการสร้าง PDF: ';
+                    
+                    if (error.message.includes('jsPDF') || error.message.includes('html2canvas')) {
+                        errorMessage += 'ไลบรารีที่จำเป็นไม่ได้โหลด กรุณารีเฟรชหน้าและลองใหม่';
+                    } else if (error.message.includes('PNG') || error.message.includes('canvas')) {
+                        errorMessage += 'ข้อมูลมีขนาดใหญ่เกินไป กรุณาลดจำนวนรายการหรือลองใหม่';
+                    } else if (error.message.includes('memory') || error.message.includes('size')) {
+                        errorMessage += 'หน่วยความจำไม่เพียงพอ กรุณาปิดแท็บอื่นและลองใหม่';
+                    } else {
+                        errorMessage += error.message || 'ข้อผิดพลาดไม่ทราบสาเหตุ';
+                    }
+                    
+                    showModal("Error", errorMessage);                } finally {
+                    // Restore button
+                    const exportBtn = document.getElementById('export-pdf-btn');
+                    if (exportBtn) {
                         exportBtn.innerHTML = originalContent;
                         exportBtn.disabled = false;
                     }
-                }, 100);
+                }
             }
             
             let audioCtx;
@@ -7281,11 +7406,10 @@ def calculate_serial_sku_score(text, pattern_type):
                 addListener('openScannerBtn', 'click', openScannerModal);
                 addListener('openScannerBtn-spp-spare-parts', 'click', () => openFloatingScanner('spp-spare-parts'));
                 addListener('openScannerBtn-spp-glue', 'click', () => openFloatingScanner('spp-glue'));
-                addListener('openScannerBtn-spp-tools', 'click', () => openFloatingScanner('spp-tools'));
-                addListener('final-openScannerBtn', 'click', finalOpenScannerModal);
+                addListener('openScannerBtn-spp-tools', 'click', () => openFloatingScanner('spp-tools'));                addListener('final-openScannerBtn', 'click', finalOpenScannerModal);
                 // closeScannerBtn removed - handled by floating scanner
                 addListener('export-pdf-btn', 'click', exportToPDF);                
-                // Scanner tab switching removed - handled by floating scanner                
+                // Scanner tab switching removed - handled by floating scanner
                 // Capture button removed - handled by floating scanner                
                 // Add debounced search event listeners for better performance
                 let searchDebounceTimers = {};
