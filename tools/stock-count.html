@@ -4015,33 +4015,36 @@ def calculate_serial_sku_score(text, pattern_type):
                     const originalSku = String(row.SKU || '').trim().toUpperCase();
                     const groupCode = String(row.GROUP_CODE || '').toUpperCase();
                     const subclassCode = String(row.SUBCLASS_CODE || '').toUpperCase();
-                    
-                    // Advanced DEMO detection logic (Power Query sequence step 2)
+                      // Advanced DEMO detection logic (Power Query sequence step 2)
                     let isDemo;
                     if (useAdvancedMode) {
                         isDemo = detectAdvancedDemo(originalSku, desc, family, groupCode, subclassCode, isIStudio);
                     } else {
-                        // Exclusion list for items that should NOT be flagged as DEMO
-                        const demoExclusions = [
-                            'AIS SIM DYNAMIC SALE',
-                            'AIS SIM'
-                        ];
-                        
-                        // Check if SKU or description contains any exclusion patterns
-                        const isExcluded = demoExclusions.some(exclusion => 
-                            originalSku.includes(exclusion) || desc.includes(exclusion)
-                        );
-                        
-                        // Standard DEMO detection logic with exclusions
-                        isDemo = (
-                            !isExcluded && 
-                            !originalSku.startsWith('DLCGZ') && (
-                                originalSku.startsWith('D') ||           // Condition 1: First character is 'D'
-                                originalSku.includes('DEMO') ||          // Condition 2: SKU contains "DEMO" anywhere
-                                desc.includes('DEMO') ||                 // Condition 3: Description contains "DEMO"
-                                family === 'DEMO'                       // Condition 4: Family equals "DEMO"
-                            )
-                        );
+                        // Check family field first (highest priority)
+                        if (family === 'DEMO') {
+                            isDemo = true;
+                        } else {
+                            // Exclusion list for items that should NOT be flagged as DEMO
+                            const demoExclusions = [
+                                'AIS SIM DYNAMIC SALE',
+                                'AIS SIM'
+                            ];
+                            
+                            // Check if SKU or description contains any exclusion patterns
+                            const isExcluded = demoExclusions.some(exclusion => 
+                                originalSku.includes(exclusion) || desc.includes(exclusion)
+                            );
+                            
+                            // Standard DEMO detection logic with exclusions (fallback if family is not DEMO)
+                            isDemo = (
+                                !isExcluded && 
+                                !originalSku.startsWith('DLCGZ') && (
+                                    originalSku.startsWith('D') ||           // Condition 1: First character is 'D'
+                                    originalSku.includes('DEMO') ||          // Condition 2: SKU contains "DEMO" anywhere
+                                    desc.includes('DEMO')                    // Condition 3: Description contains "DEMO"
+                                )
+                            );
+                        }
                     }
                     
                     // Serial/SKU combination logic (Power Query sequence step 3)
@@ -4158,17 +4161,20 @@ def calculate_serial_sku_score(text, pattern_type):
                 });
                 
                 return processedData;
-            }
-              function detectAdvancedDemo(originalSku, desc, family, groupCode, subclassCode, isIStudio) {
+            }              function detectAdvancedDemo(originalSku, desc, family, groupCode, subclassCode, isIStudio) {
                 // Enhanced DEMO detection for advanced branches
                 
-                // Standard DEMO detection first
+                // Check family field first (highest priority)
+                if (family === 'DEMO') {
+                    return true;
+                }
+                
+                // Standard DEMO detection fallback (only if family is not DEMO)
                 const standardDemo = (
                     !originalSku.startsWith('DLCGZ') && (
                         originalSku.startsWith('D') ||
                         originalSku.includes('DEMO') ||
-                        desc.includes('DEMO') ||
-                        family === 'DEMO'
+                        desc.includes('DEMO')
                     )
                 );
                 
