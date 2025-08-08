@@ -1042,6 +1042,131 @@
                 URL.revokeObjectURL(url);
             };
             
+            const generateAttachmentSection = () => {
+                const attachmentContent = generateAttachmentReferences();
+                
+                // Check if there are any actual attachment items (not just the "no items" message)
+                const hasAttachments = !attachmentContent.includes('ไม่มีรายการที่มีหลักฐานประกอบ');
+                
+                if (!hasAttachments) {
+                    return ''; // Don't show the section if no attachments
+                }
+                
+                return `
+                    <div style="margin-top: 50px; page-break-before: avoid;">
+                        <h3 style="color: #000000; border-bottom: 2px solid #000000; padding-bottom: 5px; margin-bottom: 20px;">
+                            เอกสารอ้างอิง / References
+                        </h3>
+                        <div id="attachment-references">
+                            ${attachmentContent}
+                        </div>
+                    </div>
+                `;
+            };
+            
+            const generateAttachmentReferences = () => {
+                let attachmentHtml = '';
+                let referenceNumber = 1;
+                
+                // Check voucher items for attachments
+                const voucherRows = document.querySelectorAll('#voucher-list .dynamic-row');
+                
+                voucherRows.forEach(row => {
+                    const descriptionInput = row.querySelector('input[type="text"]');
+                    const rowId = row.id;
+                    
+                    if (descriptionInput && descriptionInput.value.trim() && attachments[rowId]) {
+                        const description = descriptionInput.value.trim();
+                        const amountInput = row.querySelector('input[type="number"]');
+                        const amount = amountInput ? parseFloat(amountInput.value || 0) : 0;
+                        
+                        let imageHtml = '';
+                        if (attachments[rowId] && attachments[rowId].data) {
+                            imageHtml = `
+                                <div style="text-align: center; margin-top: 10px;">
+                                    <img src="${attachments[rowId].data}" 
+                                         alt="หลักฐานสำหรับ ${description}" 
+                                         style="max-width: 100%; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <div style="margin-top: 5px; font-size: 9pt; color: #666;">
+                                        ไฟล์: ${attachments[rowId].name || 'ไม่ระบุชื่อไฟล์'}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
+                        attachmentHtml += `
+                            <div style="margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #fafafa; page-break-inside: avoid;">
+                                <div style="margin-bottom: 10px;">
+                                    <strong>อ้างอิง ${referenceNumber}:</strong> รายการจ่ายรอเบิก
+                                </div>
+                                <div style="margin-bottom: 8px;">
+                                    <strong>รายละเอียด:</strong> ${description}
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <strong>จำนวนเงิน:</strong> ${formatCurrency(amount)}
+                                </div>
+                                ${imageHtml}
+                            </div>
+                        `;
+                        referenceNumber++;
+                    }
+                });
+                
+                // Check reimbursement items for attachments
+                const reimbursementRows = document.querySelectorAll('#reimbursement-list .dynamic-row');
+                
+                reimbursementRows.forEach(row => {
+                    const descriptionInput = row.querySelector('input[type="text"]');
+                    const rowId = row.id;
+                    
+                    if (descriptionInput && descriptionInput.value.trim() && attachments[rowId]) {
+                        const description = descriptionInput.value.trim();
+                        const amountInput = row.querySelector('input[type="number"]');
+                        const amount = amountInput ? parseFloat(amountInput.value || 0) : 0;
+                        
+                        let imageHtml = '';
+                        if (attachments[rowId] && attachments[rowId].data) {
+                            imageHtml = `
+                                <div style="text-align: center; margin-top: 10px;">
+                                    <img src="${attachments[rowId].data}" 
+                                         alt="หลักฐานสำหรับ ${description}" 
+                                         style="max-width: 100%; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <div style="margin-top: 5px; font-size: 9pt; color: #666;">
+                                        ไฟล์: ${attachments[rowId].name || 'ไม่ระบุชื่อไฟล์'}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
+                        attachmentHtml += `
+                            <div style="margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #fafafa; page-break-inside: avoid;">
+                                <div style="margin-bottom: 10px;">
+                                    <strong>อ้างอิง ${referenceNumber}:</strong> รายการรอโอนเงินคืน
+                                </div>
+                                <div style="margin-bottom: 8px;">
+                                    <strong>รายละเอียด:</strong> ${description}
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <strong>จำนวนเงิน:</strong> ${formatCurrency(amount)}
+                                </div>
+                                ${imageHtml}
+                            </div>
+                        `;
+                        referenceNumber++;
+                    }
+                });
+                
+                if (attachmentHtml === '') {
+                    attachmentHtml = `
+                        <div style="padding: 20px; text-align: center; color: #666; font-style: italic;">
+                            ไม่มีรายการที่มีหลักฐานประกอบ
+                        </div>
+                    `;
+                }
+                
+                return attachmentHtml;
+            };
+            
             const exportToPDF = async () => {
                 const getVal = (id) => {
                     const element = document.getElementById(id);
@@ -1264,6 +1389,9 @@
                                     <div>วันที่ / Date: _______________</div>
                                 </div>
                             </div>
+                            
+                            <!-- Attachment Reference Section -->
+                            ${generateAttachmentSection()}
                         </div>`;
 
                     document.body.appendChild(pdfContent);
