@@ -52,7 +52,7 @@
     
     /* Company Header - Top Right */
     .print-header-section::after {
-        content: "บริษัท เอส พี วี ไอ จำกัด (มหาชน)\A 1550/5 อาคารธนิยะ พลาซ่า ชั้น 12A ถนนเพลินจิต\A แขวงลุมพินี เขตปทุมวัน กรุงเทพมหานคร 10330\A โทร. 0-2658-8881 แฟกซ์ 0-2658-8870\A";
+        content: "บริษัท เอส พี วี ไอ จำกัด (มหาชน)\A เลขที่ 2 อาคารพรีเมียร์เพลซ ชั้น 3 ซอยพรีเมียร์ 2 ถนนศรีนครินทร์\A แขวงหนองบอน เขตประเวศ กรุงเทพมหานคร 10250\A โทร. (66) 61-417-9777  Line ID : iStudio by spvi\A";
         position: absolute;
         top: 5px; /* Move text closer to top edge */
         right: 5px; /* Small right padding to prevent cutoff */
