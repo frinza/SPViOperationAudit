@@ -1044,10 +1044,16 @@
                         
                         <div style="margin-bottom: 25px;">
                             <h2 style="font-size: 14pt; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">รายละเอียดการตรวจสอบ</h2>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                                 <div><strong>สาขา:</strong> ${appState.details.branch || '-'}</div>
                                 <div><strong>วันที่ตรวจสอบ:</strong> ${appState.details.date || '-'}</div>
-                                <div><strong>เวลาที่ตรวจสอบ:</strong> ${appState.details.time || '-'}</div>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <div><strong>ผู้รับการตรวจสอบ:</strong> ${appState.details.auditeeName || '-'} (${appState.details.auditeePosition || '-'})</div>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <strong>ผู้ตรวจสอบ:</strong> ${appState.details.auditors && appState.details.auditors.length > 0 ? 
+                                    appState.details.auditors.map(auditor => `${auditor.name || '-'} (${auditor.position || '-'})`).join(', ') : '-'}
                             </div>
                             <div style="margin-top: 15px;">
                                 <strong>คะแนนรวม:</strong> 
@@ -1059,17 +1065,6 @@
                                 </span>
                             </div>
                         </div>`;
-
-                    // Add auditors section
-                    if (appState.auditors && appState.auditors.length > 0) {
-                        pdfContent.innerHTML += `
-                            <div style="margin-bottom: 25px;">
-                                <h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 10px;">ผู้ตรวจสอบ</h3>
-                                ${appState.auditors.map((auditor, index) => `
-                                    <div style="margin-bottom: 5px;">${index + 1}. ${auditor.name || '-'} (${auditor.position || '-'})</div>
-                                `).join('')}
-                            </div>`;
-                    }
 
                     // Add checklist sections
                     Object.keys(appState.sections).forEach((sectionKey) => {
