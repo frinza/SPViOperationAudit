@@ -6661,12 +6661,11 @@ def calculate_serial_sku_score(text, pattern_type):
                     // Limit data size to prevent canvas issues
                     const maxItemsForCanvas = 50; // Limit to prevent PNG corruption
                     const limitedData = filteredData.slice(0, maxItemsForCanvas);
-                    const isDataLimited = filteredData.length > maxItemsForCanvas;// Create temporary div for PDF content
+                    const isDataLimited = filteredData.length > maxItemsForCanvas;                    // Create temporary div for PDF content
                     const pdfContent = document.createElement('div');
                     pdfContent.style.width = '210mm';
                     pdfContent.style.maxWidth = '210mm';
-                    pdfContent.style.minHeight = '297mm';
-                    pdfContent.style.padding = '20mm';
+                    pdfContent.style.padding = '15mm 20mm';
                     pdfContent.style.backgroundColor = 'white';
                     pdfContent.style.fontFamily = 'Sarabun, sans-serif';
                     pdfContent.style.fontSize = '12pt';
@@ -6771,11 +6770,9 @@ def calculate_serial_sku_score(text, pattern_type):
                                     * แสดงเฉพาะรายการที่มีผลต่างและรายการ Demo | Total: ${filteredData.length} รายการ
                                 </div>
                             </div>`;
-                    }
-
-                    // Add legal declaration
+                    }                    // Add legal declaration
                     pdfContent.innerHTML += `
-                        <div style="margin-top: 40px; page-break-before: always;">
+                        <div style="margin-top: 40px;">
                             <div style="border: 2px solid #222; border-radius: 8px; background: #f7f7f7; padding: 15px; text-align: center; margin-bottom: 30px;">
                                 <p style="margin: 0; font-size: 11pt; line-height: 1.4;">
                                     <strong>คำรับรองและคำประกาศความถูกต้อง</strong><br>
@@ -6805,14 +6802,15 @@ def calculate_serial_sku_score(text, pattern_type):
                         </div>`;                    document.body.appendChild(pdfContent);
 
                     // Wait for content to render
-                    await new Promise(resolve => setTimeout(resolve, 100));
-
-                    // Generate PDF with improved html2canvas settings
+                    await new Promise(resolve => setTimeout(resolve, 100));                    // Generate PDF with improved html2canvas settings
                     const canvas = await html2canvas(pdfContent, {
                         scale: 1.5, // Reduced scale to prevent memory issues
                         useCORS: true,
                         allowTaint: true,
                         backgroundColor: 'white',
+                        width: pdfContent.scrollWidth,
+                        height: pdfContent.scrollHeight,
+                        logging: false,
                         scrollX: 0,
                         scrollY: 0,
                         windowWidth: 1200,
@@ -6833,7 +6831,7 @@ def calculate_serial_sku_score(text, pattern_type):
                     const pdf = new jsPDF('p', 'mm', 'a4');
                     
                     const imgWidth = 210; // A4 width in mm
-                    const pageHeight = 297; // A4 height in mm
+                    const pageHeight = 295; // A4 height in mm (slightly less to account for margins)
                     const imgHeight = (canvas.height * imgWidth) / canvas.width;
                     
                     // Generate image data with error handling
@@ -6848,21 +6846,22 @@ def calculate_serial_sku_score(text, pattern_type):
                     } catch (canvasError) {
                         throw new Error('Canvas to image conversion failed: ' + canvasError.message);
                     }
-                    
-                    let heightLeft = imgHeight;
-                    let position = 0;
 
                     // Add first page
                     try {
-                        pdf.addImage(imageData, 'PNG', 0, position, imgWidth, imgHeight);
-                        heightLeft -= pageHeight;
+                        pdf.addImage(imageData, 'PNG', 0, 0, imgWidth, imgHeight);
+                        
+                        // Only add additional pages if content significantly exceeds one page
+                        if (imgHeight > pageHeight + 5) { // 5mm tolerance
+                            let heightLeft = imgHeight - pageHeight;
 
-                        // Add additional pages if needed
-                        while (heightLeft >= 0) {
-                            position = heightLeft - imgHeight;
-                            pdf.addPage();
-                            pdf.addImage(imageData, 'PNG', 0, position, imgWidth, imgHeight);
-                            heightLeft -= pageHeight;
+                            // Add additional pages if needed
+                            while (heightLeft > 5) { // Only continue if significant content remains
+                                pdf.addPage();
+                                const yPosition = -(imgHeight - heightLeft);
+                                pdf.addImage(imageData, 'PNG', 0, yPosition, imgWidth, imgHeight);
+                                heightLeft -= pageHeight;
+                            }
                         }
                     } catch (pdfError) {
                         throw new Error('PDF generation failed: ' + pdfError.message);

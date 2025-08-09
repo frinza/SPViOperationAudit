@@ -383,6 +383,23 @@
                         <label for="today-sales-counted" class="block text-sm font-medium text-gray-700">เงินสดจากยอดขายวันนี้</label>
                         <input type="number" id="today-sales-counted" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
                     </div>
+
+                    <!-- AIS-specific cash fields (initially hidden) -->
+                    <div id="ais-cash-section" class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                        <h4 class="text-md font-semibold text-blue-700 mb-3">กองเงิน AIS เพิ่มเติม</h4>
+                        <div class="mt-3">
+                            <label for="ais-change-fund-counted" class="block text-sm font-medium text-gray-700">เงินทอน AIS</label>
+                            <input type="number" id="ais-change-fund-counted" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                        </div>
+                        <div class="mt-3">
+                            <label for="ais-prev-sales-counted" class="block text-sm font-medium text-gray-700">เงินสดจากยอดขายวันก่อน (ที่ยังไม่ได้นำส่ง) AIS</label>
+                            <input type="number" id="ais-prev-sales-counted" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                        </div>
+                        <div class="mt-3">
+                            <label for="ais-today-sales-counted" class="block text-sm font-medium text-gray-700">เงินสดจากยอดขายวันนี้ AIS</label>
+                            <input type="number" id="ais-today-sales-counted" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Vouchers & Reimbursements -->
@@ -439,6 +456,23 @@
                         <div>
                             <label for="today-sales-system" class="block text-sm font-medium text-gray-700">ยอดขายวันนี้ (ตามรายงาน)</label>
                             <input type="number" id="today-sales-system" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                        </div>
+
+                        <!-- AIS-specific system fields (initially hidden) -->
+                        <div id="ais-system-section" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                            <h4 class="text-md font-semibold text-blue-700 mb-3">ยอดระบบ AIS เพิ่มเติม</h4>
+                            <div class="mt-3">
+                                <label for="ais-approved-change-fund" class="block text-sm font-medium text-gray-700">วงเงินทอนอนุมัติ AIS</label>
+                                <input type="number" id="ais-approved-change-fund" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                            </div>
+                            <div class="mt-3">
+                                <label for="ais-prev-sales-system" class="block text-sm font-medium text-gray-700">ยอดขายวันก่อน (ตามรายงาน) AIS</label>
+                                <input type="number" id="ais-prev-sales-system" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                            </div>
+                            <div class="mt-3">
+                                <label for="ais-today-sales-system" class="block text-sm font-medium text-gray-700">ยอดขายวันนี้ (ตามรายงาน) AIS</label>
+                                <input type="number" id="ais-today-sales-system" value="" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm currency-input" placeholder="0.00">
+                            </div>
                         </div>
                         
                         <div class="border-t pt-3 space-y-4 print:flex print:space-y-0 print:gap-8 print:items-start">
@@ -693,6 +727,38 @@
                 departmentHidden.value = value;
                 departmentSearch.value = text;
                 closeDropdown();
+                
+                // Check if branch is AIS or A-Store and show/hide AIS sections
+                toggleAisSections(value);
+            }
+
+            function toggleAisSections(branchValue) {
+                const aisCashSection = document.getElementById('ais-cash-section');
+                const aisSystemSection = document.getElementById('ais-system-section');
+                
+                // Check if branch contains AIS or A-Store keywords
+                const isAisOrAStore = branchValue && (
+                    branchValue.toLowerCase().includes('ais') || 
+                    branchValue.toLowerCase().includes('a-store')
+                );
+                
+                if (isAisOrAStore) {
+                    aisCashSection.classList.remove('hidden');
+                    aisSystemSection.classList.remove('hidden');
+                } else {
+                    aisCashSection.classList.add('hidden');
+                    aisSystemSection.classList.add('hidden');
+                    // Clear AIS values when hiding
+                    document.getElementById('ais-change-fund-counted').value = '';
+                    document.getElementById('ais-prev-sales-counted').value = '';
+                    document.getElementById('ais-today-sales-counted').value = '';
+                    document.getElementById('ais-approved-change-fund').value = '';
+                    document.getElementById('ais-prev-sales-system').value = '';
+                    document.getElementById('ais-today-sales-system').value = '';
+                }
+                
+                // Recalculate totals when visibility changes
+                calculateAll();
             }
 
             // Event listeners
@@ -901,20 +967,32 @@
                 const prevSalesCounted = parseFloat(document.getElementById('prev-sales-counted').value) || 0;
                 const todaySalesCounted = parseFloat(document.getElementById('today-sales-counted').value) || 0;
 
-                const totalAssetsCounted = totalPettyCashFund + changeFundCounted + prevSalesCounted + todaySalesCounted;
+                // Add AIS values if visible
+                const aisChangeFundCounted = parseFloat(document.getElementById('ais-change-fund-counted').value) || 0;
+                const aisPrevSalesCounted = parseFloat(document.getElementById('ais-prev-sales-counted').value) || 0;
+                const aisTodaySalesCounted = parseFloat(document.getElementById('ais-today-sales-counted').value) || 0;
+
+                const totalAssetsCounted = totalPettyCashFund + changeFundCounted + prevSalesCounted + todaySalesCounted + 
+                                         aisChangeFundCounted + aisPrevSalesCounted + aisTodaySalesCounted;
                 document.getElementById('total-assets-counted').textContent = formatCurrency(totalAssetsCounted);
                 
                 const approvedPettyCash = parseFloat(document.getElementById('approved-petty-cash').value) || 0;
                 const approvedChangeFund = parseFloat(document.getElementById('approved-change-fund').value) || 0;
                 const prevSalesSystem = parseFloat(document.getElementById('prev-sales-system').value) || 0;
                 const todaySalesSystem = parseFloat(document.getElementById('today-sales-system').value) || 0;
+
+                // Add AIS system values if visible
+                const aisApprovedChangeFund = parseFloat(document.getElementById('ais-approved-change-fund').value) || 0;
+                const aisPrevSalesSystem = parseFloat(document.getElementById('ais-prev-sales-system').value) || 0;
+                const aisTodaySalesSystem = parseFloat(document.getElementById('ais-today-sales-system').value) || 0;
                 
                 let totalVouchers = Array.from(document.querySelectorAll('.voucher-amount')).reduce((sum, el) => sum + (parseFloat(el.value) || 0), 0);
                 document.getElementById('total-vouchers').textContent = formatCurrency(totalVouchers);
                 let totalReimbursements = Array.from(document.querySelectorAll('.reimbursement-amount')).reduce((sum, el) => sum + (parseFloat(el.value) || 0), 0);
                 document.getElementById('total-reimbursements').textContent = formatCurrency(totalReimbursements);
 
-                const expectedSystemTotal = approvedPettyCash + approvedChangeFund + prevSalesSystem + todaySalesSystem;
+                const expectedSystemTotal = approvedPettyCash + approvedChangeFund + prevSalesSystem + todaySalesSystem + 
+                                           aisApprovedChangeFund + aisPrevSalesSystem + aisTodaySalesSystem;
                 const expectedBalance = expectedSystemTotal - totalReimbursements - totalVouchers;
                 document.getElementById('expected-balance').textContent = formatCurrency(expectedBalance);
 
@@ -944,6 +1022,7 @@
                 summaryData = {
                     totalPettyCash: totalPettyCashFund,
                     totalOtherFunds: changeFundCounted + prevSalesCounted + todaySalesCounted,
+                    totalAisFunds: aisChangeFundCounted + aisPrevSalesCounted + aisTodaySalesCounted,
                     totalAssetsCounted: totalAssetsCounted,
                     totalVouchers: totalVouchers,
                     totalReimbursements: totalReimbursements,
@@ -1202,8 +1281,7 @@
                     // Create temporary div for PDF content
                     const pdfContent = document.createElement('div');
                     pdfContent.style.width = '210mm';
-                    pdfContent.style.minHeight = '297mm';
-                    pdfContent.style.padding = '20mm';
+                    pdfContent.style.padding = '15mm 20mm';
                     pdfContent.style.backgroundColor = 'white';
                     pdfContent.style.fontFamily = 'Sarabun, sans-serif';
                     pdfContent.style.fontSize = '12pt';
@@ -1211,6 +1289,7 @@
                     pdfContent.style.position = 'absolute';
                     pdfContent.style.left = '-9999px';
                     pdfContent.style.top = '0';
+                    pdfContent.style.boxSizing = 'border-box';
 
                     // Get dynamic section data
                     const getDynamicSectionData = (listId) => {
@@ -1270,6 +1349,12 @@
                                         <div>เงินทอนที่นับได้: ${getVal('change-fund-counted') || '0.00'} บาท</div>
                                         <div>เงินสดจากยอดขายวันก่อน: ${getVal('prev-sales-counted') || '0.00'} บาท</div>
                                         <div>เงินสดจากยอดขายวันนี้: ${getVal('today-sales-counted') || '0.00'} บาท</div>
+                                        ${getVal('ais-change-fund-counted') || getVal('ais-prev-sales-counted') || getVal('ais-today-sales-counted') ? `
+                                        <div style="color: #1e40af; margin-top: 5px; font-weight: bold;">กองเงิน AIS:</div>
+                                        <div>เงินทอน AIS: ${getVal('ais-change-fund-counted') || '0.00'} บาท</div>
+                                        <div>เงินสดจากยอดขายวันก่อน AIS: ${getVal('ais-prev-sales-counted') || '0.00'} บาท</div>
+                                        <div>เงินสดจากยอดขายวันนี้ AIS: ${getVal('ais-today-sales-counted') || '0.00'} บาท</div>
+                                        ` : ''}
                                         <div style="border-top: 1px solid #ccc; margin-top: 5px; padding-top: 5px; font-weight: bold;">
                                             รวมเงินสดทั้งหมด: ${getTxt('total-assets-counted')} บาท
                                         </div>
@@ -1401,29 +1486,32 @@
                         scale: 2,
                         useCORS: true,
                         backgroundColor: 'white',
-                        width: pdfContent.offsetWidth,
-                        height: pdfContent.offsetHeight
+                        width: pdfContent.scrollWidth,
+                        height: pdfContent.scrollHeight,
+                        logging: false,
+                        allowTaint: true
                     });
 
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF('p', 'mm', 'a4');
                     
                     const imgWidth = 210; // A4 width in mm
-                    const pageHeight = 297; // A4 height in mm
+                    const pageHeight = 295; // A4 height in mm (slightly less to account for margins)
                     const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                    let heightLeft = imgHeight;
-                    let position = 0;
-
+                    
                     // Add first page
-                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-
-                    // Add additional pages if needed
-                    while (heightLeft >= 0) {
-                        position = heightLeft - imgHeight;
-                        pdf.addPage();
-                        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-                        heightLeft -= pageHeight;
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+                    
+                    // Only add additional pages if content significantly exceeds one page
+                    if (imgHeight > pageHeight + 5) { // 5mm tolerance
+                        let heightLeft = imgHeight - pageHeight;
+                        
+                        while (heightLeft > 5) { // Only continue if significant content remains
+                            pdf.addPage();
+                            const yPosition = -(imgHeight - heightLeft);
+                            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, yPosition, imgWidth, imgHeight);
+                            heightLeft -= pageHeight;
+                        }
                     }
 
                     // Clean up
@@ -1478,6 +1566,17 @@
                 csvRows.push(`เงินทอนที่นับได้,${escapeCsv(getVal('change-fund-counted'))}`);
                 csvRows.push(`เงินสดจากยอดขายวันก่อน,${escapeCsv(getVal('prev-sales-counted'))}`);
                 csvRows.push(`เงินสดจากยอดขายวันนี้,${escapeCsv(getVal('today-sales-counted'))}`);
+                
+                // Include AIS values if they exist
+                const aisChangeFund = getVal('ais-change-fund-counted');
+                const aisPrevSales = getVal('ais-prev-sales-counted');
+                const aisTodaySales = getVal('ais-today-sales-counted');
+                if (aisChangeFund || aisPrevSales || aisTodaySales) {
+                    csvRows.push(`เงินทอน AIS,${escapeCsv(aisChangeFund)}`);
+                    csvRows.push(`เงินสดจากยอดขายวันก่อน AIS,${escapeCsv(aisPrevSales)}`);
+                    csvRows.push(`เงินสดจากยอดขายวันนี้ AIS,${escapeCsv(aisTodaySales)}`);
+                }
+                
                 csvRows.push("");
                 csvRows.push("รายละเอียดเงินตามระบบ");
                 csvRows.push("รายการ,จำนวนเงิน");
@@ -1485,6 +1584,16 @@
                 csvRows.push(`วงเงินทอนอนุมัติ,${escapeCsv(getVal('approved-change-fund'))}`);
                 csvRows.push(`ยอดขายวันก่อน (ตามรายงาน),${escapeCsv(getVal('prev-sales-system'))}`);
                 csvRows.push(`ยอดขายวันนี้ (ตามรายงาน),${escapeCsv(getVal('today-sales-system'))}`);
+                
+                // Include AIS system values if they exist
+                const aisApprovedChangeFund = getVal('ais-approved-change-fund');
+                const aisPrevSalesSystem = getVal('ais-prev-sales-system');
+                const aisTodaySalesSystem = getVal('ais-today-sales-system');
+                if (aisApprovedChangeFund || aisPrevSalesSystem || aisTodaySalesSystem) {
+                    csvRows.push(`วงเงินทอนอนุมัติ AIS,${escapeCsv(aisApprovedChangeFund)}`);
+                    csvRows.push(`ยอดขายวันก่อน (ตามรายงาน) AIS,${escapeCsv(aisPrevSalesSystem)}`);
+                    csvRows.push(`ยอดขายวันนี้ (ตามรายงาน) AIS,${escapeCsv(aisTodaySalesSystem)}`);
+                }
                 csvRows.push("");
                 csvRows.push("รายการเอกสารจ่ายรอเบิก");
                 csvRows.push("รายละเอียด,จำนวนเงิน,มีรูปแนบ");

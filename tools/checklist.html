@@ -1013,8 +1013,7 @@
                     // Create temporary div for PDF content
                     const pdfContent = document.createElement('div');
                     pdfContent.style.width = '210mm';
-                    pdfContent.style.minHeight = '297mm';
-                    pdfContent.style.padding = '20mm';
+                    pdfContent.style.padding = '15mm 20mm';
                     pdfContent.style.backgroundColor = 'white';
                     pdfContent.style.fontFamily = 'Sarabun, sans-serif';
                     pdfContent.style.fontSize = '12pt';
@@ -1022,6 +1021,7 @@
                     pdfContent.style.position = 'absolute';
                     pdfContent.style.left = '-9999px';
                     pdfContent.style.top = '0';
+                    pdfContent.style.boxSizing = 'border-box';
 
                     // Add header
                     pdfContent.innerHTML = `
@@ -1117,7 +1117,7 @@
 
                     // Add legal declaration
                     pdfContent.innerHTML += `
-                        <div style="margin-top: 40px; page-break-before: always;">
+                        <div style="margin-top: 40px;">
                             <div style="border: 2px solid #222; border-radius: 8px; background: #f7f7f7; padding: 15px; text-align: center; margin-bottom: 30px;">
                                 <p style="margin: 0; font-size: 11pt; line-height: 1.4;">
                                     <strong>คำรับรองและคำประกาศความถูกต้อง</strong><br>
@@ -1153,29 +1153,32 @@
                         scale: 2,
                         useCORS: true,
                         backgroundColor: 'white',
-                        width: pdfContent.offsetWidth,
-                        height: pdfContent.offsetHeight
+                        width: pdfContent.scrollWidth,
+                        height: pdfContent.scrollHeight,
+                        logging: false,
+                        allowTaint: true
                     });
 
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF('p', 'mm', 'a4');
                     
                     const imgWidth = 210; // A4 width in mm
-                    const pageHeight = 297; // A4 height in mm
+                    const pageHeight = 295; // A4 height in mm (slightly less to account for margins)
                     const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                    let heightLeft = imgHeight;
-                    let position = 0;
-
+                    
                     // Add first page
-                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-
-                    // Add additional pages if needed
-                    while (heightLeft >= 0) {
-                        position = heightLeft - imgHeight;
-                        pdf.addPage();
-                        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-                        heightLeft -= pageHeight;
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+                    
+                    // Only add additional pages if content significantly exceeds one page
+                    if (imgHeight > pageHeight + 5) { // 5mm tolerance
+                        let heightLeft = imgHeight - pageHeight;
+                        
+                        while (heightLeft > 5) { // Only continue if significant content remains
+                            pdf.addPage();
+                            const yPosition = -(imgHeight - heightLeft);
+                            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, yPosition, imgWidth, imgHeight);
+                            heightLeft -= pageHeight;
+                        }
                     }
 
                     // Clean up
