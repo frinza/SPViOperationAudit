@@ -827,6 +827,10 @@
                             <input type="checkbox" id="perm-riskAnalyzer" class="rounded mr-3">
                             <span class="text-sm">Risk Analyzer</span>
                         </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="perm-smcoCheck" class="rounded mr-3">
+                            <span class="text-sm">SMCO Check</span>
+                        </label>
                     </div>
                     <div class="space-y-3">
                         <label class="flex items-center">
@@ -1910,6 +1914,7 @@
             document.getElementById('perm-cashControl').checked = permissions.cashControl || false;
             document.getElementById('perm-checklist').checked = permissions.checklist || false;
             document.getElementById('perm-riskAnalyzer').checked = permissions.riskAnalyzer || false;
+            document.getElementById('perm-smcoCheck').checked = permissions.smcoCheck || false;
             document.getElementById('perm-auditCalendar').checked = permissions.auditCalendar || false;
             document.getElementById('perm-reportComparison').checked = permissions.reportComparison || false;
             document.getElementById('perm-issueTracker').checked = permissions.issueTracker || false;
@@ -1924,6 +1929,7 @@
                 cashControl: document.getElementById('perm-cashControl').checked,
                 checklist: document.getElementById('perm-checklist').checked,
                 riskAnalyzer: document.getElementById('perm-riskAnalyzer').checked,
+                smcoCheck: document.getElementById('perm-smcoCheck').checked,
                 auditCalendar: document.getElementById('perm-auditCalendar').checked,
                 reportComparison: document.getElementById('perm-reportComparison').checked,
                 issueTracker: document.getElementById('perm-issueTracker').checked,

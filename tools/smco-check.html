@@ -1,0 +1,2059 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMCO Check - SPVi Operations Audit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    
+    <!-- Configuration Manager -->
+    <script src="../config.js"></script>
+    
+    <!-- Session Manager -->
+    <script src="../session-manager.js"></script>
+    
+    <!-- Firebase Auth System -->
+    <script src="../firebase-auth.js"></script>
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="../styles/spvi-main.css">
+    <link rel="stylesheet" href="../styles/print-header.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        
+        /* Upload sections */
+        .upload-section {
+            border: 2px dashed #cbd5e1;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #3b82f6;
+            background-color: #f8fafc;
+        }
+
+        .upload-section.dragover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: 'Sarabun', sans-serif;
+            font-weight: 500;
+            transition: background 0.3s ease;
+        }
+
+        .upload-btn:hover {
+            background: #2563eb;
+        }
+
+        .file-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 0.5rem;
+            display: none;
+        }
+
+        /* Status and processing */
+        .processing-status {
+            text-align: center;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0.5rem;
+            display: none;
+        }
+
+        .processing-status.processing {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+        }
+
+        .processing-status.success {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+
+        .processing-status.error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            background: white;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Results sections */
+        .results-section {
+            display: none;
+        }
+
+        .group-section {
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .group-header {
+            background: #f8fafc;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1e293b;
+        }
+
+        .group-content {
+            padding: 1.5rem;
+        }
+
+        /* Summary stats */
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+
+        /* Missing branches */
+        .missing-branches-section {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .missing-branches-title {
+            color: #92400e;
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 0 0.75rem 0;
+        }
+
+        .missing-branches-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .missing-branch-tag {
+            background: #fed7aa;
+            color: #9a3412;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: 1px solid #fdba74;
+        }
+
+        /* Row highlighting */
+        .data-table tbody tr.diff-row {
+            background-color: #fef2f2 !important;
+            border-left: 4px solid #ef4444;
+        }
+
+        .data-table tbody tr.diff-row:hover {
+            background-color: #fee2e2 !important;
+        }
+
+        .data-table tbody tr.soh-updated {
+            background-color: #f0f9ff !important;
+            border-left: 4px solid #0ea5e9;
+        }
+
+        .data-table tbody tr.soh-updated:hover {
+            background-color: #e0f2fe !important;
+        }
+
+        .data-table .clickable-doc {
+            color: #2563eb;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .data-table .clickable-doc:hover {
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+
+        /* Detail file uploads */
+        .detail-upload-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+        }
+
+        .detail-upload-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .detail-upload-area:hover {
+            border-color: #3b82f6;
+            background-color: #f8fafc;
+        }
+
+        .detail-upload-area.dragover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .detail-upload-btn {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            font-family: 'Sarabun', sans-serif;
+            font-weight: 500;
+            transition: background 0.3s ease;
+        }
+
+        .detail-upload-btn:hover {
+            background: #4338ca;
+        }
+
+        .uploaded-files-list {
+            margin-top: 0.5rem;
+        }
+
+        .uploaded-file-item {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            padding: 0.5rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .uploaded-file-name {
+            flex: 1;
+            color: #374151;
+        }
+
+        .uploaded-file-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-processing {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .modal-close {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .modal-close:hover {
+            background: #4b5563;
+        }
+
+        /* Export section */
+        .export-section {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .export-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: 'Sarabun', sans-serif;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            transition: background 0.3s ease;
+        }
+
+        .export-btn:hover {
+            background: #059669;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        /* Progress Bar Styles */
+        .progress-container {
+            margin: 1rem 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #374151;
+            margin-top: 0.25rem;
+        }
+
+        /* SOH Statistics */
+        .soh-stats {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .soh-stat-item {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            text-align: center;
+            min-width: 120px;
+            flex: 1;
+        }
+
+        .soh-stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0369a1;
+            margin-bottom: 0.25rem;
+        }
+
+        .soh-stat-label {
+            font-size: 0.75rem;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        /* Loading animation for SOH upload button */
+        .upload-btn.loading {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .upload-btn.loading:before {
+            content: "⟳ ";
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Sortable Table Styles */
+        .sortable-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 20px;
+        }
+
+        .sortable-table th.sortable:hover {
+            background-color: #e2e8f0;
+        }
+
+        .sort-icon {
+            position: absolute;
+            right: 5px;
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+
+        .sort-icon.asc::after {
+            content: '↑';
+            color: #3b82f6;
+        }
+
+        .sort-icon.desc::after {
+            content: '↓';
+            color: #3b82f6;
+        }
+
+        /* Branch Status Table */
+        .branch-status-section {
+            margin-bottom: 2rem;
+        }
+
+        .branch-status-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-pass {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .status-fail {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 shadow-2xl max-w-sm mx-4">
+            <div class="flex flex-col items-center">
+                <div class="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mb-4"></div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">กำลังเตรียมข้อมูล</h3>
+                <p class="text-gray-600 text-center">กรุณารอสักครู่...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="../dashboard.html" class="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        <span class="font-medium">กลับสู่หน้าหลัก</span>
+                    </a>
+                    <div class="h-6 w-px bg-gray-300"></div>
+                    <h1 class="text-xl font-bold text-gray-900">🏪 SMCO Check</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="userInfo" class="text-sm text-gray-600"></div>
+                    <button onclick="signOut()" class="text-red-600 hover:text-red-700 font-medium text-sm">
+                        ออกจากระบบ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 text-white">
+                <h1 class="text-2xl sm:text-3xl font-bold mb-2">Stock Management Control Operations Analysis</h1>
+                <p class="text-blue-100">ระบบตรวจสอบและวิเคราะห์การควบคุมการจัดการสินค้าคงคลัง</p>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6">
+            <!-- Upload Section -->
+            <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center mb-6 transition-all duration-300 hover:border-blue-400 hover:bg-blue-50" id="uploadSection">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">📁 อัปโหลดไฟล์ SMCO Data</h3>
+                <p class="text-gray-600 mb-4">กรุณาเลือกไฟล์ .xlsx ที่มีข้อมูล SMCO Check</p>
+                <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls" />
+                <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium" onclick="document.getElementById('fileInput').click()">
+                    เลือกไฟล์
+                </button>
+                <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg hidden" id="fileInfo"></div>
+            </div>
+
+            <!-- SOH Upload Section -->
+            <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center mb-6 transition-all duration-300 hover:border-green-400 hover:bg-green-50 hidden" id="sohUploadSection">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">📁 อัปโหลดไฟล์ SOH (Stock On Hand) สำหรับอัปเดต Final OH</h3>
+                <p class="text-gray-600 text-sm mb-4">
+                    ไฟล์ SOH จะถูกใช้เพื่อ:<br>
+                    • เพิ่มคอลัมน์ Final OH ให้กับตารางรายละเอียด<br>
+                    • คำนวณ Final Diff (Scan - Final OH)<br>
+                    • ลบ SKU ที่มี Final Diff = 0 ออกจากตารางรายละเอียด<br>
+                    • อัปเดตข้อมูลจาก AVAILABLE_QTY ในไฟล์ SOH
+                </p>
+                <input type="file" id="sohFileInput" class="hidden" accept=".xlsx,.xls" />
+                <button class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium" onclick="document.getElementById('sohFileInput').click()">
+                    <span id="sohUploadText">เลือกไฟล์ SOH</span>
+                </button>
+                <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg hidden" id="sohFileInfo"></div>
+                
+                <!-- SOH Progress Bar -->
+                <div class="progress-container" id="sohProgressContainer" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="sohProgressFill"></div>
+                    </div>
+                    <div class="progress-text" id="sohProgressText">0%</div>
+                </div>
+                
+                <div id="sohProcessingStatus" style="margin-top: 1rem; font-weight: bold;"></div>
+                
+                <!-- SOH Statistics -->
+                <div id="sohStats" class="soh-stats" style="display: none;">
+                    <div class="soh-stat-item">
+                        <div class="soh-stat-number" id="sohRecordsProcessed">0</div>
+                        <div class="soh-stat-label">รายการที่ประมวลผล</div>
+                    </div>
+                    <div class="soh-stat-item">
+                        <div class="soh-stat-number" id="sohRecordsMatched">0</div>
+                        <div class="soh-stat-label">รายการที่จับคู่สำเร็จ</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processing Status -->
+            <div class="text-center p-4 mx-4 rounded-lg hidden" id="processingStatus"></div>
+
+            <!-- Results Section -->
+            <div class="hidden" id="resultsSection">
+                <!-- Summary Stats -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="summaryStats"></div>
+
+                <!-- Group Results -->
+                <div id="groupResults"></div>
+
+                <!-- Export Section -->
+                <div class="text-center mt-8 space-x-4">
+                    <button class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium" onclick="exportToExcel()">📊 Export to Excel</button>
+                    <button class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium" onclick="printResults()">🖨️ Print Report</button>
+                </div>
+            </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Authentication Scripts moved to end of file -->
+
+    <style media="print">
+        .upload-section, .export-section, nav {
+            display: none !important;
+        }
+        
+        body {
+            background: white !important;
+            padding: 1rem !important;
+        }
+        
+        .modal-overlay {
+            display: none !important;
+        }
+    </style>
+
+    <script>
+        let processedData = {};
+        let allData = [];
+
+        // File upload handling
+        document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+        document.getElementById('sohFileInput').addEventListener('change', handleSOHFileUpload);
+
+        // Drag and drop functionality
+        const uploadSection = document.getElementById('uploadSection');
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleSOHFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleSOHFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                showStatus('error', 'กรุณาเลือกไฟล์ .xlsx หรือ .xls เท่านั้น');
+                return;
+            }
+
+            // Show file info
+            const fileInfo = document.getElementById('fileInfo');
+            fileInfo.innerHTML = `
+                <strong>ไฟล์:</strong> ${file.name}<br>
+                <strong>ขนาด:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB<br>
+                <strong>แก้ไขล่าสุด:</strong> ${new Date(file.lastModified).toLocaleString('th-TH')}
+            `;
+            fileInfo.style.display = 'block';
+
+            // Process file
+            processFile(file);
+        }
+
+        function processFile(file) {
+            showStatus('processing', 'กำลังประมวลผลข้อมูล...');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                    allData = jsonData;
+                    processData(jsonData);
+                    showStatus('success', `ประมวลผลสำเร็จ! พบข้อมูล ${jsonData.length} รายการ`);
+                    showResults();
+                } catch (error) {
+                    console.error('Error processing file:', error);
+                    showStatus('error', 'เกิดข้อผิดพลาดในการประมวลผลไฟล์');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleSOHFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                showSOHStatus('error', 'กรุณาเลือกไฟล์ .xlsx หรือ .xls เท่านั้น');
+                return;
+            }
+
+            // Show file info
+            const sohFileInfo = document.getElementById('sohFileInfo');
+            sohFileInfo.innerHTML = `
+                <strong>ไฟล์ SOH:</strong> ${file.name}<br>
+                <strong>ขนาด:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB<br>
+                <strong>แก้ไขล่าสุด:</strong> ${new Date(file.lastModified).toLocaleString('th-TH')}
+            `;
+            sohFileInfo.style.display = 'block';
+
+            // Process SOH file
+            processSOHFile(file);
+        }
+
+        function processSOHFile(file) {
+            showSOHStatus('processing', 'กำลังประมวลผลไฟล์ SOH...');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                    // Validate required columns
+                    if (jsonData.length === 0) {
+                        throw new Error('ไฟล์ SOH ไม่มีข้อมูล');
+                    }
+
+                    const firstRow = jsonData[0];
+                    const requiredColumns = ['BRANCH_CODE', 'SKU', 'AVAILABLE_QTY'];
+                    const missingColumns = requiredColumns.filter(col => !(col in firstRow));
+                    
+                    if (missingColumns.length > 0) {
+                        throw new Error(`ไฟล์ SOH ขาดคอลัมน์ที่จำเป็น: ${missingColumns.join(', ')}`);
+                    }
+
+                    // Check if detail files exist
+                    if (Object.keys(detailFiles).length === 0) {
+                        showSOHStatus('error', 'กรุณาอัปโหลดไฟล์รายละเอียด (Detail Files) ก่อนอัปโหลดไฟล์ SOH');
+                        return;
+                    }
+
+                    // Validate data types
+                    let invalidRows = 0;
+                    const validData = jsonData.filter(row => {
+                        const branchCode = (row['BRANCH_CODE'] || '').toString().trim();
+                        const sku = (row['SKU'] || '').toString().trim();
+                        const qty = parseFloat(row['AVAILABLE_QTY']);
+                        
+                        if (!branchCode || !sku || isNaN(qty)) {
+                            invalidRows++;
+                            return false;
+                        }
+                        return true;
+                    });
+
+                    if (invalidRows > 0) {
+                        console.warn(`พบข้อมูลไม่ถูกต้อง ${invalidRows} รายการ จะข้ามไป`);
+                    }
+
+                    if (validData.length === 0) {
+                        throw new Error('ไม่พบข้อมูล SOH ที่ถูกต้อง');
+                    }
+
+                    // Process SOH data and update detail files
+                    updateDetailFilesWithSOH(validData);
+                    
+                    const statusMessage = invalidRows > 0 
+                        ? `ประมวลผล SOH สำเร็จ! อัปเดตข้อมูล ${validData.length} รายการ (ข้าม ${invalidRows} รายการที่ไม่ถูกต้อง)`
+                        : `ประมวลผล SOH สำเร็จ! อัปเดตข้อมูล ${validData.length} รายการ`;
+                    
+                    showSOHStatus('success', statusMessage);
+                } catch (error) {
+                    console.error('Error processing SOH file:', error);
+                    showSOHStatus('error', `เกิดข้อผิดพลาดในการประมวลผลไฟล์ SOH: ${error.message}`);
+                    
+                    // Reset upload button state
+                    const uploadBtn = document.querySelector('#sohUploadSection .upload-btn');
+                    uploadBtn.classList.remove('loading');
+                    uploadBtn.querySelector('#sohUploadText').textContent = 'เลือกไฟล์ SOH';
+                    
+                    // Hide progress
+                    document.getElementById('sohProgressContainer').style.display = 'none';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function showSOHStatus(type, message) {
+            const status = document.getElementById('sohProcessingStatus');
+            status.className = `processing-status ${type}`;
+            status.textContent = message;
+            status.style.display = 'block';
+
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // SOH data storage
+        let sohData = [];
+
+        function updateDetailFilesWithSOH(sohJsonData) {
+            sohData = sohJsonData;
+            let totalUpdates = 0;
+            let totalRemovals = 0;
+            let totalProcessed = 0;
+            
+            // Show progress container
+            const progressContainer = document.getElementById('sohProgressContainer');
+            const progressFill = document.getElementById('sohProgressFill');
+            const progressText = document.getElementById('sohProgressText');
+            const uploadBtn = document.querySelector('#sohUploadSection .upload-btn');
+            
+            progressContainer.style.display = 'block';
+            uploadBtn.classList.add('loading');
+            uploadBtn.querySelector('#sohUploadText').textContent = 'กำลังประมวลผล...';
+
+            // Calculate total operations
+            let totalOperations = 0;
+            Object.keys(detailFiles).forEach(groupName => {
+                Object.keys(detailFiles[groupName]).forEach(docNo => {
+                    totalOperations += detailFiles[groupName][docNo].data.length;
+                });
+            });
+
+            // Process each group's detail files
+            let currentOperation = 0;
+            
+            Object.keys(detailFiles).forEach(groupName => {
+                Object.keys(detailFiles[groupName]).forEach(docNo => {
+                    const detailFileData = detailFiles[groupName][docNo];
+                    const originalCount = detailFileData.data.length;
+                    
+                    // Update each row in detail data
+                    const updatedData = [];
+                    
+                    detailFileData.data.forEach(row => {
+                        currentOperation++;
+                        const progress = Math.round((currentOperation / totalOperations) * 100);
+                        
+                        // Update progress bar
+                        progressFill.style.width = `${progress}%`;
+                        progressText.textContent = `${progress}%`;
+                        
+                        // Find matching SOH record by BRANCH_CODE and SKU
+                        const sohMatch = sohData.find(sohRow => {
+                            const sohBranch = (sohRow['BRANCH_CODE'] || '').toString().trim();
+                            const sohSku = (sohRow['SKU'] || '').toString().trim();
+                            const detailBranch = (row['Branch'] || '').toString().trim();
+                            const detailSku = (row['SKU'] || '').toString().trim();
+                            
+                            return sohBranch === detailBranch && sohSku === detailSku;
+                        });
+
+                        totalProcessed++;
+
+                        if (sohMatch) {
+                            // Add Final OH column from SOH AVAILABLE_QTY
+                            const finalOH = parseFloat(sohMatch['AVAILABLE_QTY']) || 0;
+                            row['Final OH'] = finalOH;
+                            
+                            // Keep row regardless of Final OH value (no removal based on Final Diff)
+                            updatedData.push(row);
+                            totalUpdates++;
+                        } else {
+                            // No SOH match found, keep original row
+                            updatedData.push(row);
+                        }
+                    });
+                    
+                    // Update the detail file data
+                    detailFiles[groupName][docNo].data = updatedData;
+                    
+                    console.log(`Updated ${docNo}: ${originalCount} -> ${updatedData.length} rows`);
+                });
+            });
+
+            // Complete progress
+            setTimeout(() => {
+                progressFill.style.width = '100%';
+                progressText.textContent = '100%';
+                
+                // Show statistics
+                document.getElementById('sohRecordsProcessed').textContent = totalProcessed;
+                document.getElementById('sohRecordsMatched').textContent = totalUpdates;
+                document.getElementById('sohStats').style.display = 'flex';
+                
+                // Reset upload button
+                uploadBtn.classList.remove('loading');
+                uploadBtn.querySelector('#sohUploadText').textContent = '✓ SOH อัปเดตแล้ว';
+                
+                // Hide progress after completion
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 2000);
+                
+                // Refresh the results display to show updated data
+                showGroupResults();
+                
+                // Show summary of updates
+                showSOHStatus('success', 
+                    `SOH อัปเดตเสร็จสิ้น: อัปเดต ${totalUpdates} รายการ`
+                );
+            }, 500);
+        }
+
+        function showStatus(type, message) {
+            const status = document.getElementById('processingStatus');
+            status.classList.remove('hidden', 'bg-yellow-100', 'border-yellow-400', 'text-yellow-800', 
+                                    'bg-green-100', 'border-green-400', 'text-green-800',
+                                    'bg-red-100', 'border-red-400', 'text-red-800');
+            
+            if (type === 'processing') {
+                status.classList.add('bg-yellow-100', 'border-yellow-400', 'text-yellow-800', 'border');
+            } else if (type === 'success') {
+                status.classList.add('bg-green-100', 'border-green-400', 'text-green-800', 'border');
+            } else if (type === 'error') {
+                status.classList.add('bg-red-100', 'border-red-400', 'text-red-800', 'border');
+            }
+            
+            status.textContent = message;
+            status.classList.remove('hidden');
+
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    status.classList.add('hidden');
+                }, 3000);
+            }
+        }
+
+        function showSOHStatus(type, message) {
+            const status = document.getElementById('sohProcessingStatus');
+            status.className = `processing-status ${type}`;
+            status.textContent = message;
+            status.style.display = 'block';
+
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Define expected branches by group based on checklist.html
+        const expectedBranches = {
+            'Head Office': [
+                'B000 - Head Office'
+            ],
+            'AIS, A-Store, Mobi': [
+                'B034 - AIS Shop Lotus Rayong',
+                'B035 - AIS Shop BigC Arun',
+                'B037 - Mobi Phayao',
+                'B038 - Mobi Lamphun',
+                'B040 - AIS Robinson Lifestyle Chanthaburi',
+                'B044 - AIS Shop Lotus Rojana',
+                'B046 - AIS Lotus Ban Chang',
+                'B047 - AIS TW Lotus Lom Sak',
+                'B049 - Mobi Phichit',
+                'B050 - AIS TW BigC Wichian Buri',
+                'B051 - AIS Shop RobinsonKamphaengPhet',
+                'B052 - AIS Buddy Phayao',
+                'B053 - AIS Shop Lotus Phetchabun',
+                'B054 - AIS shop Big C sattahip',
+                'B056 - AIS Shop Robinson Chonburi',
+                'B058 - AIS TW Lotus U-Tapao',
+                'B059 - AIS Shop Central Rayong',
+                'B064 - AIS TW Lotus SiThep',
+                'B068 - AIS A-Store SWU',
+                'B070 - AIS A-Store PSU',
+                'B075 - AIS Telewiz Lotus Chonburi',
+                'B076 - A-Store มหาวิทยาลัยมหิดล ศาลายา',
+                'B078 - AIS Robinson Mae Sot',
+                'B079 - AIS A-Store SUT',
+                'B081 - AIS TW Laemtong Chonburi',
+                'B083 - AIS A-Store BU',
+                'B084 - Mobi Suvarnabhumi',
+                'B087 - AIS Robinson Ban Chang',
+                'B089 - A-Store มหาวิทยาลัยแม่ฟ้าหลวง',
+                'B091 - A-Store มหาวิทยาลัยราชภัฏเชียงใหม่',
+                'B092 - AIS Shop Robinson Lifestyle Thalang',
+                'B095 - A-Store มหาวิทยาลัยมหาสารคาม',
+                'B096 - A-Store มหาวิทยาลัยเกษตรศาสตร์ ศรีราชา',
+                'B098 - Mobi Lotus Bo Win',
+                'B099 - AIS Mini Shop Lotus Pak Kret',
+                'B100 - AIS Telewiz Lotus Sattahip',
+                'B101 - AIS Buddy Krua Sahapat',
+                'B102 - A-Store Kasetsart University',
+                'B109 - AIS Telewiz Lotus พะเยา',
+                'B110 - Mobi Esplanade',
+                'B111 - AIS Shop Robinson Chalong',
+                'B112 - AIS Telewiz Lotus Samkong Phuket'
+            ],
+            'U-Store': [
+                'B006 - U Store TUR',
+                'B007 - U Store ABB',
+                'B008 - U Store TU Thaprajan',
+                'B012 - U Store KUB',
+                'B013 - U Store MUS',
+                'B016 - U Store BUR',
+                'B017 - U Store DPU',
+                'B019 - U Store BUU',
+                'B061 - U Store Mae Fah Luang University',
+                'B062 - U Store KMUTNB',
+                'B063 - U Store NU',
+                'B065 - U Store MSU',
+                'B066 - U Store RBRU',
+                'B067 - U Store CMRU',
+                'B069 - U Store PSU',
+                'B071 - U Store UP',
+                'B072 - U Store SUT',
+                'B073 - U Store Maejo University',
+                'B074 - U Store RMUTT',
+                'B085 - U Store NPRU',
+                'B090 - U Store Pibulsongkram Rajabhat University',
+                'B093 - U Store TU Rungsit-MED',
+                'B094 - U Store SIAMSCAPE',
+                'B097 - U Store Kasetsart University ศรีราชา',
+                'B103 - U Store RMUTK',
+                'B104 - U Store Phranakhon Rajabhat University',
+                'B105 - U Store Nakhon Sawan Rajabhat University'
+            ],
+            'iStudio, iBeat': [
+                'B002 - IBeat – IT Mall',
+                'B004 - IBeat Esplanade',
+                'B009 - iStudio Central Chaengwattana',
+                'B010 - iStudio Seacon Square',
+                'B018 - iStudio Central Rama 9',
+                'B021 - IBeat Gateway Ekamai',
+                'B024 - IBeat – Central Chiang Rai',
+                'B031 - iStudio Central Rayong',
+                'B048 - I Beat Robinson kampaeng phet',
+                'B106 - iStudio Central Westville',
+                'B107 - iStudio Central Nakhon Sawan'
+            ],
+            'iCenter': [
+                'B020 - iCenter Central Changwattana',
+                'B032 - iCenter Central Chiang Rai',
+                'B036 - iCenter Laemtong Rayong',
+                'B039 - iCenter Homepro Nakhonpatom',
+                'B055 - iCenter G Tower',
+                'B077 - iCenter Phuke',
+                'B080 - Icenter Robinson Chanthaburi'
+            ]
+        };
+
+        function processData(data) {
+            processedData = {
+                'AIS, A-Store, Mobi': [],
+                'U-Store': [],
+                'iStudio, iBeat': [],
+                'iCenter': [],
+                'Head Office': []
+            };
+
+            // Track processed branches
+            const processedBranches = {
+                'AIS, A-Store, Mobi': new Set(),
+                'U-Store': new Set(),
+                'iStudio, iBeat': new Set(),
+                'iCenter': new Set(),
+                'Head Office': new Set()
+            };
+
+            // Group by branch type
+            data.forEach(row => {
+                const branch = row['Branch'] || '';
+                const branchLower = branch.toLowerCase();
+
+                let groupType;
+                if (branchLower.includes('ais') || branchLower.includes('a-store') || branchLower.includes('mobi')) {
+                    groupType = 'AIS, A-Store, Mobi';
+                } else if (branchLower.includes('u store') || branchLower.includes('u-store')) {
+                    groupType = 'U-Store';
+                } else if (branchLower.includes('istudio') || branchLower.includes('ibeat')) {
+                    groupType = 'iStudio, iBeat';
+                } else if (branchLower.includes('icenter')) {
+                    groupType = 'iCenter';
+                } else if (branchLower.includes('head office')) {
+                    groupType = 'Head Office';
+                } else {
+                    // Try to categorize based on other patterns
+                    groupType = 'Head Office'; // Default fallback
+                }
+
+                row.groupType = groupType;
+            });
+
+            // Process each group according to specific rules
+            processAISGroup(data.filter(row => row.groupType === 'AIS, A-Store, Mobi'));
+            processUStoreGroup(data.filter(row => row.groupType === 'U-Store'));
+            processIStudioGroup(data.filter(row => row.groupType === 'iStudio, iBeat'));
+            processICenterGroup(data.filter(row => row.groupType === 'iCenter'));
+            processHeadOfficeGroup(data.filter(row => row.groupType === 'Head Office'));
+
+            // Track which branches have been processed
+            Object.keys(processedData).forEach(groupName => {
+                processedData[groupName].forEach(row => {
+                    processedBranches[groupName].add(row['Branch']);
+                });
+            });
+
+            // Store processed branches for missing branch analysis
+            window.processedBranches = processedBranches;
+        }
+
+        function processAISGroup(data) {
+            // AIS, A-Store, Mobi: Check Stock, Status Confirm/Draft, Onhand != Counted != 0, latest by Create Date per Branch
+            const branchGroups = groupByBranch(data);
+            
+            Object.keys(branchGroups).forEach(branchId => {
+                const branchData = branchGroups[branchId]
+                    .filter(row => 
+                        (row['Check'] === 'Check Stock') &&
+                        (row['Status'] === 'Confirm' || row['Status'] === 'Draft') &&
+                        (row['Onhand'] != row['Counted']) &&
+                        (row['Onhand'] != 0 && row['Counted'] != 0)
+                    )
+                    .sort((a, b) => new Date(b['Create Date']) - new Date(a['Create Date']));
+
+                if (branchData.length > 0) {
+                    processedData['AIS, A-Store, Mobi'].push(branchData[0]);
+                }
+            });
+        }
+
+        function processUStoreGroup(data) {
+            // U-Store: Check Serial, Classes (AP-IPH-APPLE IPHONE, AP-IPD-APPLE IPAD, AP-MAC-APPLE MAC), latest by Create Date per Branch per Class
+            const targetClasses = ['AP-IPH-APPLE IPHONE', 'AP-IPD-APPLE IPAD', 'AP-MAC-APPLE MAC'];
+            const branchGroups = groupByBranch(data);
+
+            Object.keys(branchGroups).forEach(branchId => {
+                targetClasses.forEach(targetClass => {
+                    const classData = branchGroups[branchId]
+                        .filter(row => 
+                            (row['Check'] === 'Check Serial') &&
+                            (row['Class'] === targetClass) &&
+                            (row['Status'] === 'Confirm' || row['Status'] === 'Draft')
+                        )
+                        .sort((a, b) => new Date(b['Create Date']) - new Date(a['Create Date']));
+
+                    if (classData.length > 0) {
+                        processedData['U-Store'].push(classData[0]);
+                    }
+                });
+            });
+        }
+
+        function processIStudioGroup(data) {
+            // iStudio, iBeat: Check Serial, Class AP-IPH-APPLE IPHONE only, latest by Create Date per Branch
+            const branchGroups = groupByBranch(data);
+
+            Object.keys(branchGroups).forEach(branchId => {
+                const branchData = branchGroups[branchId]
+                    .filter(row => 
+                        (row['Check'] === 'Check Serial') &&
+                        (row['Class'] === 'AP-IPH-APPLE IPHONE') &&
+                        (row['Status'] === 'Confirm' || row['Status'] === 'Draft')
+                    )
+                    .sort((a, b) => new Date(b['Create Date']) - new Date(a['Create Date']));
+
+                if (branchData.length > 0) {
+                    processedData['iStudio, iBeat'].push(branchData[0]);
+                }
+            });
+        }
+
+        function processICenterGroup(data) {
+            // iCenter: Same as AIS group - Check Stock, Status Confirm/Draft, Onhand != Counted != 0, latest by Create Date per Branch
+            const branchGroups = groupByBranch(data);
+            
+            Object.keys(branchGroups).forEach(branchId => {
+                const branchData = branchGroups[branchId]
+                    .filter(row => 
+                        (row['Check'] === 'Check Stock') &&
+                        (row['Status'] === 'Confirm' || row['Status'] === 'Draft') &&
+                        (row['Onhand'] != row['Counted']) &&
+                        (row['Onhand'] != 0 && row['Counted'] != 0)
+                    )
+                    .sort((a, b) => new Date(b['Create Date']) - new Date(a['Create Date']));
+
+                if (branchData.length > 0) {
+                    processedData['iCenter'].push(branchData[0]);
+                }
+            });
+        }
+
+        function processHeadOfficeGroup(data) {
+            // Head Office: Same as AIS group
+            const branchGroups = groupByBranch(data);
+            
+            Object.keys(branchGroups).forEach(branchId => {
+                const branchData = branchGroups[branchId]
+                    .filter(row => 
+                        (row['Check'] === 'Check Stock') &&
+                        (row['Status'] === 'Confirm' || row['Status'] === 'Draft') &&
+                        (row['Onhand'] != row['Counted']) &&
+                        (row['Onhand'] != 0 && row['Counted'] != 0)
+                    )
+                    .sort((a, b) => new Date(b['Create Date']) - new Date(a['Create Date']));
+
+                if (branchData.length > 0) {
+                    processedData['Head Office'].push(branchData[0]);
+                }
+            });
+        }
+
+        function groupByBranch(data) {
+            return data.reduce((groups, row) => {
+                const branchId = row['Branch'];
+                if (!groups[branchId]) {
+                    groups[branchId] = [];
+                }
+                groups[branchId].push(row);
+                return groups;
+            }, {});
+        }
+
+        function showResults() {
+            document.getElementById('resultsSection').classList.remove('hidden');
+            document.getElementById('sohUploadSection').classList.remove('hidden');
+            
+            // Show summary stats
+            showSummaryStats();
+            
+            // Show branch status overview first
+            showBranchStatusOverview();
+            
+            // Show group results
+            showGroupResults();
+        }
+
+        function showBranchStatusOverview() {
+            const branchStatusHtml = `
+                <div class="branch-status-section">
+                    <div class="branch-status-title">
+                        📋 สถานะสาขาทั้งหมด - Branch Status Overview
+                    </div>
+                    ${generateBranchStatusTable()}
+                </div>
+            `;
+            
+            // Insert before group results
+            const groupResults = document.getElementById('groupResults');
+            const existingBranchStatus = document.querySelector('.branch-status-section');
+            if (existingBranchStatus) {
+                existingBranchStatus.remove();
+            }
+            groupResults.insertAdjacentHTML('beforebegin', branchStatusHtml);
+            
+            // Initialize sorting for the new table
+            setTimeout(() => initializeSortableTables(), 100);
+        }
+
+        function generateBranchStatusTable() {
+            const allExpectedBranches = [];
+            const processedBranchesFlat = new Set();
+            
+            // Collect all expected branches and processed branches
+            Object.keys(expectedBranches).forEach(groupName => {
+                expectedBranches[groupName].forEach(branch => {
+                    allExpectedBranches.push({
+                        branch: branch,
+                        group: groupName
+                    });
+                });
+                
+                // Collect processed branches
+                if (window.processedBranches && window.processedBranches[groupName]) {
+                    Array.from(window.processedBranches[groupName]).forEach(branch => {
+                        processedBranchesFlat.add(branch);
+                    });
+                }
+            });
+            
+            let tableHtml = `
+                <table class="data-table sortable-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" onclick="sortTable(this, 0)">Branch Code <span class="sort-icon">↕</span></th>
+                            <th class="sortable" onclick="sortTable(this, 1)">Branch Name <span class="sort-icon">↕</span></th>
+                            <th class="sortable" onclick="sortTable(this, 2)">Group <span class="sort-icon">↕</span></th>
+                            <th class="sortable" onclick="sortTable(this, 3)">Status <span class="sort-icon">↕</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // Sort branches by branch code
+            allExpectedBranches.sort((a, b) => {
+                const aCode = a.branch.split(' ')[0];
+                const bCode = b.branch.split(' ')[0];
+                return aCode.localeCompare(bCode);
+            });
+            
+            allExpectedBranches.forEach(item => {
+                const branchCode = item.branch.split(' ')[0];
+                const branchName = item.branch.substring(item.branch.indexOf(' ') + 1);
+                
+                // Check if branch was found in processed data
+                const isFound = Array.from(processedBranchesFlat).some(processed => 
+                    processed.includes(branchCode)
+                );
+                
+                const statusClass = isFound ? 'status-pass' : 'status-fail';
+                const statusText = isFound ? 'PASS (Found)' : 'FAIL (Not Found)';
+                
+                tableHtml += `
+                    <tr>
+                        <td>${branchCode}</td>
+                        <td>${branchName}</td>
+                        <td>${item.group}</td>
+                        <td><span class="${statusClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            });
+            
+            tableHtml += '</tbody></table>';
+            return tableHtml;
+        }
+
+        function showSummaryStats() {
+            const totalRecords = Object.values(processedData).reduce((sum, group) => sum + group.length, 0);
+            const totalBranches = new Set(Object.values(processedData).flat().map(row => row['Branch'])).size;
+            
+            // Calculate missing branches across all groups
+            let totalMissingBranches = 0;
+            Object.keys(expectedBranches).forEach(groupName => {
+                const expectedForGroup = expectedBranches[groupName] || [];
+                const processedForGroup = window.processedBranches ? Array.from(window.processedBranches[groupName] || new Set()) : [];
+                const missingCount = expectedForGroup.filter(expected => {
+                    return !processedForGroup.some(processed => {
+                        const expectedCode = expected.split(' ')[0];
+                        return processed.includes(expectedCode);
+                    });
+                }).length;
+                totalMissingBranches += missingCount;
+            });
+            
+            const statsHtml = `
+                <div class="bg-white p-6 rounded-lg border border-gray-200 text-center">
+                    <div class="text-3xl font-bold text-blue-600">${totalRecords}</div>
+                    <div class="text-sm text-gray-600 mt-1">รายการที่พบปัญหา</div>
+                </div>
+                <div class="bg-white p-6 rounded-lg border border-gray-200 text-center">
+                    <div class="text-3xl font-bold text-blue-600">${totalBranches}</div>
+                    <div class="text-sm text-gray-600 mt-1">สาขาที่มีปัญหา</div>
+                </div>
+                <div class="bg-white p-6 rounded-lg border border-gray-200 text-center">
+                    <div class="text-3xl font-bold text-red-600">${totalMissingBranches}</div>
+                    <div class="text-sm text-gray-600 mt-1">สาขาที่ไม่พบข้อมูล</div>
+                </div>
+                <div class="bg-white p-6 rounded-lg border border-gray-200 text-center">
+                    <div class="text-3xl font-bold text-gray-600">${allData.length}</div>
+                    <div class="text-sm text-gray-600 mt-1">รายการทั้งหมด</div>
+                </div>
+            `;
+            
+            document.getElementById('summaryStats').innerHTML = statsHtml;
+        }
+
+        function showGroupResults() {
+            const groupResultsContainer = document.getElementById('groupResults');
+            let html = '';
+
+            Object.keys(processedData).forEach(groupName => {
+                const groupData = processedData[groupName];
+                
+                // Find missing branches for this group
+                const expectedForGroup = expectedBranches[groupName] || [];
+                const processedForGroup = window.processedBranches ? Array.from(window.processedBranches[groupName] || new Set()) : [];
+                const missingBranches = expectedForGroup.filter(expected => {
+                    return !processedForGroup.some(processed => {
+                        // Flexible matching - check if the expected branch pattern exists in processed branch
+                        const expectedCode = expected.split(' ')[0]; // Get B000, B001, etc.
+                        return processed.includes(expectedCode);
+                    });
+                });
+                
+                html += `
+                    <div class="group-section">
+                        <div class="group-header">
+                            ${groupName} (${groupData.length} รายการพบปัญหา)
+                            ${sohData && sohData.length > 0 ? '<span style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; margin-left: 0.5rem;">📊 SOH Integrated</span>' : ''}
+                        </div>
+                        <div class="group-content">
+                `;
+
+                // Show missing branches warning if any
+                if (missingBranches.length > 0) {
+                    html += `
+                        <div class="missing-branches-section">
+                            <h4 class="missing-branches-title">⚠️ สาขาที่ไม่พบข้อมูลในไฟล์ (${missingBranches.length} สาขา)</h4>
+                            <div class="missing-branches-list">
+                                ${missingBranches.map(branch => `<span class="missing-branch-tag">${branch}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Detail file upload section
+                html += `
+                    <div class="detail-upload-section">
+                        <div class="detail-upload-title">📎 อัปโหลดไฟล์รายละเอียด (Detail Files)</div>
+                        <div class="detail-upload-area" id="detail-upload-${groupName.replace(/[^a-zA-Z0-9]/g, '')}" 
+                             data-group="${groupName}">
+                            <input type="file" multiple accept=".xlsx,.xls" style="display: none;" 
+                                   id="detail-files-${groupName.replace(/[^a-zA-Z0-9]/g, '')}" />
+                            <button class="detail-upload-btn" 
+                                    onclick="document.getElementById('detail-files-${groupName.replace(/[^a-zA-Z0-9]/g, '')}').click()">
+                                เลือกไฟล์รายละเอียด
+                            </button>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: #6b7280;">
+                                สามารถเลือกหลายไฟล์พร้อมกันได้
+                            </p>
+                        </div>
+                        <div class="uploaded-files-list" id="uploaded-files-${groupName.replace(/[^a-zA-Z0-9]/g, '')}"></div>
+                    </div>
+                `;
+
+                if (groupData.length === 0) {
+                    html += '<div class="no-data">ไม่พบข้อมูลที่ต้องตรวจสอบ</div>';
+                } else {
+                    html += `
+                        <table class="data-table sortable-table">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" onclick="sortTable(this, 0)">Create Date <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable(this, 1)">Doc No <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable(this, 2)">Status <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable(this, 3)">Branch <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable(this, 4)">Class <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable(this, 5)">Check <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable(this, 6)">Onhand <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable(this, 7)">Counted <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable(this, 8)">Diff <span class="sort-icon">↕</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    groupData.forEach((row, index) => {
+                        const diff = parseFloat(row['Diff']) || 0;
+                        const isDiffRow = diff !== 0;
+                        const docNo = row['Doc No'] || '';
+                        
+                        html += `
+                            <tr class="${isDiffRow ? 'diff-row' : ''}" data-doc-no="${docNo}" data-group="${groupName}">
+                                <td>${row['Create Date'] || ''}</td>
+                                <td class="${docNo ? 'clickable-doc' : ''}" 
+                                    ${docNo ? `onclick="showDocDetail('${docNo}', '${groupName}')"` : ''}>
+                                    ${docNo}
+                                </td>
+                                <td>${row['Status'] || ''}</td>
+                                <td>${row['Branch'] || ''}</td>
+                                <td>${row['Class'] || ''}</td>
+                                <td>${row['Check'] || ''}</td>
+                                <td>${row['Onhand'] || ''}</td>
+                                <td>${row['Counted'] || ''}</td>
+                                <td>${row['Diff'] || ''}</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += '</tbody></table>';
+                }
+
+                html += '</div></div>';
+            });
+
+            groupResultsContainer.innerHTML = html;
+            
+            // Setup detail file upload handlers
+            setupDetailFileHandlers();
+            
+            // Initialize sorting for group tables (default sort by branch)
+            setTimeout(() => initializeSortableTables(), 100);
+        }
+
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+
+            // Create summary sheet
+            const summaryData = [
+                ['Group', 'Records with Issues', 'Missing Branches Count'],
+                ...Object.keys(processedData).map(group => {
+                    const expectedForGroup = expectedBranches[group] || [];
+                    const processedForGroup = window.processedBranches ? Array.from(window.processedBranches[group] || new Set()) : [];
+                    const missingCount = expectedForGroup.filter(expected => {
+                        return !processedForGroup.some(processed => {
+                            const expectedCode = expected.split(' ')[0];
+                            return processed.includes(expectedCode);
+                        });
+                    }).length;
+                    return [group, processedData[group].length, missingCount];
+                })
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+
+            // Create missing branches sheet
+            const missingBranchesData = [['Group', 'Missing Branch']];
+            Object.keys(expectedBranches).forEach(groupName => {
+                const expectedForGroup = expectedBranches[groupName] || [];
+                const processedForGroup = window.processedBranches ? Array.from(window.processedBranches[groupName] || new Set()) : [];
+                const missingBranches = expectedForGroup.filter(expected => {
+                    return !processedForGroup.some(processed => {
+                        const expectedCode = expected.split(' ')[0];
+                        return processed.includes(expectedCode);
+                    });
+                });
+                missingBranches.forEach(branch => {
+                    missingBranchesData.push([groupName, branch]);
+                });
+            });
+            const missingWs = XLSX.utils.aoa_to_sheet(missingBranchesData);
+            XLSX.utils.book_append_sheet(wb, missingWs, 'Missing Branches');
+
+            // Create sheets for each group
+            Object.keys(processedData).forEach(groupName => {
+                if (processedData[groupName].length > 0) {
+                    const ws = XLSX.utils.json_to_sheet(processedData[groupName]);
+                    XLSX.utils.book_append_sheet(wb, ws, groupName.substring(0, 31)); // Excel sheet name limit
+                }
+            });
+
+            // Add detail files with SOH data if available
+            const hasSOHData = sohData && sohData.length > 0;
+            if (Object.keys(detailFiles).length > 0) {
+                Object.keys(detailFiles).forEach(groupName => {
+                    Object.keys(detailFiles[groupName]).forEach(docNo => {
+                        const detailData = detailFiles[groupName][docNo].data;
+                        if (detailData.length > 0) {
+                            // Prepare data for export with SOH columns if available
+                            const exportData = detailData.map(row => {
+                                const exportRow = { ...row };
+                                if (hasSOHData && row['Final OH'] !== undefined) {
+                                    // Include SOH data in export
+                                    exportRow['Final_OH'] = row['Final OH'];
+                                    exportRow['Final_Diff'] = row['Final Diff'];
+                                    exportRow['SOH_Updated'] = 'Yes';
+                                } else if (hasSOHData) {
+                                    exportRow['Final_OH'] = 'N/A';
+                                    exportRow['Final_Diff'] = 'N/A';
+                                    exportRow['SOH_Updated'] = 'No';
+                                }
+                                return exportRow;
+                            });
+                            
+                            const ws = XLSX.utils.json_to_sheet(exportData);
+                            const sheetName = `${groupName.substring(0, 20)}_${docNo}`.substring(0, 31);
+                            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                        }
+                    });
+                });
+            }
+
+            // Save file
+            const fileName = `SMCO_Check_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+
+        function printResults() {
+            window.print();
+        }
+
+        // Detail file handling
+        let detailFiles = {}; // Store detail files by group and doc number
+
+        function setupDetailFileHandlers() {
+            Object.keys(processedData).forEach(groupName => {
+                const groupId = groupName.replace(/[^a-zA-Z0-9]/g, '');
+                const fileInput = document.getElementById(`detail-files-${groupId}`);
+                const uploadArea = document.getElementById(`detail-upload-${groupId}`);
+                
+                if (fileInput && uploadArea) {
+                    // File input change handler
+                    fileInput.addEventListener('change', (e) => {
+                        handleDetailFiles(e.target.files, groupName);
+                    });
+
+                    // Drag and drop handlers
+                    uploadArea.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        uploadArea.classList.add('dragover');
+                    });
+
+                    uploadArea.addEventListener('dragleave', () => {
+                        uploadArea.classList.remove('dragover');
+                    });
+
+                    uploadArea.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        uploadArea.classList.remove('dragover');
+                        handleDetailFiles(e.dataTransfer.files, groupName);
+                    });
+                }
+            });
+        }
+
+        function handleDetailFiles(files, groupName) {
+            const groupId = groupName.replace(/[^a-zA-Z0-9]/g, '');
+            const uploadedFilesContainer = document.getElementById(`uploaded-files-${groupId}`);
+            
+            Array.from(files).forEach(file => {
+                if (!file.name.match(/\.(xlsx|xls)$/)) {
+                    alert(`ไฟล์ ${file.name} ไม่ใช่ไฟล์ Excel`);
+                    return;
+                }
+
+                // Create file item UI
+                const fileItem = document.createElement('div');
+                fileItem.className = 'uploaded-file-item';
+                fileItem.innerHTML = `
+                    <span class="uploaded-file-name">${file.name}</span>
+                    <span class="uploaded-file-status status-processing">กำลังประมวลผล...</span>
+                `;
+                uploadedFilesContainer.appendChild(fileItem);
+
+                // Process the file
+                processDetailFile(file, groupName, fileItem);
+            });
+        }
+
+        function processDetailFile(file, groupName, fileItem) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                    // Extract doc number from filename (assuming format like PB049250600004.xlsx)
+                    const docNoMatch = file.name.match(/([A-Z]{2}\d{12})/);
+                    const extractedDocNo = docNoMatch ? docNoMatch[1] : null;
+
+                    if (!extractedDocNo) {
+                        throw new Error('ไม่พบ Doc No ในชื่อไฟล์');
+                    }
+
+                    // Check if this doc number exists in the main results
+                    const mainRecord = processedData[groupName].find(row => 
+                        row['Doc No'] && row['Doc No'].includes(extractedDocNo)
+                    );
+
+                    if (!mainRecord) {
+                        throw new Error(`ไม่พบ Doc No ${extractedDocNo} ในผลลัพธ์หลัก`);
+                    }
+
+                    // Filter data: OH <> 0 and SKU/SKU Description not contain DEMO
+                    const filteredData = jsonData.filter(row => {
+                        const oh = parseFloat(row['OH']) || 0;
+                        const sku = (row['SKU'] || '').toString().toUpperCase();
+                        const skuDesc = (row['SKU Description'] || '').toString().toUpperCase();
+                        
+                        return oh !== 0 && !sku.includes('DEMO') && !skuDesc.includes('DEMO');
+                    });
+
+                    // Calculate totals
+                    const totalOH = filteredData.reduce((sum, row) => sum + (parseFloat(row['OH']) || 0), 0);
+                    const totalScan = filteredData.reduce((sum, row) => sum + (parseFloat(row['Scan']) || 0), 0);
+
+                    // Update main record
+                    mainRecord['Onhand'] = totalOH;
+                    mainRecord['Counted'] = totalScan;
+                    mainRecord['Diff'] = totalScan - totalOH;
+
+                    // Store detail data
+                    if (!detailFiles[groupName]) {
+                        detailFiles[groupName] = {};
+                    }
+                    detailFiles[groupName][extractedDocNo] = {
+                        filename: file.name,
+                        data: filteredData.map(row => ({
+                            'Branch': row['Branch'] || '',
+                            'SKU': row['SKU'] || '',
+                            'SKU Description': row['SKU Description'] || '',
+                            'OH': row['OH'] || 0,
+                            'Scan': row['Scan'] || 0,
+                            'Diff': (parseFloat(row['Scan']) || 0) - (parseFloat(row['OH']) || 0)
+                        }))
+                    };
+
+                    // Update file status
+                    const statusElement = fileItem.querySelector('.uploaded-file-status');
+                    statusElement.textContent = `สำเร็จ (${filteredData.length} รายการ)`;
+                    statusElement.className = 'uploaded-file-status status-success';
+
+                    // Refresh the results display
+                    showGroupResults();
+
+                } catch (error) {
+                    console.error('Error processing detail file:', error);
+                    const statusElement = fileItem.querySelector('.uploaded-file-status');
+                    statusElement.textContent = `ข้อผิดพลาด: ${error.message}`;
+                    statusElement.className = 'uploaded-file-status status-error';
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function showDocDetail(docNo, groupName) {
+            // Find the detail data
+            const groupDetails = detailFiles[groupName];
+            if (!groupDetails) {
+                alert('ไม่พบไฟล์รายละเอียดสำหรับกลุ่มนี้');
+                return;
+            }
+
+            // Find matching doc number
+            const matchingDocKey = Object.keys(groupDetails).find(key => docNo.includes(key));
+            if (!matchingDocKey) {
+                alert(`ไม่พบไฟล์รายละเอียดสำหรับ Doc No: ${docNo}`);
+                return;
+            }
+
+            const detailData = groupDetails[matchingDocKey];
+            showDetailModal(docNo, detailData);
+        }
+
+        function showDetailModal(docNo, detailData) {
+            // Create modal if it doesn't exist
+            let modal = document.getElementById('detailModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'detailModal';
+                modal.className = 'modal-overlay';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title" id="modalTitle"></h3>
+                            <button class="modal-close" onclick="closeDetailModal()">ปิด</button>
+                        </div>
+                        <div id="modalBody"></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            // Check if SOH data is available
+            const hasSOHData = sohData && sohData.length > 0;
+            
+            // Filter to show only rows with differences (use original Diff only)
+            const diffRows = detailData.data.filter(row => {
+                const diff = parseFloat(row['Diff']) || 0;
+                return diff !== 0;
+            });
+
+            // Update modal content
+            document.getElementById('modalTitle').textContent = `รายละเอียด ${docNo} - รายการที่มีความแตกต่าง (${diffRows.length} รายการ)${hasSOHData ? ' - รวม SOH' : ''}`;
+            
+            if (diffRows.length === 0) {
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="no-data">ไม่พบรายการที่มีความแตกต่าง (Diff = 0 ทั้งหมด)</div>
+                `;
+            } else {
+                // Build table header based on SOH data availability
+                let headerHtml = `
+                    <table class="data-table sortable-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" onclick="sortTable(this, 0)">Branch <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(this, 1)">SKU <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(this, 2)">SKU Description <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(this, 3)">OH <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(this, 4)">Scan <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(this, 5)">Diff <span class="sort-icon">↕</span></th>`;
+                
+                if (hasSOHData) {
+                    headerHtml += `
+                                <th class="sortable" onclick="sortTable(this, 6)" style="background-color: #e8f5e8;">Final OH <span class="sort-icon">↕</span></th>`;
+                }
+                
+                headerHtml += `
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                let tableHtml = headerHtml;
+
+                diffRows.forEach(row => {
+                    const isSOHUpdated = hasSOHData && row['Final OH'] !== undefined;
+                    const rowClass = isSOHUpdated ? 'diff-row soh-updated' : 'diff-row';
+                    
+                    tableHtml += `
+                        <tr class="${rowClass}">
+                            <td>${row['Branch']}</td>
+                            <td>${row['SKU']}</td>
+                            <td>${row['SKU Description']}</td>
+                            <td>${row['OH']}</td>
+                            <td>${row['Scan']}</td>
+                            <td>${row['Diff']}</td>`;
+                    
+                    if (hasSOHData) {
+                        const finalOH = row['Final OH'] !== undefined ? row['Final OH'] : '-';
+                        tableHtml += `
+                            <td style="background-color: #f0f8f0; font-weight: ${isSOHUpdated ? 'bold' : 'normal'};">${finalOH}</td>`;
+                    }
+                    
+                    tableHtml += '</tr>';
+                });
+
+                tableHtml += '</tbody></table>';
+                document.getElementById('modalBody').innerHTML = tableHtml;
+            }
+
+            // Show modal
+            modal.style.display = 'flex';
+        }
+
+        function closeDetailModal() {
+            const modal = document.getElementById('detailModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', (e) => {
+            const modal = document.getElementById('detailModal');
+            if (modal && e.target === modal) {
+                closeDetailModal();
+            }
+        });
+
+        // Sortable table functionality
+        function sortTable(header, columnIndex) {
+            const table = header.closest('table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const isAscending = header.classList.contains('sort-asc');
+            
+            // Clear all sort classes
+            table.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                const icon = th.querySelector('.sort-icon');
+                if (icon) icon.className = 'sort-icon';
+            });
+            
+            // Set new sort direction
+            if (isAscending) {
+                header.classList.add('sort-desc');
+                header.querySelector('.sort-icon').className = 'sort-icon desc';
+            } else {
+                header.classList.add('sort-asc');
+                header.querySelector('.sort-icon').className = 'sort-icon asc';
+            }
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                const aText = a.cells[columnIndex].textContent.trim();
+                const bText = b.cells[columnIndex].textContent.trim();
+                
+                // Try to parse as numbers
+                const aNum = parseFloat(aText);
+                const bNum = parseFloat(bText);
+                
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return isAscending ? bNum - aNum : aNum - bNum;
+                } else {
+                    return isAscending ? bText.localeCompare(aText) : aText.localeCompare(bText);
+                }
+            });
+            
+            // Reorder DOM
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // Initialize sortable tables
+        function initializeSortableTables() {
+            document.querySelectorAll('.sortable-table').forEach(table => {
+                // Find branch column and sort by default
+                const headers = table.querySelectorAll('th');
+                headers.forEach((header, index) => {
+                    if (header.textContent.toLowerCase().includes('branch')) {
+                        sortTable(header, index);
+                    }
+                });
+            });
+        }
+    </script>
+
+    <!-- Authentication Scripts -->
+    <script>
+        // Initialize authentication when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Initialize Firebase
+                await SPViAuth.initializeFirebase();
+                
+                // Check authentication - redirect to login if not authenticated
+                const isAuthenticated = await SPViAuth.checkAuthentication();
+                if (!isAuthenticated) {
+                    window.location.href = '../index.html';
+                    return;
+                }
+                
+                // User info will be added automatically by firebase-auth.js init()
+                // No need to call addUserInfo() manually
+                
+                // Setup centralized devtools protection
+                SPViAuth.setupDevToolsProtection();
+
+                // Check tool access permission after authentication is confirmed
+                if (window.SPViSessionManager && window.SPViSessionManager.checkToolAccess) {
+                    const hasAccess = await window.SPViSessionManager.checkToolAccess('smcoCheck');
+                    if (!hasAccess) {
+                        // Access denied - modal will be shown by checkToolAccess function
+                        // Optionally hide main content
+                        document.querySelector('main')?.style.setProperty('display', 'none');
+                    }
+                }
+            } catch (error) {
+                // Authentication error handled silently for production
+                // If authentication fails, redirect to login
+                window.location.href = '../index.html';
+            }
+            
+            // Hide loading overlay
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }, 1000);
+            
+            // Initialize session and auth (fallback)
+            if (typeof initializeSession === 'function') {
+                initializeSession();
+            }
+            if (typeof initializeAuth === 'function') {
+                initializeAuth();
+            }
+        });
+    </script>
+
+    <style media="print">
+        .upload-section, .export-section, nav, #loadingOverlay {
+            display: none !important;
+        }
+        
+        body {
+            background: white !important;
+            padding: 1rem !important;
+        }
+        
+        .modal-overlay {
+            display: none !important;
+        }
+        
+        main {
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    </style>
+</body>
+</html>
