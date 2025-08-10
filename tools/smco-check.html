@@ -25,6 +25,8 @@
     <link rel="stylesheet" href="../styles/print-header.css">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Sarabun', sans-serif; }
         
@@ -549,7 +551,6 @@
         }
 
         .status-pass {
-            background: #d1fae5;
             color: #065f46;
             padding: 0.25rem 0.5rem;
             border-radius: 0.25rem;
@@ -558,7 +559,6 @@
         }
 
         .status-fail {
-            background: #fee2e2;
             color: #991b1b;
             padding: 0.25rem 0.5rem;
             border-radius: 0.25rem;
@@ -653,7 +653,7 @@
             <div class="p-6">
             <!-- Upload Section -->
             <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center mb-6 transition-all duration-300 hover:border-blue-400 hover:bg-blue-50" id="uploadSection">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">📁 อัปโหลดไฟล์ SMCO Data</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2"> อัพโหลดไฟล์ SMCO Data</h3>
                 <p class="text-gray-600 mb-4">กรุณาเลือกไฟล์ .xlsx ที่มีข้อมูล SMCO Check</p>
                 <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls" />
                 <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium" onclick="document.getElementById('fileInput').click()">
@@ -664,13 +664,13 @@
 
             <!-- SOH Upload Section -->
             <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center mb-6 transition-all duration-300 hover:border-green-400 hover:bg-green-50 hidden" id="sohUploadSection">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">📁 อัปโหลดไฟล์ SOH (Stock On Hand) สำหรับอัปเดต Final OH</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2"> อัพโหลดไฟล์ SOH (Stock On Hand) สำหรับอัพเดท Final OH</h3>
                 <p class="text-gray-600 text-sm mb-4">
                     ไฟล์ SOH จะถูกใช้เพื่อ:<br>
                     • เพิ่มคอลัมน์ Final OH ให้กับตารางรายละเอียด<br>
                     • คำนวณ Final Diff (Scan - Final OH)<br>
                     • ลบ SKU ที่มี Final Diff = 0 ออกจากตารางรายละเอียด<br>
-                    • อัปเดตข้อมูลจาก AVAILABLE_QTY ในไฟล์ SOH
+                    • อัพเดทข้อมูลจาก AVAILABLE_QTY ในไฟล์ SOH
                 </p>
                 <input type="file" id="sohFileInput" class="hidden" accept=".xlsx,.xls" />
                 <button class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium" onclick="document.getElementById('sohFileInput').click()">
@@ -735,9 +735,14 @@
 
                 <!-- Export Section -->
                 <div class="text-center mt-8 space-x-4">
-                    <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium" onclick="exportOverviewToExcel()">📊 Excel Overview</button>
-                    <button class="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium" onclick="exportDiscrepancySKU()">📋 Export Discrepancy SKU</button>
-                    <button class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium" onclick="printResults()">🖨️ Print Report</button>
+                    <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium" onclick="exportOverviewToExcel()">Excel Overview</button>
+                    <button class="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium" onclick="exportDiscrepancySKU()">Export Discrepancy SKU</button>
+                    <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium" onclick="exportToPDF()">
+                        <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        Export PDF
+                    </button>
                 </div>
             </div>
             </div>
@@ -747,7 +752,7 @@
     <!-- Authentication Scripts moved to end of file -->
 
     <style media="print">
-        .upload-section, .export-section, nav {
+        .upload-section, .export-section, nav, .no-print, button, .tab-navigation {
             display: none !important;
         }
         
@@ -758,6 +763,28 @@
         
         .modal-overlay {
             display: none !important;
+        }
+        
+        /* Ensure tables and content are visible in PDF */
+        .data-table, .results-section, .group-section {
+            page-break-inside: avoid;
+        }
+        
+        /* Improve table formatting for PDF */
+        .data-table th,
+        .data-table td {
+            border: 1px solid #ddd !important;
+            padding: 8px !important;
+        }
+        
+        .data-table th {
+            background-color: #f5f5f5 !important;
+            font-weight: bold !important;
+        }
+        
+        /* Show tab content for PDF */
+        .tab-content {
+            display: block !important;
         }
     </style>
 
@@ -892,7 +919,7 @@
 
                     // Check if detail files exist
                     if (Object.keys(detailFiles).length === 0) {
-                        showSOHStatus('error', 'กรุณาอัปโหลดไฟล์รายละเอียด (Detail Files) ก่อนอัปโหลดไฟล์ SOH');
+                        showSOHStatus('error', 'กรุณาอัพโหลดไฟล์รายละเอียด (Detail Files) ก่อนอัพโหลดไฟล์ SOH');
                         return;
                     }
 
@@ -922,8 +949,8 @@
                     updateDetailFilesWithSOH(validData);
                     
                     const statusMessage = invalidRows > 0 
-                        ? `ประมวลผล SOH สำเร็จ! อัปเดตข้อมูล ${validData.length} รายการ (ข้าม ${invalidRows} รายการที่ไม่ถูกต้อง)`
-                        : `ประมวลผล SOH สำเร็จ! อัปเดตข้อมูล ${validData.length} รายการ`;
+                        ? `ประมวลผล SOH สำเร็จ! อัพเดทข้อมูล ${validData.length} รายการ (ข้าม ${invalidRows} รายการที่ไม่ถูกต้อง)`
+                        : `ประมวลผล SOH สำเร็จ! อัพเดทข้อมูล ${validData.length} รายการ`;
                     
                     showSOHStatus('success', statusMessage);
                 } catch (error) {
@@ -1054,7 +1081,7 @@
                 if (uploadBtn) {
                     uploadBtn.classList.remove('loading');
                     const uploadText = uploadBtn.querySelector('#sohUploadText');
-                    if (uploadText) uploadText.textContent = '✓ SOH อัปเดตแล้ว';
+                    if (uploadText) uploadText.textContent = '✓ SOH อัพเดทแล้ว';
                 }
                 
                 // Hide progress after completion
@@ -1067,7 +1094,7 @@
                 
                 // Show summary of updates
                 showSOHStatus('success', 
-                    `SOH อัปเดตเสร็จสิ้น: อัปเดต ${totalUpdates} รายการ`
+                    `SOH อัพเดทเสร็จสิ้น: อัพเดท ${totalUpdates} รายการ`
                 );
             }, 500);
         }
@@ -1415,7 +1442,7 @@
             const branchStatusHtml = `
                 <div class="branch-status-section">
                     <div class="branch-status-title">
-                        📋 สถานะสาขาทั้งหมด - Branch Status Overview
+                        สถานะสาขาทั้งหมด - Branch Status Overview
                     </div>
                     ${generateBranchStatusTable()}
                 </div>
@@ -1487,7 +1514,7 @@
                 );
                 
                 const statusClass = isFound ? 'status-pass' : 'status-fail';
-                const statusText = isFound ? 'PASS (Found)' : 'FAIL (Not Found)';
+                const statusText = isFound ? 'PASS' : 'FAIL';
                 
                 tableHtml += `
                     <tr>
@@ -1598,7 +1625,7 @@
                 // Detail file upload section
                 html += `
                     <div class="detail-upload-section">
-                        <div class="detail-upload-title">📎 อัปโหลดไฟล์รายละเอียด (Detail Files)</div>
+                        <div class="detail-upload-title">📎 อัพโหลดไฟล์รายละเอียด (Detail Files)</div>
                         <div class="detail-upload-area" id="detail-upload-${groupName.replace(/[^a-zA-Z0-9]/g, '')}" 
                              data-group="${groupName}">
                             <input type="file" multiple accept=".xlsx,.xls" style="display: none;" 
@@ -1750,7 +1777,7 @@
                     processed.includes(branchCode)
                 );
                 
-                const statusText = isFound ? 'PASS (Found)' : 'FAIL (Not Found)';
+                const statusText = isFound ? 'PASS' : 'FAIL';
                 
                 branchStatusData.push([branchCode, branchName, item.group, statusText]);
             });
@@ -1790,7 +1817,7 @@
             const allDiscrepancyData = [];
             
             if (Object.keys(detailFiles).length === 0) {
-                alert('ไม่พบไฟล์รายละเอียด กรุณาอัปโหลดไฟล์รายละเอียดก่อน');
+                alert('ไม่พบไฟล์รายละเอียด กรุณาอัพโหลดไฟล์รายละเอียดก่อน');
                 return;
             }
 
@@ -1800,6 +1827,7 @@
                     
                     // Filter only SKUs with negative differences (Diff < 0 only)
                     // Also filter out rows where Final OH is 0 or blank when SOH data is available
+                    // For iCenter group, also filter out SKUs with GLUE or ADHESIVE in SKU Description
                     const discrepancyRows = detailData.filter(row => {
                         const diff = parseFloat(row['Diff']) || 0;
                         // Only show negative differences (shortages/undercounts)
@@ -1811,6 +1839,14 @@
                             const finalOH = row['Final OH'];
                             // Check if Final OH is undefined, null, empty, "-", or 0
                             if (finalOH === undefined || finalOH === null || finalOH === '' || finalOH === '-' || parseFloat(finalOH) === 0 || isNaN(parseFloat(finalOH))) {
+                                return false;
+                            }
+                        }
+                        
+                        // Additional filter for iCenter group: exclude GLUE and ADHESIVE
+                        if (groupName === 'iCenter') {
+                            const skuDesc = (row['SKU Description'] || '').toString().toUpperCase();
+                            if (skuDesc.includes('GLUE') || skuDesc.includes('ADHESIVE')) {
                                 return false;
                             }
                         }
@@ -1891,8 +1927,227 @@
             exportOverviewToExcel();
         }
 
+        function exportToPDF() {
+            // Check if jsPDF is available
+            if (typeof window.jspdf === 'undefined') {
+                alert('PDF library not loaded. Please refresh the page and try again.');
+                return;
+            }
+
+            // Get the button to show loading state
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            
+            try {
+                // Set loading state
+                button.innerHTML = `
+                    <svg class="w-5 h-5 mr-2 inline animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    กำลังสร้าง PDF...
+                `;
+                button.disabled = true;
+
+                // Create temporary div for PDF content with professional header
+                const pdfContent = document.createElement('div');
+                pdfContent.style.width = '210mm';
+                pdfContent.style.padding = '15mm 20mm';
+                pdfContent.style.backgroundColor = 'white';
+                pdfContent.style.fontFamily = 'Sarabun, sans-serif';
+                pdfContent.style.fontSize = '12pt';
+                pdfContent.style.lineHeight = '1.4';
+                pdfContent.style.position = 'absolute';
+                pdfContent.style.left = '-9999px';
+                pdfContent.style.top = '0';
+                pdfContent.style.boxSizing = 'border-box';
+
+                // Add professional header
+                const today = new Date().toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                pdfContent.innerHTML = `
+                    <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                            <div style="text-align: left; font-size: 10pt; font-weight: bold;">
+                                Operation Audit Division<br>
+                                (ฝ่ายตรวจสอบปฏิบัติการ)
+                            </div>
+                            <div style="text-align: right; font-size: 8pt; max-width: 280px;">
+                                บริษัท เอส พี วี ไอ จำกัด (มหาชน)<br>
+                                เลขที่ 2 อาคารพรีเมียร์เพลซ ชั้น 3 ซอยพรีเมียร์ 2 ถนนศรีนครินทร์<br>
+                                แขวงหนองบอน เขตประเวศ กรุงเทพมหานคร 10250<br>
+                                โทร. (66) 61-417-9777  Line ID : iStudio by spvi
+                            </div>
+                        </div>
+                        <h1 style="font-size: 18pt; font-weight: bold; margin: 0;">SMCO Check Report</h1>
+                        <p style="font-size: 12pt; color: #666; margin: 5px 0 0 0;">รายงานตรวจสอบและวิเคราะห์การควบคุมการจัดการสินค้าคงคลังของสาขา</p>
+                        <p style="font-size: 10pt; color: #888; margin: 10px 0 0 0;">วันที่สร้างรายงาน: ${today}</p>
+                    </div>
+                `;
+
+                // Get the main content and clone it
+                const originalElement = document.querySelector('main');
+                const contentClone = originalElement.cloneNode(true);
+                
+                // Remove unwanted elements from the cloned content
+                const elementsToRemove = contentClone.querySelectorAll(`
+                    .upload-section,
+                    .export-section, 
+                    .tab-navigation, 
+                    .no-print, 
+                    button,
+                    #uploadSection,
+                    #sohUploadSection,
+                    .detail-upload-section,
+                    header,
+                    nav,
+                    .loading-overlay,
+                    #loadingOverlay,
+                    .modal-overlay,
+                    #processingStatus,
+                    .processing-status,
+                    .bg-green-100,
+                    .bg-yellow-100,
+                    .bg-red-100
+                `);
+                elementsToRemove.forEach(el => el.remove());
+
+                // Clean up the header in the content (we already have our professional header)
+                const existingHeaders = contentClone.querySelectorAll('header, h1');
+                existingHeaders.forEach(header => {
+                    if (header.textContent.includes('SMCO Check')) {
+                        header.remove();
+                    }
+                });
+
+                // Only show Overview tab content for PDF
+                const tabContents = contentClone.querySelectorAll('.tab-content');
+                tabContents.forEach(tab => {
+                    if (tab.id === 'overviewTab') {
+                        tab.style.display = 'block';
+                        tab.style.marginBottom = '30px';
+                    } else {
+                        tab.remove(); // Remove other tabs (like byGroupTab)
+                    }
+                });
+
+                // Improve table styling for PDF and make it fill A4 size
+                const tables = contentClone.querySelectorAll('.data-table');
+                tables.forEach(table => {
+                    table.style.pageBreakInside = 'avoid';
+                    table.style.border = '1px solid #ddd';
+                    table.style.borderCollapse = 'collapse';
+                    table.style.width = '100%';
+                    table.style.marginBottom = '20px';
+                    table.style.fontSize = '9pt'; // Smaller font for better fit
+                    
+                    const cells = table.querySelectorAll('th, td');
+                    cells.forEach(cell => {
+                        cell.style.border = '1px solid #ddd';
+                        cell.style.padding = '6px'; // Reduced padding
+                        cell.style.fontSize = '9pt';
+                        cell.style.lineHeight = '1.2';
+                        cell.style.wordWrap = 'break-word';
+                    });
+                    
+                    const headers = table.querySelectorAll('th');
+                    headers.forEach(header => {
+                        header.style.backgroundColor = '#f5f5f5';
+                        header.style.fontWeight = 'bold';
+                        header.style.fontSize = '9pt';
+                    });
+                });
+
+                // Adjust summary stats cards for better PDF layout
+                const statsCards = contentClone.querySelectorAll('.stat-card');
+                statsCards.forEach(card => {
+                    card.style.padding = '8px';
+                    card.style.margin = '4px';
+                    card.style.fontSize = '10pt';
+                });
+
+                // Make summary stats section more compact
+                const summaryStats = contentClone.querySelector('#summaryStats');
+                if (summaryStats) {
+                    summaryStats.style.marginBottom = '15px';
+                }
+
+                // Append cleaned content to PDF container
+                pdfContent.appendChild(contentClone);
+                
+                // Add PDF content to body temporarily
+                document.body.appendChild(pdfContent);
+                
+                // Generate PDF using html2canvas and jsPDF
+                setTimeout(async () => {
+                    try {
+                        const canvas = await html2canvas(pdfContent, {
+                            backgroundColor: 'white',
+                            width: pdfContent.scrollWidth,
+                            height: pdfContent.scrollHeight,
+                            logging: false,
+                            allowTaint: true,
+                            scale: 2
+                        });
+
+                        const { jsPDF } = window.jspdf;
+                        const pdf = new jsPDF('p', 'mm', 'a4');
+                        
+                        const imgWidth = 210; // A4 width in mm
+                        const pageHeight = 295; // A4 height in mm (slightly less to account for margins)
+                        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                        
+                        // Add first page
+                        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+                        
+                        // Add additional pages if content exceeds one page
+                        if (imgHeight > pageHeight + 5) { // 5mm tolerance
+                            let heightLeft = imgHeight - pageHeight;
+                            
+                            while (heightLeft > 5) { // Only continue if significant content remains
+                                pdf.addPage();
+                                const yPosition = -(imgHeight - heightLeft);
+                                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, yPosition, imgWidth, imgHeight);
+                                heightLeft -= pageHeight;
+                            }
+                        }
+
+                        // Clean up
+                        document.body.removeChild(pdfContent);
+
+                        // Download PDF
+                        const fileName = `SMCO_Check_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+                        pdf.save(fileName);
+
+                    } catch (error) {
+                        console.error('Error generating PDF:', error);
+                        alert('เกิดข้อผิดพลาดในการสร้าง PDF กรุณาลองใหม่อีกครั้ง');
+                        // Clean up on error
+                        if (pdfContent.parentNode) {
+                            document.body.removeChild(pdfContent);
+                        }
+                    } finally {
+                        // Restore button state
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }
+                }, 100);
+
+            } catch (error) {
+                console.error('Error in PDF export:', error);
+                alert('เกิดข้อผิดพลาดในการเตรียม PDF กรุณาลองใหม่อีกครั้ง');
+                // Restore button state
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
         function printResults() {
-            window.print();
+            // Keep this function for backward compatibility, but redirect to PDF export
+            exportToPDF();
         }
 
         // Detail file handling
@@ -1982,12 +2237,21 @@
                     }
 
                     // Filter data: OH <> 0 and SKU/SKU Description not contain DEMO
+                    // For iCenter group, also filter out SKUs with GLUE or ADHESIVE in SKU Description
                     const filteredData = jsonData.filter(row => {
                         const oh = parseFloat(row['OH']) || 0;
                         const sku = (row['SKU'] || '').toString().toUpperCase();
                         const skuDesc = (row['SKU Description'] || '').toString().toUpperCase();
                         
-                        return oh !== 0 && !sku.includes('DEMO') && !skuDesc.includes('DEMO');
+                        // Basic filter: OH not 0 and no DEMO
+                        let shouldInclude = oh !== 0 && !sku.includes('DEMO') && !skuDesc.includes('DEMO');
+                        
+                        // Additional filter for iCenter group: exclude GLUE and ADHESIVE
+                        if (shouldInclude && groupName === 'iCenter') {
+                            shouldInclude = !skuDesc.includes('GLUE') && !skuDesc.includes('ADHESIVE');
+                        }
+                        
+                        return shouldInclude;
                     });
 
                     // Calculate totals
@@ -2050,10 +2314,10 @@
             }
 
             const detailData = groupDetails[matchingDocKey];
-            showDetailModal(docNo, detailData);
+            showDetailModal(docNo, detailData, groupName);
         }
 
-        function showDetailModal(docNo, detailData) {
+        function showDetailModal(docNo, detailData, groupName) {
             // Create modal if it doesn't exist
             let modal = document.getElementById('detailModal');
             if (!modal) {
@@ -2077,6 +2341,7 @@
             
             // Filter to show only rows with negative differences (Diff < 0 only)
             // Also filter out rows where Final OH is 0 or blank when SOH data is available
+            // For iCenter group, also filter out SKUs with GLUE or ADHESIVE in SKU Description
             const diffRows = detailData.data.filter(row => {
                 const diff = parseFloat(row['Diff']) || 0;
                 // Only show negative differences (shortages/undercounts)
@@ -2087,6 +2352,14 @@
                     const finalOH = row['Final OH'];
                     // Check if Final OH is undefined, null, empty, "-", or 0
                     if (finalOH === undefined || finalOH === null || finalOH === '' || finalOH === '-' || parseFloat(finalOH) === 0 || isNaN(parseFloat(finalOH))) {
+                        return false;
+                    }
+                }
+                
+                // Additional filter for iCenter group: exclude GLUE and ADHESIVE
+                if (groupName === 'iCenter') {
+                    const skuDesc = (row['SKU Description'] || '').toString().toUpperCase();
+                    if (skuDesc.includes('GLUE') || skuDesc.includes('ADHESIVE')) {
                         return false;
                     }
                 }
