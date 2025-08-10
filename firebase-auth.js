@@ -97,6 +97,7 @@
                 auditCalendar: true,
                 reportComparison: true,
                 issueTracker: true,
+                smcoCheck: true,
                 userManagement: false // Only admins
             },
             sessionInfo: userData.sessionInfo || {
@@ -752,6 +753,7 @@
                             auditCalendar: true,
                             reportComparison: true,
                             issueTracker: true,
+                            smcoCheck: true,
                             userManagement: true
                         }
                     };
@@ -1125,6 +1127,12 @@
                 url: 'risk-analyzer.html',
                 title: 'วิเคราะห์ความเสี่ยง',
                 icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+            },
+            {
+                name: 'smcoCheck',
+                url: 'smco-check.html',
+                title: 'SMCO Check',
+                icon: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H9m0 0V4a1 1 0 011-1h2a1 1 0 011 1v3M4 7h16'
             }
         ];
 

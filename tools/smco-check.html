@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMCO Check - SPVi Operations Audit</title>
+    <title>ตรวจสอบการนับผ่านระบบ SMCO ของสาขา - SPVi Operations Audit</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Firebase SDK -->
@@ -565,6 +565,65 @@
             font-weight: 600;
             font-size: 0.75rem;
         }
+
+        /* Tab Navigation Styles */
+        .tab-navigation {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 2rem;
+            background: #f8fafc;
+            border-radius: 0.5rem 0.5rem 0 0;
+            overflow: hidden;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: #f8fafc;
+            border: none;
+            cursor: pointer;
+            font-family: 'Sarabun', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #64748b;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            position: relative;
+        }
+
+        .tab-button:hover {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .tab-button.active {
+            background: white;
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #3b82f6;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-icon {
+            margin-right: 0.5rem;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
@@ -579,39 +638,17 @@
         </div>
     </div>
 
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center space-x-4">
-                    <a href="../dashboard.html" class="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                        </svg>
-                        <span class="font-medium">กลับสู่หน้าหลัก</span>
-                    </a>
-                    <div class="h-6 w-px bg-gray-300"></div>
-                    <h1 class="text-xl font-bold text-gray-900">🏪 SMCO Check</h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div id="userInfo" class="text-sm text-gray-600"></div>
-                    <button onclick="signOut()" class="text-red-600 hover:text-red-700 font-medium text-sm">
-                        ออกจากระบบ
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
+
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <!-- Header -->
-            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 text-white">
-                <h1 class="text-2xl sm:text-3xl font-bold mb-2">Stock Management Control Operations Analysis</h1>
-                <p class="text-blue-100">ระบบตรวจสอบและวิเคราะห์การควบคุมการจัดการสินค้าคงคลัง</p>
-            </div>
+        <!-- Header -->
+        <header class="mb-6 md:mb-8 text-center relative no-print mt-2 md:mt-4">
+            <h1 class="text-2xl md:text-4xl font-bold text-slate-900 mb-1 md:mb-2">SMCO Check</h1>
+            <p class="text-slate-500 text-sm md:text-base text-center">ตรวจสอบและวิเคราะห์การควบคุมการจัดการสินค้าคงคลังของสาขา</p>
+        </header>
 
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <!-- Content -->
             <div class="p-6">
             <!-- Upload Section -->
@@ -669,15 +706,37 @@
 
             <!-- Results Section -->
             <div class="hidden" id="resultsSection">
-                <!-- Summary Stats -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="summaryStats"></div>
+                <!-- Tab Navigation -->
+                <div class="tab-navigation">
+                    <button class="tab-button active" onclick="switchTab('overview')" data-tab="overview">
+                        <span class="tab-icon">📊</span>
+                        Overview
+                    </button>
+                    <button class="tab-button" onclick="switchTab('byGroup')" data-tab="byGroup">
+                        <span class="tab-icon">📋</span>
+                        By Group
+                    </button>
+                </div>
 
-                <!-- Group Results -->
-                <div id="groupResults"></div>
+                <!-- Overview Tab Content -->
+                <div class="tab-content active" id="overviewTab">
+                    <!-- Summary Stats -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8" id="summaryStats"></div>
+                    
+                    <!-- Branch Status Overview -->
+                    <div id="branchStatusOverview"></div>
+                </div>
+
+                <!-- By Group Tab Content -->
+                <div class="tab-content" id="byGroupTab">
+                    <!-- Group Results -->
+                    <div id="groupResults"></div>
+                </div>
 
                 <!-- Export Section -->
                 <div class="text-center mt-8 space-x-4">
-                    <button class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium" onclick="exportToExcel()">📊 Export to Excel</button>
+                    <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium" onclick="exportOverviewToExcel()">📊 Excel Overview</button>
+                    <button class="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium" onclick="exportDiscrepancySKU()">📋 Export Discrepancy SKU</button>
                     <button class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium" onclick="printResults()">🖨️ Print Report</button>
                 </div>
             </div>
@@ -870,11 +929,13 @@
                 } catch (error) {
                     console.error('Error processing SOH file:', error);
                     showSOHStatus('error', `เกิดข้อผิดพลาดในการประมวลผลไฟล์ SOH: ${error.message}`);
-                    
-                    // Reset upload button state
-                    const uploadBtn = document.querySelector('#sohUploadSection .upload-btn');
+                         // Reset upload button state
+                const uploadBtn = document.querySelector('#sohUploadSection button');
+                if (uploadBtn) {
                     uploadBtn.classList.remove('loading');
-                    uploadBtn.querySelector('#sohUploadText').textContent = 'เลือกไฟล์ SOH';
+                    const uploadText = uploadBtn.querySelector('#sohUploadText');
+                    if (uploadText) uploadText.textContent = 'เลือกไฟล์ SOH';
+                }
                     
                     // Hide progress
                     document.getElementById('sohProgressContainer').style.display = 'none';
@@ -909,11 +970,14 @@
             const progressContainer = document.getElementById('sohProgressContainer');
             const progressFill = document.getElementById('sohProgressFill');
             const progressText = document.getElementById('sohProgressText');
-            const uploadBtn = document.querySelector('#sohUploadSection .upload-btn');
+            const uploadBtn = document.querySelector('#sohUploadSection button');
             
-            progressContainer.style.display = 'block';
-            uploadBtn.classList.add('loading');
-            uploadBtn.querySelector('#sohUploadText').textContent = 'กำลังประมวลผล...';
+            if (progressContainer) progressContainer.style.display = 'block';
+            if (uploadBtn) {
+                uploadBtn.classList.add('loading');
+                const uploadText = uploadBtn.querySelector('#sohUploadText');
+                if (uploadText) uploadText.textContent = 'กำลังประมวลผล...';
+            }
 
             // Calculate total operations
             let totalOperations = 0;
@@ -986,8 +1050,12 @@
                 document.getElementById('sohStats').style.display = 'flex';
                 
                 // Reset upload button
-                uploadBtn.classList.remove('loading');
-                uploadBtn.querySelector('#sohUploadText').textContent = '✓ SOH อัปเดตแล้ว';
+                const uploadBtn = document.querySelector('#sohUploadSection button');
+                if (uploadBtn) {
+                    uploadBtn.classList.remove('loading');
+                    const uploadText = uploadBtn.querySelector('#sohUploadText');
+                    if (uploadText) uploadText.textContent = '✓ SOH อัปเดตแล้ว';
+                }
                 
                 // Hide progress after completion
                 setTimeout(() => {
@@ -1329,6 +1397,20 @@
             showGroupResults();
         }
 
+        function switchTab(tabName) {
+            // Remove active class from all tab buttons and contents
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Add active class to selected tab button and content
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
+
         function showBranchStatusOverview() {
             const branchStatusHtml = `
                 <div class="branch-status-section">
@@ -1339,13 +1421,16 @@
                 </div>
             `;
             
-            // Insert before group results
-            const groupResults = document.getElementById('groupResults');
-            const existingBranchStatus = document.querySelector('.branch-status-section');
+            // Insert into overview tab instead of before group results
+            const overviewTab = document.getElementById('overviewTab');
+            const existingBranchStatus = overviewTab.querySelector('.branch-status-section');
             if (existingBranchStatus) {
                 existingBranchStatus.remove();
             }
-            groupResults.insertAdjacentHTML('beforebegin', branchStatusHtml);
+            
+            // Add after summary stats
+            const summaryStats = overviewTab.querySelector('#summaryStats');
+            summaryStats.insertAdjacentHTML('afterend', branchStatusHtml);
             
             // Initialize sorting for the new table
             setTimeout(() => initializeSortableTables(), 100);
@@ -1419,39 +1504,52 @@
         }
 
         function showSummaryStats() {
-            const totalRecords = Object.values(processedData).reduce((sum, group) => sum + group.length, 0);
-            const totalBranches = new Set(Object.values(processedData).flat().map(row => row['Branch'])).size;
+            // Calculate total expected branches across all groups
+            let totalExpectedBranches = 0;
+            Object.keys(expectedBranches).forEach(groupName => {
+                totalExpectedBranches += (expectedBranches[groupName] || []).length;
+            });
             
-            // Calculate missing branches across all groups
-            let totalMissingBranches = 0;
+            // Calculate branches that have data (found in processed data)
+            const processedBranchesFlat = new Set();
+            Object.keys(expectedBranches).forEach(groupName => {
+                if (window.processedBranches && window.processedBranches[groupName]) {
+                    Array.from(window.processedBranches[groupName]).forEach(branch => {
+                        processedBranchesFlat.add(branch);
+                    });
+                }
+            });
+            
+            // Count branches that were found in data
+            let branchesFound = 0;
             Object.keys(expectedBranches).forEach(groupName => {
                 const expectedForGroup = expectedBranches[groupName] || [];
-                const processedForGroup = window.processedBranches ? Array.from(window.processedBranches[groupName] || new Set()) : [];
-                const missingCount = expectedForGroup.filter(expected => {
-                    return !processedForGroup.some(processed => {
-                        const expectedCode = expected.split(' ')[0];
-                        return processed.includes(expectedCode);
-                    });
-                }).length;
-                totalMissingBranches += missingCount;
+                expectedForGroup.forEach(expected => {
+                    const expectedCode = expected.split(' ')[0];
+                    const isFound = Array.from(processedBranchesFlat).some(processed => 
+                        processed.includes(expectedCode)
+                    );
+                    if (isFound) {
+                        branchesFound++;
+                    }
+                });
             });
+            
+            // Calculate branches not found
+            const branchesNotFound = totalExpectedBranches - branchesFound;
             
             const statsHtml = `
                 <div class="bg-white p-6 rounded-lg border border-gray-200 text-center">
-                    <div class="text-3xl font-bold text-blue-600">${totalRecords}</div>
-                    <div class="text-sm text-gray-600 mt-1">รายการที่พบปัญหา</div>
+                    <div class="text-3xl font-bold text-gray-700">${totalExpectedBranches}</div>
+                    <div class="text-sm text-gray-600 mt-1">สาขาทั้งหมด</div>
                 </div>
                 <div class="bg-white p-6 rounded-lg border border-gray-200 text-center">
-                    <div class="text-3xl font-bold text-blue-600">${totalBranches}</div>
-                    <div class="text-sm text-gray-600 mt-1">สาขาที่มีปัญหา</div>
+                    <div class="text-3xl font-bold text-green-600">${branchesFound}</div>
+                    <div class="text-sm text-gray-600 mt-1">สาขาที่พบข้อมูล</div>
                 </div>
                 <div class="bg-white p-6 rounded-lg border border-gray-200 text-center">
-                    <div class="text-3xl font-bold text-red-600">${totalMissingBranches}</div>
+                    <div class="text-3xl font-bold text-red-600">${branchesNotFound}</div>
                     <div class="text-sm text-gray-600 mt-1">สาขาที่ไม่พบข้อมูล</div>
-                </div>
-                <div class="bg-white p-6 rounded-lg border border-gray-200 text-center">
-                    <div class="text-3xl font-bold text-gray-600">${allData.length}</div>
-                    <div class="text-sm text-gray-600 mt-1">รายการทั้งหมด</div>
                 </div>
             `;
             
@@ -1576,29 +1674,92 @@
             setTimeout(() => initializeSortableTables(), 100);
         }
 
-        function exportToExcel() {
+        function exportOverviewToExcel() {
             const wb = XLSX.utils.book_new();
 
-            // Create summary sheet
-            const summaryData = [
-                ['Group', 'Records with Issues', 'Missing Branches Count'],
-                ...Object.keys(processedData).map(group => {
-                    const expectedForGroup = expectedBranches[group] || [];
-                    const processedForGroup = window.processedBranches ? Array.from(window.processedBranches[group] || new Set()) : [];
-                    const missingCount = expectedForGroup.filter(expected => {
-                        return !processedForGroup.some(processed => {
-                            const expectedCode = expected.split(' ')[0];
-                            return processed.includes(expectedCode);
-                        });
-                    }).length;
-                    return [group, processedData[group].length, missingCount];
-                })
+            // Calculate total expected branches across all groups
+            let totalExpectedBranches = 0;
+            Object.keys(expectedBranches).forEach(groupName => {
+                totalExpectedBranches += (expectedBranches[groupName] || []).length;
+            });
+            
+            // Calculate branches that have data (found in processed data)
+            const processedBranchesFlat = new Set();
+            Object.keys(expectedBranches).forEach(groupName => {
+                if (window.processedBranches && window.processedBranches[groupName]) {
+                    Array.from(window.processedBranches[groupName]).forEach(branch => {
+                        processedBranchesFlat.add(branch);
+                    });
+                }
+            });
+            
+            // Count branches that were found in data
+            let branchesFound = 0;
+            Object.keys(expectedBranches).forEach(groupName => {
+                const expectedForGroup = expectedBranches[groupName] || [];
+                expectedForGroup.forEach(expected => {
+                    const expectedCode = expected.split(' ')[0];
+                    const isFound = Array.from(processedBranchesFlat).some(processed => 
+                        processed.includes(expectedCode)
+                    );
+                    if (isFound) {
+                        branchesFound++;
+                    }
+                });
+            });
+            
+            const branchesNotFound = totalExpectedBranches - branchesFound;
+
+            // Create overview summary sheet
+            const overviewSummaryData = [
+                ['Metric', 'Count'],
+                ['สาขาทั้งหมด (Total Branches)', totalExpectedBranches],
+                ['สาขาที่พบข้อมูล (Branches Found)', branchesFound],
+                ['สาขาที่ไม่พบข้อมูล (Branches Not Found)', branchesNotFound]
             ];
-            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
-            XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+            const overviewSummaryWs = XLSX.utils.aoa_to_sheet(overviewSummaryData);
+            XLSX.utils.book_append_sheet(wb, overviewSummaryWs, 'Overview Summary');
+
+            // Create branch status sheet with all branches
+            const branchStatusData = [['Branch Code', 'Branch Name', 'Group', 'Status']];
+            const allExpectedBranches = [];
+            
+            // Collect all expected branches
+            Object.keys(expectedBranches).forEach(groupName => {
+                expectedBranches[groupName].forEach(branch => {
+                    allExpectedBranches.push({
+                        branch: branch,
+                        group: groupName
+                    });
+                });
+            });
+            
+            // Sort branches by branch code
+            allExpectedBranches.sort((a, b) => {
+                const aCode = a.branch.split(' ')[0];
+                const bCode = b.branch.split(' ')[0];
+                return aCode.localeCompare(bCode);
+            });
+            
+            allExpectedBranches.forEach(item => {
+                const branchCode = item.branch.split(' ')[0];
+                const branchName = item.branch.substring(item.branch.indexOf(' ') + 1);
+                
+                // Check if branch was found in processed data
+                const isFound = Array.from(processedBranchesFlat).some(processed => 
+                    processed.includes(branchCode)
+                );
+                
+                const statusText = isFound ? 'PASS (Found)' : 'FAIL (Not Found)';
+                
+                branchStatusData.push([branchCode, branchName, item.group, statusText]);
+            });
+            
+            const branchStatusWs = XLSX.utils.aoa_to_sheet(branchStatusData);
+            XLSX.utils.book_append_sheet(wb, branchStatusWs, 'Branch Status');
 
             // Create missing branches sheet
-            const missingBranchesData = [['Group', 'Missing Branch']];
+            const missingBranchesData = [['Group', 'Missing Branch Code', 'Missing Branch Name']];
             Object.keys(expectedBranches).forEach(groupName => {
                 const expectedForGroup = expectedBranches[groupName] || [];
                 const processedForGroup = window.processedBranches ? Array.from(window.processedBranches[groupName] || new Set()) : [];
@@ -1609,54 +1770,125 @@
                     });
                 });
                 missingBranches.forEach(branch => {
-                    missingBranchesData.push([groupName, branch]);
+                    const branchCode = branch.split(' ')[0];
+                    const branchName = branch.substring(branch.indexOf(' ') + 1);
+                    missingBranchesData.push([groupName, branchCode, branchName]);
                 });
             });
             const missingWs = XLSX.utils.aoa_to_sheet(missingBranchesData);
             XLSX.utils.book_append_sheet(wb, missingWs, 'Missing Branches');
 
-            // Create sheets for each group
-            Object.keys(processedData).forEach(groupName => {
-                if (processedData[groupName].length > 0) {
-                    const ws = XLSX.utils.json_to_sheet(processedData[groupName]);
-                    XLSX.utils.book_append_sheet(wb, ws, groupName.substring(0, 31)); // Excel sheet name limit
-                }
-            });
+            // Save file
+            const fileName = `SMCO_Overview_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
 
-            // Add detail files with SOH data if available
-            const hasSOHData = sohData && sohData.length > 0;
-            if (Object.keys(detailFiles).length > 0) {
-                Object.keys(detailFiles).forEach(groupName => {
-                    Object.keys(detailFiles[groupName]).forEach(docNo => {
-                        const detailData = detailFiles[groupName][docNo].data;
-                        if (detailData.length > 0) {
-                            // Prepare data for export with SOH columns if available
-                            const exportData = detailData.map(row => {
-                                const exportRow = { ...row };
-                                if (hasSOHData && row['Final OH'] !== undefined) {
-                                    // Include SOH data in export
-                                    exportRow['Final_OH'] = row['Final OH'];
-                                    exportRow['Final_Diff'] = row['Final Diff'];
-                                    exportRow['SOH_Updated'] = 'Yes';
-                                } else if (hasSOHData) {
-                                    exportRow['Final_OH'] = 'N/A';
-                                    exportRow['Final_Diff'] = 'N/A';
-                                    exportRow['SOH_Updated'] = 'No';
-                                }
-                                return exportRow;
-                            });
-                            
-                            const ws = XLSX.utils.json_to_sheet(exportData);
-                            const sheetName = `${groupName.substring(0, 20)}_${docNo}`.substring(0, 31);
-                            XLSX.utils.book_append_sheet(wb, ws, sheetName);
-                        }
-                    });
-                });
+        function exportDiscrepancySKU() {
+            const wb = XLSX.utils.book_new();
+            
+            // Collect all discrepancy SKU data from detail files
+            const allDiscrepancyData = [];
+            
+            if (Object.keys(detailFiles).length === 0) {
+                alert('ไม่พบไฟล์รายละเอียด กรุณาอัปโหลดไฟล์รายละเอียดก่อน');
+                return;
             }
 
+            Object.keys(detailFiles).forEach(groupName => {
+                Object.keys(detailFiles[groupName]).forEach(docNo => {
+                    const detailData = detailFiles[groupName][docNo].data;
+                    
+                    // Filter only SKUs with negative differences (Diff < 0 only)
+                    // Also filter out rows where Final OH is 0 or blank when SOH data is available
+                    const discrepancyRows = detailData.filter(row => {
+                        const diff = parseFloat(row['Diff']) || 0;
+                        // Only show negative differences (shortages/undercounts)
+                        if (diff >= 0) return false;
+                        
+                        // If SOH data is available, filter out rows where Final OH is 0, blank, or "-"
+                        const hasSOHData = sohData && sohData.length > 0;
+                        if (hasSOHData) {
+                            const finalOH = row['Final OH'];
+                            // Check if Final OH is undefined, null, empty, "-", or 0
+                            if (finalOH === undefined || finalOH === null || finalOH === '' || finalOH === '-' || parseFloat(finalOH) === 0 || isNaN(parseFloat(finalOH))) {
+                                return false;
+                            }
+                        }
+                        
+                        return true;
+                    });
+                    
+                    discrepancyRows.forEach(row => {
+                        const hasSOHData = sohData && sohData.length > 0;
+                        const exportRow = {
+                            'Group': groupName,
+                            'Doc No': docNo,
+                            'Branch': row['Branch'] || '',
+                            'SKU': row['SKU'] || '',
+                            'SKU Description': row['SKU Description'] || '',
+                            'OH (Original)': row['OH'] || 0,
+                            'Scan': row['Scan'] || 0,
+                            'Diff (Scan - OH)': row['Diff'] || 0
+                        };
+                        
+                        // Add SOH data if available (without Final Diff calculation)
+                        if (hasSOHData && row['Final OH'] !== undefined) {
+                            exportRow['Final OH (from SOH)'] = row['Final OH'];
+                            exportRow['SOH Updated'] = 'Yes';
+                        } else if (hasSOHData) {
+                            exportRow['Final OH (from SOH)'] = 'N/A';
+                            exportRow['SOH Updated'] = 'No';
+                        }
+                        
+                        allDiscrepancyData.push(exportRow);
+                    });
+                });
+            });
+
+            if (allDiscrepancyData.length === 0) {
+                alert('ไม่พบรายการที่มีความแตกต่าง (Discrepancy)');
+                return;
+            }
+
+            // Create discrepancy SKU sheet
+            const discrepancyWs = XLSX.utils.json_to_sheet(allDiscrepancyData);
+            XLSX.utils.book_append_sheet(wb, discrepancyWs, 'Discrepancy SKU');
+
+            // Create summary by group sheet
+            const groupSummary = {};
+            allDiscrepancyData.forEach(row => {
+                const group = row['Group'];
+                if (!groupSummary[group]) {
+                    groupSummary[group] = {
+                        'Group': group,
+                        'Total Discrepancy Items': 0,
+                        'Unique Branches': new Set(),
+                        'Unique SKUs': new Set()
+                    };
+                }
+                groupSummary[group]['Total Discrepancy Items']++;
+                groupSummary[group]['Unique Branches'].add(row['Branch']);
+                groupSummary[group]['Unique SKUs'].add(row['SKU']);
+            });
+
+            const summaryData = Object.values(groupSummary).map(item => ({
+                'Group': item['Group'],
+                'Total Discrepancy Items': item['Total Discrepancy Items'],
+                'Unique Branches Count': item['Unique Branches'].size,
+                'Unique SKUs Count': item['Unique SKUs'].size
+            }));
+
+            const summaryWs = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, 'Discrepancy Summary');
+
             // Save file
-            const fileName = `SMCO_Check_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+            const fileName = `SMCO_Discrepancy_SKU_${new Date().toISOString().split('T')[0]}.xlsx`;
             XLSX.writeFile(wb, fileName);
+        }
+
+        function exportToExcel() {
+            // Keep the old function for backward compatibility
+            exportOverviewToExcel();
         }
 
         function printResults() {
@@ -1843,10 +2075,23 @@
             // Check if SOH data is available
             const hasSOHData = sohData && sohData.length > 0;
             
-            // Filter to show only rows with differences (use original Diff only)
+            // Filter to show only rows with negative differences (Diff < 0 only)
+            // Also filter out rows where Final OH is 0 or blank when SOH data is available
             const diffRows = detailData.data.filter(row => {
                 const diff = parseFloat(row['Diff']) || 0;
-                return diff !== 0;
+                // Only show negative differences (shortages/undercounts)
+                if (diff >= 0) return false;
+                
+                // If SOH data is available, filter out rows where Final OH is 0, blank, or "-"
+                if (hasSOHData) {
+                    const finalOH = row['Final OH'];
+                    // Check if Final OH is undefined, null, empty, "-", or 0
+                    if (finalOH === undefined || finalOH === null || finalOH === '' || finalOH === '-' || parseFloat(finalOH) === 0 || isNaN(parseFloat(finalOH))) {
+                        return false;
+                    }
+                }
+                
+                return true;
             });
 
             // Update modal content
@@ -2036,7 +2281,7 @@
     </script>
 
     <style media="print">
-        .upload-section, .export-section, nav, #loadingOverlay {
+        .upload-section, .export-section, nav, #loadingOverlay, .tab-navigation {
             display: none !important;
         }
         
@@ -2047,6 +2292,10 @@
         
         .modal-overlay {
             display: none !important;
+        }
+        
+        .tab-content {
+            display: block !important;
         }
         
         main {
