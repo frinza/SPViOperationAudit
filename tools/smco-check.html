@@ -2236,15 +2236,15 @@
                         throw new Error(`ไม่พบ Doc No ${extractedDocNo} ในผลลัพธ์หลัก`);
                     }
 
-                    // Filter data: OH <> 0 and SKU/SKU Description not contain DEMO
+                    // Filter data: OH <> 0 and SKU/SKU Description not contain DEMO and SKU not end with -D
                     // For iCenter group, also filter out SKUs with GLUE or ADHESIVE in SKU Description
                     const filteredData = jsonData.filter(row => {
                         const oh = parseFloat(row['OH']) || 0;
                         const sku = (row['SKU'] || '').toString().toUpperCase();
                         const skuDesc = (row['SKU Description'] || '').toString().toUpperCase();
                         
-                        // Basic filter: OH not 0 and no DEMO
-                        let shouldInclude = oh !== 0 && !sku.includes('DEMO') && !skuDesc.includes('DEMO');
+                        // Basic filter: OH not 0, no DEMO, and SKU doesn't end with -D
+                        let shouldInclude = oh !== 0 && !sku.includes('DEMO') && !skuDesc.includes('DEMO') && !sku.endsWith('-D');
                         
                         // Additional filter for iCenter group: exclude GLUE and ADHESIVE
                         if (shouldInclude && groupName === 'iCenter') {
