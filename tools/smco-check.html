@@ -736,6 +736,7 @@
                 <!-- Export Section -->
                 <div class="text-center mt-8 space-x-4">
                     <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium" onclick="exportOverviewToExcel()">Excel Overview</button>
+                    <button class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium" onclick="exportAllGroupData()">Export All Groups Data</button>
                     <button class="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium" onclick="exportDiscrepancySKU()">Export Discrepancy SKU</button>
                     <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium" onclick="exportToPDF()">
                         <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1922,6 +1923,115 @@
             XLSX.writeFile(wb, fileName);
         }
 
+        function exportAllGroupData() {
+            if (Object.keys(processedData).length === 0) {
+                alert('ไม่พบข้อมูลกลุ่ม กรุณาอัพโหลดไฟล์และประมวลผลข้อมูลก่อน');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            // Create a sheet for each group
+            Object.keys(processedData).forEach(groupName => {
+                const groupData = processedData[groupName];
+                
+                if (groupData.length > 0) {
+                    // Create clean data for export
+                    const exportData = groupData.map(row => ({
+                        'Create Date': row['Create Date'] || '',
+                        'Doc No': row['Doc No'] || '',
+                        'Status': row['Status'] || '',
+                        'Branch': row['Branch'] || '',
+                        'Class': row['Class'] || '',
+                        'Check': row['Check'] || '',
+                        'Onhand': row['Onhand'] || 0,
+                        'Counted': row['Counted'] || 0,
+                        'Diff': row['Diff'] || 0
+                    }));
+
+                    // Create worksheet for this group
+                    const ws = XLSX.utils.json_to_sheet(exportData);
+                    
+                    // Auto-adjust column widths
+                    const wscols = [
+                        { wch: 12 }, // Create Date
+                        { wch: 16 }, // Doc No
+                        { wch: 10 }, // Status
+                        { wch: 25 }, // Branch
+                        { wch: 20 }, // Class
+                        { wch: 12 }, // Check
+                        { wch: 10 }, // Onhand
+                        { wch: 10 }, // Counted
+                        { wch: 10 }  // Diff
+                    ];
+                    ws['!cols'] = wscols;
+
+                    // Add the worksheet to workbook with safe sheet name
+                    const safeGroupName = groupName.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 30);
+                    XLSX.utils.book_append_sheet(wb, ws, safeGroupName);
+                } else {
+                    // Create empty sheet for groups with no data
+                    const emptyData = [{
+                        'Message': `No data found for ${groupName}`,
+                        'Create Date': '',
+                        'Doc No': '',
+                        'Status': '',
+                        'Branch': '',
+                        'Class': '',
+                        'Check': '',
+                        'Onhand': '',
+                        'Counted': '',
+                        'Diff': ''
+                    }];
+                    const ws = XLSX.utils.json_to_sheet(emptyData);
+                    const safeGroupName = groupName.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 30);
+                    XLSX.utils.book_append_sheet(wb, ws, safeGroupName);
+                }
+            });
+
+            // Create a summary sheet with all data combined
+            const allData = [];
+            Object.keys(processedData).forEach(groupName => {
+                processedData[groupName].forEach(row => {
+                    allData.push({
+                        'Group': groupName,
+                        'Create Date': row['Create Date'] || '',
+                        'Doc No': row['Doc No'] || '',
+                        'Status': row['Status'] || '',
+                        'Branch': row['Branch'] || '',
+                        'Class': row['Class'] || '',
+                        'Check': row['Check'] || '',
+                        'Onhand': row['Onhand'] || 0,
+                        'Counted': row['Counted'] || 0,
+                        'Diff': row['Diff'] || 0
+                    });
+                });
+            });
+
+            if (allData.length > 0) {
+                const summaryWs = XLSX.utils.json_to_sheet(allData);
+                // Auto-adjust column widths for summary
+                const wscols = [
+                    { wch: 18 }, // Group
+                    { wch: 12 }, // Create Date
+                    { wch: 16 }, // Doc No
+                    { wch: 10 }, // Status
+                    { wch: 25 }, // Branch
+                    { wch: 20 }, // Class
+                    { wch: 12 }, // Check
+                    { wch: 10 }, // Onhand
+                    { wch: 10 }, // Counted
+                    { wch: 10 }  // Diff
+                ];
+                summaryWs['!cols'] = wscols;
+                XLSX.utils.book_append_sheet(wb, summaryWs, 'All Groups Summary');
+            }
+
+            // Save file
+            const fileName = `SMCO_All_Groups_Data_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+
         function exportToExcel() {
             // Keep the old function for backward compatibility
             exportOverviewToExcel();
@@ -2500,6 +2610,116 @@
                 });
             });
         }
+
+        function exportAllGroupData() {
+            if (Object.keys(processedData).length === 0) {
+                alert('ไม่พบข้อมูลกลุ่ม กรุณาอัพโหลดไฟล์และประมวลผลข้อมูลก่อน');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            // Create a sheet for each group
+            Object.keys(processedData).forEach(groupName => {
+                const groupData = processedData[groupName];
+                
+                if (groupData.length > 0) {
+                    // Create clean data for export
+                    const exportData = groupData.map(row => ({
+                        'Create Date': row['Create Date'] || '',
+                        'Doc No': row['Doc No'] || '',
+                        'Status': row['Status'] || '',
+                        'Branch': row['Branch'] || '',
+                        'Class': row['Class'] || '',
+                        'Check': row['Check'] || '',
+                        'Onhand': row['Onhand'] || 0,
+                        'Counted': row['Counted'] || 0,
+                        'Diff': row['Diff'] || 0
+                    }));
+
+                    // Create worksheet for this group
+                    const ws = XLSX.utils.json_to_sheet(exportData);
+                    
+                    // Auto-adjust column widths
+                    const wscols = [
+                        { wch: 12 }, // Create Date
+                        { wch: 16 }, // Doc No
+                        { wch: 10 }, // Status
+                        { wch: 25 }, // Branch
+                        { wch: 20 }, // Class
+                        { wch: 12 }, // Check
+                        { wch: 10 }, // Onhand
+                        { wch: 10 }, // Counted
+                        { wch: 10 }  // Diff
+                    ];
+                    ws['!cols'] = wscols;
+
+                    // Add the worksheet to workbook with safe sheet name
+                    const safeGroupName = groupName.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 30);
+                    XLSX.utils.book_append_sheet(wb, ws, safeGroupName);
+                } else {
+                    // Create empty sheet for groups with no data
+                    const emptyData = [{
+                        'Message': `No data found for ${groupName}`,
+                        'Create Date': '',
+                        'Doc No': '',
+                        'Status': '',
+                        'Branch': '',
+                        'Class': '',
+                        'Check': '',
+                        'Onhand': '',
+                        'Counted': '',
+                        'Diff': ''
+                    }];
+                    const ws = XLSX.utils.json_to_sheet(emptyData);
+                    const safeGroupName = groupName.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 30);
+                    XLSX.utils.book_append_sheet(wb, ws, safeGroupName);
+                }
+            });
+
+            // Create a summary sheet with all data combined
+            const allData = [];
+            Object.keys(processedData).forEach(groupName => {
+                processedData[groupName].forEach(row => {
+                    allData.push({
+                        'Group': groupName,
+                        'Create Date': row['Create Date'] || '',
+                        'Doc No': row['Doc No'] || '',
+                        'Status': row['Status'] || '',
+                        'Branch': row['Branch'] || '',
+                        'Class': row['Class'] || '',
+                        'Check': row['Check'] || '',
+                        'Onhand': row['Onhand'] || 0,
+                        'Counted': row['Counted'] || 0,
+                        'Diff': row['Diff'] || 0
+                    });
+                });
+            });
+
+            if (allData.length > 0) {
+                const summaryWs = XLSX.utils.json_to_sheet(allData);
+                // Auto-adjust column widths for summary
+                const wscols = [
+                    { wch: 18 }, // Group
+                    { wch: 12 }, // Create Date
+                    { wch: 16 }, // Doc No
+                    { wch: 10 }, // Status
+                    { wch: 25 }, // Branch
+                    { wch: 20 }, // Class
+                    { wch: 12 }, // Check
+                    { wch: 10 }, // Onhand
+                    { wch: 10 }, // Counted
+                    { wch: 10 }  // Diff
+                ];
+                summaryWs['!cols'] = wscols;
+                XLSX.utils.book_append_sheet(wb, summaryWs, 'All Groups Summary');
+            }
+
+            // Save file
+            const fileName = `SMCO_All_Groups_Data_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+
     </script>
 
     <!-- Authentication Scripts -->
