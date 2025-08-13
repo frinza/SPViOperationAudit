@@ -953,6 +953,11 @@
                         throw new Error(`ไฟล์ SOH ขาดคอลัมน์ที่จำเป็น: ${missingColumns.join(', ')}`);
                     }
 
+                    // Check for SUBCLASS_CODE column (needed for iCenter filtering)
+                    if (!('SUBCLASS_CODE' in firstRow)) {
+                        console.warn('ไฟล์ SOH ไม่มีคอลัมน์ SUBCLASS_CODE - การกรองข้อมูล iCenter อาจไม่ทำงาน');
+                    }
+
                     // Check if detail files exist
                     if (Object.keys(detailFiles).length === 0) {
                         showSOHStatus('error', 'กรุณาอัพโหลดไฟล์รายละเอียด (Detail Files) ก่อนอัพโหลดไฟล์ SOH');
@@ -1086,6 +1091,16 @@
                             const finalOH = parseFloat(sohMatch['AVAILABLE_QTY']) || 0;
                             row['Final OH'] = finalOH;
                             
+                            // For iCenter group: filter out SKUs with SUBCLASS_CODE = "OTH"
+                            if (groupName === 'iCenter') {
+                                const subclassCode = (sohMatch['SUBCLASS_CODE'] || '').toString().trim().toUpperCase();
+                                if (subclassCode === 'OTH') {
+                                    console.log(`Filtering out iCenter SKU with SUBCLASS_CODE = OTH: ${row['SKU']}`);
+                                    totalRemovals++;
+                                    return; // Skip this row (don't add to updatedData)
+                                }
+                            }
+                            
                             // Keep row regardless of Final OH value (no removal based on Final Diff)
                             updatedData.push(row);
                             totalUpdates++;
@@ -1129,9 +1144,11 @@
                 showGroupResults();
                 
                 // Show summary of updates
-                showSOHStatus('success', 
-                    `SOH อัพเดทเสร็จสิ้น: อัพเดท ${totalUpdates} รายการ`
-                );
+                let summaryMessage = `SOH อัพเดทเสร็จสิ้น: อัพเดท ${totalUpdates} รายการ`;
+                if (totalRemovals > 0) {
+                    summaryMessage += `, กรองออก ${totalRemovals} รายการ (iCenter SUBCLASS_CODE = OTH)`;
+                }
+                showSOHStatus('success', summaryMessage);
             }, 500);
         }
 
