@@ -1248,6 +1248,27 @@
             ]
         };
 
+        // Helper function to get full branch name from branch code
+        function getFullBranchName(branchCode) {
+            if (!branchCode) return '';
+            
+            // Extract branch code from the input (handle cases like "B034" or "B034 - AIS Shop Lotus Rayong")
+            const code = branchCode.split(' ')[0].trim();
+            
+            // Search through all groups to find the full branch name
+            for (const groupName in expectedBranches) {
+                const branch = expectedBranches[groupName].find(fullName => 
+                    fullName.startsWith(code + ' -')
+                );
+                if (branch) {
+                    return branch;
+                }
+            }
+            
+            // If not found in expected branches, return the original code
+            return branchCode;
+        }
+
         function processData(data) {
             processedData = {
                 'AIS, A-Store, Mobi': [],
@@ -1700,6 +1721,7 @@
                         const isDiffRow = diff !== 0;
                         const isMatchRow = onhand === counted && onhand !== 0;
                         const docNo = row['Doc No'] || '';
+                        const fullBranchName = getFullBranchName(row['Branch']);
                         
                         // Determine row class based on onhand vs counted comparison
                         let rowClass = '';
@@ -1717,7 +1739,7 @@
                                     ${docNo}
                                 </td>
                                 <td>${row['Status'] || ''}</td>
-                                <td>${row['Branch'] || ''}</td>
+                                <td>${fullBranchName}</td>
                                 <td>${row['Class'] || ''}</td>
                                 <td>${row['Check'] || ''}</td>
                                 <td>${row['Onhand'] || ''}</td>
@@ -1897,15 +1919,17 @@
                     
                     discrepancyRows.forEach(row => {
                         const hasSOHData = sohData && sohData.length > 0;
+                        const fullBranchName = getFullBranchName(row['Branch']);
                         const exportRow = {
                             'Group': groupName,
                             'Doc No': docNo,
-                            'Branch': row['Branch'] || '',
+                            'Branch': fullBranchName,
                             'SKU': row['SKU'] || '',
                             'SKU Description': row['SKU Description'] || '',
                             'OH (Original)': row['OH'] || 0,
                             'Scan': row['Scan'] || 0,
-                            'Diff (Scan - OH)': row['Diff'] || 0
+                            'Diff (Scan - OH)': row['Diff'] || 0,
+                            'Reason': row['Reason'] || ''
                         };
                         
                         // Add SOH data if available (without Final Diff calculation)
@@ -1944,7 +1968,7 @@
                     };
                 }
                 groupSummary[group]['Total Discrepancy Items']++;
-                groupSummary[group]['Unique Branches'].add(row['Branch']);
+                groupSummary[group]['Unique Branches'].add(getFullBranchName(row['Branch']));
                 groupSummary[group]['Unique SKUs'].add(row['SKU']);
             });
 
@@ -1981,7 +2005,7 @@
                         'Create Date': row['Create Date'] || '',
                         'Doc No': row['Doc No'] || '',
                         'Status': row['Status'] || '',
-                        'Branch': row['Branch'] || '',
+                        'Branch': getFullBranchName(row['Branch']),
                         'Class': row['Class'] || '',
                         'Check': row['Check'] || '',
                         'Onhand': row['Onhand'] || 0,
@@ -2425,7 +2449,8 @@
                             'SKU Description': row['SKU Description'] || '',
                             'OH': row['OH'] || 0,
                             'Scan': row['Scan'] || 0,
-                            'Diff': (parseFloat(row['Scan']) || 0) - (parseFloat(row['OH']) || 0)
+                            'Diff': (parseFloat(row['Scan']) || 0) - (parseFloat(row['OH']) || 0),
+                            'Reason': row['Reason'] || ''
                         }))
                     };
 
@@ -2535,11 +2560,12 @@
                                 <th class="sortable" onclick="sortTable(this, 2)">SKU Description <span class="sort-icon">↕</span></th>
                                 <th class="sortable" onclick="sortTable(this, 3)">OH <span class="sort-icon">↕</span></th>
                                 <th class="sortable" onclick="sortTable(this, 4)">Scan <span class="sort-icon">↕</span></th>
-                                <th class="sortable" onclick="sortTable(this, 5)">Diff <span class="sort-icon">↕</span></th>`;
+                                <th class="sortable" onclick="sortTable(this, 5)">Diff <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(this, 6)" style="background-color: #fff3cd; color: #856404;">Reason <span class="sort-icon">↕</span></th>`;
                 
                 if (hasSOHData) {
                     headerHtml += `
-                                <th class="sortable" onclick="sortTable(this, 6)" style="background-color: #e8f5e8;">Final OH <span class="sort-icon">↕</span></th>`;
+                                <th class="sortable" onclick="sortTable(this, 7)" style="background-color: #e8f5e8;">Final OH <span class="sort-icon">↕</span></th>`;
                 }
                 
                 headerHtml += `
@@ -2553,15 +2579,17 @@
                 diffRows.forEach(row => {
                     const isSOHUpdated = hasSOHData && row['Final OH'] !== undefined;
                     const rowClass = isSOHUpdated ? 'diff-row soh-updated' : 'diff-row';
+                    const fullBranchName = getFullBranchName(row['Branch']);
                     
                     tableHtml += `
                         <tr class="${rowClass}">
-                            <td>${row['Branch']}</td>
+                            <td>${fullBranchName}</td>
                             <td>${row['SKU']}</td>
                             <td>${row['SKU Description']}</td>
                             <td>${row['OH']}</td>
                             <td>${row['Scan']}</td>
-                            <td>${row['Diff']}</td>`;
+                            <td>${row['Diff']}</td>
+                            <td style="background-color: #fffbf0; font-style: ${row['Reason'] ? 'normal' : 'italic'}; color: ${row['Reason'] ? '#856404' : '#9ca3af'};">${row['Reason'] || 'No reason provided'}</td>`;
                     
                     if (hasSOHData) {
                         const finalOH = row['Final OH'] !== undefined ? row['Final OH'] : '-';
@@ -2669,7 +2697,7 @@
                         'Create Date': row['Create Date'] || '',
                         'Doc No': row['Doc No'] || '',
                         'Status': row['Status'] || '',
-                        'Branch': row['Branch'] || '',
+                        'Branch': getFullBranchName(row['Branch']),
                         'Class': row['Class'] || '',
                         'Check': row['Check'] || '',
                         'Onhand': row['Onhand'] || 0,
