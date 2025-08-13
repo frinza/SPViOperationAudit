@@ -662,7 +662,7 @@
             <div class="p-6">
             <!-- Upload Section -->
             <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center mb-6 transition-all duration-300 hover:border-blue-400 hover:bg-blue-50" id="uploadSection">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2"> อัพโหลดไฟล์ SMCO Data</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2"> 1.อัพโหลดไฟล์ SMCO Data</h3>
                 <p class="text-gray-600 mb-4">กรุณาเลือกไฟล์ .xlsx ที่มีข้อมูล SMCO Check</p>
                 <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls" />
                 <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium" onclick="document.getElementById('fileInput').click()">
@@ -671,9 +671,33 @@
                 <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg hidden" id="fileInfo"></div>
             </div>
 
+            <!-- Global Detail Files Upload Section -->
+            <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center mb-6 transition-all duration-300 hover:border-purple-400 hover:bg-purple-50 hidden" id="detailUploadSection">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2"> 2.อัพโหลดไฟล์รายละเอียด (Detail Files)</h3>
+                <p class="text-gray-600 text-sm mb-4">
+                    อัพโหลดไฟล์รายละเอียดทั้งหมดพร้อมกัน ระบบจะจัดกลุ่มไฟล์อัตโนมัติตาม Doc No<br>
+                    สามารถเลือกหลายไฟล์พร้อมกันได้ (รองรับการลากและวาง)
+                </p>
+                <input type="file" id="globalDetailFileInput" class="hidden" accept=".xlsx,.xls" multiple />
+                <button class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium" onclick="document.getElementById('globalDetailFileInput').click()">
+                    เลือกไฟล์รายละเอียด
+                </button>
+                <div class="mt-4 text-xs text-gray-500">
+                    รองรับไฟล์ .xlsx และ .xls • สามารถอัพโหลดหลายไฟล์พร้อมกัน
+                </div>
+                
+                <!-- Global Detail Files List -->
+                <div class="mt-4" id="globalDetailFilesList" style="display: none;">
+                    <div class="text-left">
+                        <h4 class="font-semibold text-gray-800 mb-2">ไฟล์ที่อัพโหลด:</h4>
+                        <div id="globalDetailFilesContainer" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- SOH Upload Section -->
             <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center mb-6 transition-all duration-300 hover:border-green-400 hover:bg-green-50 hidden" id="sohUploadSection">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2"> อัพโหลดไฟล์ SOH (Stock On Hand) สำหรับอัพเดท Final OH</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2"> 3.อัพโหลดไฟล์ SOH (Stock On Hand) สำหรับอัพเดท Final OH</h3>
                 <p class="text-gray-600 text-sm mb-4">
                     ไฟล์ SOH จะถูกใช้เพื่อ:<br>
                     • เพิ่มคอลัมน์ Final OH ให้กับตารางรายละเอียด<br>
@@ -1441,6 +1465,7 @@
         function showResults() {
             document.getElementById('resultsSection').classList.remove('hidden');
             document.getElementById('sohUploadSection').classList.remove('hidden');
+            document.getElementById('detailUploadSection').classList.remove('hidden');
             
             // Show summary stats
             showSummaryStats();
@@ -1662,26 +1687,6 @@
                     `;
                 }
 
-                // Detail file upload section
-                html += `
-                    <div class="detail-upload-section">
-                        <div class="detail-upload-title">📎 อัพโหลดไฟล์รายละเอียด (Detail Files)</div>
-                        <div class="detail-upload-area" id="detail-upload-${groupName.replace(/[^a-zA-Z0-9]/g, '')}" 
-                             data-group="${groupName}">
-                            <input type="file" multiple accept=".xlsx,.xls" style="display: none;" 
-                                   id="detail-files-${groupName.replace(/[^a-zA-Z0-9]/g, '')}" />
-                            <button class="detail-upload-btn" 
-                                    onclick="document.getElementById('detail-files-${groupName.replace(/[^a-zA-Z0-9]/g, '')}').click()">
-                                เลือกไฟล์รายละเอียด
-                            </button>
-                            <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: #6b7280;">
-                                สามารถเลือกหลายไฟล์พร้อมกันได้
-                            </p>
-                        </div>
-                        <div class="uploaded-files-list" id="uploaded-files-${groupName.replace(/[^a-zA-Z0-9]/g, '')}"></div>
-                    </div>
-                `;
-
                 if (groupData.length === 0) {
                     html += '<div class="no-data">ไม่พบข้อมูลที่ต้องตรวจสอบ</div>';
                 } else {
@@ -1757,11 +1762,12 @@
 
             groupResultsContainer.innerHTML = html;
             
-            // Setup detail file upload handlers
-            setupDetailFileHandlers();
-            
-            // Initialize sorting for group tables (default sort by branch)
-            setTimeout(() => initializeSortableTables(), 100);
+            // Setup global detail file upload handler after DOM is rendered
+            setTimeout(() => {
+                setupGlobalDetailFileHandler();
+                // Initialize sorting for group tables (default sort by branch)
+                initializeSortableTables();
+            }, 100);
         }
 
         function exportOverviewToExcel() {
@@ -2327,37 +2333,6 @@
         // Detail file handling
         let detailFiles = {}; // Store detail files by group and doc number
 
-        function setupDetailFileHandlers() {
-            Object.keys(processedData).forEach(groupName => {
-                const groupId = groupName.replace(/[^a-zA-Z0-9]/g, '');
-                const fileInput = document.getElementById(`detail-files-${groupId}`);
-                const uploadArea = document.getElementById(`detail-upload-${groupId}`);
-                
-                if (fileInput && uploadArea) {
-                    // File input change handler
-                    fileInput.addEventListener('change', (e) => {
-                        handleDetailFiles(e.target.files, groupName);
-                    });
-
-                    // Drag and drop handlers
-                    uploadArea.addEventListener('dragover', (e) => {
-                        e.preventDefault();
-                        uploadArea.classList.add('dragover');
-                    });
-
-                    uploadArea.addEventListener('dragleave', () => {
-                        uploadArea.classList.remove('dragover');
-                    });
-
-                    uploadArea.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        uploadArea.classList.remove('dragover');
-                        handleDetailFiles(e.dataTransfer.files, groupName);
-                    });
-                }
-            });
-        }
-
         function handleDetailFiles(files, groupName) {
             const groupId = groupName.replace(/[^a-zA-Z0-9]/g, '');
             const uploadedFilesContainer = document.getElementById(`uploaded-files-${groupId}`);
@@ -2471,6 +2446,84 @@
             };
 
             reader.readAsArrayBuffer(file);
+        }
+
+        function setupGlobalDetailFileHandler() {
+            const dropZone = document.getElementById('globalDetailDropZone');
+            const fileInput = document.getElementById('globalDetailFileInput');
+            const fileInfo = document.getElementById('globalDetailFileInfo');
+            const uploadedFilesContainer = document.getElementById('globalDetailUploadedFiles');
+
+            // Check if elements exist before setting up handlers
+            if (!dropZone || !fileInput || !uploadedFilesContainer) {
+                console.warn('Global detail upload elements not found in DOM');
+                return;
+            }
+
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-blue-500');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('border-blue-500');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-500');
+                const files = Array.from(e.dataTransfer.files);
+                handleGlobalDetailFiles(files, uploadedFilesContainer);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                handleGlobalDetailFiles(files, uploadedFilesContainer);
+            });
+        }
+
+        function handleGlobalDetailFiles(files, uploadedFilesContainer) {
+            files.forEach(file => {
+                // Extract doc number from filename
+                const docNoMatch = file.name.match(/([A-Z]{2}\d{12})/);
+                const extractedDocNo = docNoMatch ? docNoMatch[1] : null;
+
+                if (!extractedDocNo) {
+                    alert(`ไม่พบ Doc No ในชื่อไฟล์: ${file.name}`);
+                    return;
+                }
+
+                // Find which group this doc number belongs to
+                let targetGroup = null;
+                for (const [groupName, groupData] of Object.entries(processedData)) {
+                    const found = groupData.find(row => 
+                        row['Doc No'] && row['Doc No'].includes(extractedDocNo)
+                    );
+                    if (found) {
+                        targetGroup = groupName;
+                        break;
+                    }
+                }
+
+                if (!targetGroup) {
+                    alert(`ไม่พบ Doc No ${extractedDocNo} ในผลลัพธ์หลัก`);
+                    return;
+                }
+
+                // Create file item display
+                const fileItem = document.createElement('div');
+                fileItem.className = 'uploaded-file-item flex justify-between items-center p-3 bg-gray-50 rounded border';
+                fileItem.innerHTML = `
+                    <span class="uploaded-file-name">${file.name} (${targetGroup})</span>
+                    <span class="uploaded-file-status status-processing">กำลังประมวลผล...</span>
+                `;
+                uploadedFilesContainer.appendChild(fileItem);
+
+                // Process the file with the detected group
+                processDetailFile(file, targetGroup, fileItem);
+            });
         }
 
         function showDocDetail(docNo, groupName) {
