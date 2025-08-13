@@ -1012,19 +1012,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        function showSOHStatus(type, message) {
-            const status = document.getElementById('sohProcessingStatus');
-            status.className = `processing-status ${type}`;
-            status.textContent = message;
-            status.style.display = 'block';
-
-            if (type === 'success' || type === 'error') {
-                setTimeout(() => {
-                    status.style.display = 'none';
-                }, 5000);
-            }
-        }
-
         // SOH data storage
         let sohData = [];
 
@@ -2121,11 +2108,6 @@
             XLSX.writeFile(wb, fileName);
         }
 
-        function exportToExcel() {
-            // Keep the old function for backward compatibility
-            exportOverviewToExcel();
-        }
-
         function exportToPDF() {
             // Check if jsPDF is available
             if (typeof window.jspdf === 'undefined') {
@@ -2344,11 +2326,6 @@
             }
         }
 
-        function printResults() {
-            // Keep this function for backward compatibility, but redirect to PDF export
-            exportToPDF();
-        }
-
         // Detail file handling
         let detailFiles = {}; // Store detail files by group and doc number
         let globalDetailHandlerSetup = false; // Flag to prevent multiple setup
@@ -2451,7 +2428,9 @@
 
                     // Update file status
                     const statusElement = fileItem.querySelector('.uploaded-file-status');
-                    statusElement.textContent = `สำเร็จ (${filteredData.length} รายการ)`;
+                    const isUpdate = statusElement.textContent.includes('อัพเดทข้อมูล');
+                    const statusText = isUpdate ? `อัพเดทแล้ว (${filteredData.length} รายการ)` : `สำเร็จ (${filteredData.length} รายการ)`;
+                    statusElement.textContent = statusText;
                     statusElement.className = 'uploaded-file-status status-success';
 
                     // Refresh the results display
@@ -2580,14 +2559,40 @@
                     return;
                 }
 
-                // Create file item display
-                const fileItem = document.createElement('div');
-                fileItem.className = 'uploaded-file-item flex justify-between items-center p-3 bg-gray-50 rounded border';
-                fileItem.innerHTML = `
-                    <span class="uploaded-file-name">${file.name} (${targetGroup})</span>
-                    <span class="uploaded-file-status status-processing">กำลังประมวลผล...</span>
-                `;
-                uploadedFilesContainer.appendChild(fileItem);
+                // Check if file with same name already exists in the uploaded files list
+                const existingFileItems = uploadedFilesContainer.querySelectorAll('.uploaded-file-item');
+                let existingFileItem = null;
+                
+                existingFileItems.forEach(item => {
+                    const fileNameSpan = item.querySelector('.uploaded-file-name');
+                    if (fileNameSpan && fileNameSpan.textContent.startsWith(file.name)) {
+                        existingFileItem = item;
+                    }
+                });
+
+                let fileItem;
+                if (existingFileItem) {
+                    // Update existing file item
+                    console.log(`Updating existing file: ${file.name}`);
+                    fileItem = existingFileItem;
+                    const statusElement = fileItem.querySelector('.uploaded-file-status');
+                    statusElement.textContent = 'กำลังอัพเดทข้อมูล...';
+                    statusElement.className = 'uploaded-file-status status-processing';
+                    
+                    // Update the group display in case it changed
+                    const fileNameElement = fileItem.querySelector('.uploaded-file-name');
+                    fileNameElement.textContent = `${file.name} (${targetGroup})`;
+                } else {
+                    // Create new file item display
+                    console.log(`Adding new file: ${file.name}`);
+                    fileItem = document.createElement('div');
+                    fileItem.className = 'uploaded-file-item flex justify-between items-center p-3 bg-gray-50 rounded border';
+                    fileItem.innerHTML = `
+                        <span class="uploaded-file-name">${file.name} (${targetGroup})</span>
+                        <span class="uploaded-file-status status-processing">กำลังประมวลผล...</span>
+                    `;
+                    uploadedFilesContainer.appendChild(fileItem);
+                }
 
                 // Process the file with the detected group
                 processDetailFile(file, targetGroup, fileItem);
