@@ -679,9 +679,11 @@
                     สามารถเลือกหลายไฟล์พร้อมกันได้ (รองรับการลากและวาง)
                 </p>
                 <input type="file" id="globalDetailFileInput" class="hidden" accept=".xlsx,.xls" multiple />
-                <button class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium" onclick="document.getElementById('globalDetailFileInput').click()">
-                    เลือกไฟล์รายละเอียด
-                </button>
+                <div id="globalDetailDropZone" class="cursor-pointer">
+                    <button class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                        เลือกไฟล์รายละเอียด
+                    </button>
+                </div>
                 <div class="mt-4 text-xs text-gray-500">
                     รองรับไฟล์ .xlsx และ .xls • สามารถอัพโหลดหลายไฟล์พร้อมกัน
                 </div>
@@ -2332,6 +2334,7 @@
 
         // Detail file handling
         let detailFiles = {}; // Store detail files by group and doc number
+        let globalDetailHandlerSetup = false; // Flag to prevent multiple setup
 
         function handleDetailFiles(files, groupName) {
             const groupId = groupName.replace(/[^a-zA-Z0-9]/g, '');
@@ -2449,18 +2452,33 @@
         }
 
         function setupGlobalDetailFileHandler() {
+            // Prevent multiple setup
+            if (globalDetailHandlerSetup) {
+                console.log('Global detail handler already set up, skipping...');
+                return;
+            }
+
+            console.log('Setting up global detail file handler...');
             const dropZone = document.getElementById('globalDetailDropZone');
             const fileInput = document.getElementById('globalDetailFileInput');
-            const fileInfo = document.getElementById('globalDetailFileInfo');
-            const uploadedFilesContainer = document.getElementById('globalDetailUploadedFiles');
+            const uploadedFilesContainer = document.getElementById('globalDetailFilesContainer');
+            const filesList = document.getElementById('globalDetailFilesList');
 
             // Check if elements exist before setting up handlers
             if (!dropZone || !fileInput || !uploadedFilesContainer) {
                 console.warn('Global detail upload elements not found in DOM');
+                console.log('dropZone:', dropZone);
+                console.log('fileInput:', fileInput);
+                console.log('uploadedFilesContainer:', uploadedFilesContainer);
                 return;
             }
 
-            dropZone.addEventListener('click', () => fileInput.click());
+            console.log('All elements found, setting up event handlers...');
+
+            dropZone.addEventListener('click', () => {
+                console.log('Drop zone clicked, opening file dialog...');
+                fileInput.click();
+            });
 
             dropZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
@@ -2475,17 +2493,47 @@
                 e.preventDefault();
                 dropZone.classList.remove('border-blue-500');
                 const files = Array.from(e.dataTransfer.files);
-                handleGlobalDetailFiles(files, uploadedFilesContainer);
+                handleGlobalDetailFiles(files, uploadedFilesContainer, filesList);
             });
 
             fileInput.addEventListener('change', (e) => {
+                console.log('File input change event triggered');
+                console.log('Selected files:', e.target.files);
+                console.log('Number of files:', e.target.files.length);
+                
                 const files = Array.from(e.target.files);
-                handleGlobalDetailFiles(files, uploadedFilesContainer);
+                if (files.length > 0) {
+                    console.log('Processing files...');
+                    handleGlobalDetailFiles(files, uploadedFilesContainer, filesList);
+                } else {
+                    console.log('No files selected');
+                }
+                
+                // Reset file input to allow selecting the same files again
+                console.log('Resetting file input...');
+                fileInput.value = '';
             });
+
+            // Mark as set up
+            globalDetailHandlerSetup = true;
+            console.log('Global detail file handler setup complete');
         }
 
-        function handleGlobalDetailFiles(files, uploadedFilesContainer) {
+        function handleGlobalDetailFiles(files, uploadedFilesContainer, filesList) {
+            // Show the files list container
+            if (filesList) {
+                filesList.style.display = 'block';
+            }
+
             files.forEach(file => {
+                console.log(`Processing file: ${file.name}`);
+                
+                // Check file type
+                if (!file.name.match(/\.(xlsx|xls)$/)) {
+                    alert(`ไฟล์ ${file.name} ไม่ใช่ไฟล์ Excel`);
+                    return;
+                }
+
                 // Extract doc number from filename
                 const docNoMatch = file.name.match(/([A-Z]{2}\d{12})/);
                 const extractedDocNo = docNoMatch ? docNoMatch[1] : null;
@@ -2495,6 +2543,8 @@
                     return;
                 }
 
+                console.log(`Extracted Doc No: ${extractedDocNo}`);
+
                 // Find which group this doc number belongs to
                 let targetGroup = null;
                 for (const [groupName, groupData] of Object.entries(processedData)) {
@@ -2503,6 +2553,7 @@
                     );
                     if (found) {
                         targetGroup = groupName;
+                        console.log(`Found target group: ${targetGroup}`);
                         break;
                     }
                 }
