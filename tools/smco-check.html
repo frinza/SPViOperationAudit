@@ -230,6 +230,15 @@
             background-color: #fee2e2 !important;
         }
 
+        .data-table tbody tr.match-row {
+            background-color: #f0fdf4 !important;
+            border-left: 4px solid #22c55e;
+        }
+
+        .data-table tbody tr.match-row:hover {
+            background-color: #dcfce7 !important;
+        }
+
         .data-table tbody tr.soh-updated {
             background-color: #f0f9ff !important;
             border-left: 4px solid #0ea5e9;
@@ -1300,7 +1309,7 @@
         }
 
         function processAISGroup(data) {
-            // AIS, A-Store, Mobi: Check Stock, Status Confirm/Draft, Onhand != Counted != 0, latest by Create Date per Branch
+            // AIS, A-Store, Mobi: Check Stock, Status Confirm/Draft, include all records to track branches
             const branchGroups = groupByBranch(data);
             
             Object.keys(branchGroups).forEach(branchId => {
@@ -1308,7 +1317,6 @@
                     .filter(row => 
                         (row['Check'] === 'Check Stock') &&
                         (row['Status'] === 'Confirm' || row['Status'] === 'Draft') &&
-                        (row['Onhand'] != row['Counted']) &&
                         (row['Onhand'] != 0 && row['Counted'] != 0)
                     )
                     .sort((a, b) => new Date(b['Create Date']) - new Date(a['Create Date']));
@@ -1361,7 +1369,7 @@
         }
 
         function processICenterGroup(data) {
-            // iCenter: Same as AIS group - Check Stock, Status Confirm/Draft, Onhand != Counted != 0, latest by Create Date per Branch
+            // iCenter: Same as AIS group - Check Stock, Status Confirm/Draft, include all records to track branches
             const branchGroups = groupByBranch(data);
             
             Object.keys(branchGroups).forEach(branchId => {
@@ -1369,7 +1377,6 @@
                     .filter(row => 
                         (row['Check'] === 'Check Stock') &&
                         (row['Status'] === 'Confirm' || row['Status'] === 'Draft') &&
-                        (row['Onhand'] != row['Counted']) &&
                         (row['Onhand'] != 0 && row['Counted'] != 0)
                     )
                     .sort((a, b) => new Date(b['Create Date']) - new Date(a['Create Date']));
@@ -1381,7 +1388,7 @@
         }
 
         function processHeadOfficeGroup(data) {
-            // Head Office: Same as AIS group
+            // Head Office: Same as AIS group - Check Stock, Status Confirm/Draft, include all records to track branches
             const branchGroups = groupByBranch(data);
             
             Object.keys(branchGroups).forEach(branchId => {
@@ -1389,7 +1396,6 @@
                     .filter(row => 
                         (row['Check'] === 'Check Stock') &&
                         (row['Status'] === 'Confirm' || row['Status'] === 'Draft') &&
-                        (row['Onhand'] != row['Counted']) &&
                         (row['Onhand'] != 0 && row['Counted'] != 0)
                     )
                     .sort((a, b) => new Date(b['Create Date']) - new Date(a['Create Date']));
@@ -1602,10 +1608,22 @@
                     });
                 });
                 
+                // Count matches and discrepancies
+                const totalRecords = groupData.length;
+                const matchCount = groupData.filter(row => {
+                    const onhand = parseFloat(row['Onhand']) || 0;
+                    const counted = parseFloat(row['Counted']) || 0;
+                    return onhand === counted && onhand !== 0;
+                }).length;
+                const discrepancyCount = groupData.filter(row => {
+                    const diff = parseFloat(row['Diff']) || 0;
+                    return diff !== 0;
+                }).length;
+                
                 html += `
                     <div class="group-section">
                         <div class="group-header">
-                            ${groupName} (${groupData.length} รายการพบปัญหา)
+                            ${groupName} (${totalRecords} รายการ: ${matchCount} ตรงกัน, ${discrepancyCount} ไม่ตรงกัน)
                             ${sohData && sohData.length > 0 ? '<span style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; margin-left: 0.5rem;">📊 SOH Integrated</span>' : ''}
                         </div>
                         <div class="group-content">
@@ -1646,6 +1664,17 @@
                 if (groupData.length === 0) {
                     html += '<div class="no-data">ไม่พบข้อมูลที่ต้องตรวจสอบ</div>';
                 } else {
+                    // Add color legend
+                    html += `
+                        <div style="margin-bottom: 1rem; padding: 0.75rem; background-color: #f9fafb; border-radius: 0.5rem; font-size: 0.875rem;">
+                            <strong>สัญลักษณ์สี:</strong>
+                            <span style="display: inline-block; width: 12px; height: 12px; background-color: #22c55e; margin: 0 0.25rem; border-radius: 2px;"></span>
+                            <span style="color: #16a34a;">เขียว = Onhand = Count (ตรงกัน)</span> | 
+                            <span style="display: inline-block; width: 12px; height: 12px; background-color: #ef4444; margin: 0 0.25rem; border-radius: 2px;"></span>
+                            <span style="color: #dc2626;">แดง = Onhand ≠ Count (ไม่ตรงกัน)</span>
+                        </div>
+                    `;
+                    
                     html += `
                         <table class="data-table sortable-table">
                             <thead>
@@ -1665,12 +1694,23 @@
                     `;
 
                     groupData.forEach((row, index) => {
+                        const onhand = parseFloat(row['Onhand']) || 0;
+                        const counted = parseFloat(row['Counted']) || 0;
                         const diff = parseFloat(row['Diff']) || 0;
                         const isDiffRow = diff !== 0;
+                        const isMatchRow = onhand === counted && onhand !== 0;
                         const docNo = row['Doc No'] || '';
                         
+                        // Determine row class based on onhand vs counted comparison
+                        let rowClass = '';
+                        if (isMatchRow) {
+                            rowClass = 'match-row';
+                        } else if (isDiffRow) {
+                            rowClass = 'diff-row';
+                        }
+                        
                         html += `
-                            <tr class="${isDiffRow ? 'diff-row' : ''}" data-doc-no="${docNo}" data-group="${groupName}">
+                            <tr class="${rowClass}" data-doc-no="${docNo}" data-group="${groupName}">
                                 <td>${row['Create Date'] || ''}</td>
                                 <td class="${docNo ? 'clickable-doc' : ''}" 
                                     ${docNo ? `onclick="showDocDetail('${docNo}', '${groupName}')"` : ''}>
