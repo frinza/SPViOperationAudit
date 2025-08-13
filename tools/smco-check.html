@@ -2182,7 +2182,10 @@
                     button,
                     #uploadSection,
                     #sohUploadSection,
+                    #detailUploadSection,
                     .detail-upload-section,
+                    .detail-upload-area,
+                    .uploaded-files-list,
                     header,
                     nav,
                     .loading-overlay,
@@ -2254,6 +2257,17 @@
                 const summaryStats = contentClone.querySelector('#summaryStats');
                 if (summaryStats) {
                     summaryStats.style.marginBottom = '15px';
+                }
+
+                // Remove outer container styling completely for PDF
+                const mainContainer = contentClone.querySelector('.bg-white.rounded-xl.shadow-sm.border.border-gray-200');
+                if (mainContainer) {
+                    mainContainer.style.border = 'none';
+                    mainContainer.style.boxShadow = 'none';
+                    mainContainer.style.backgroundColor = 'transparent';
+                    mainContainer.style.borderRadius = '0';
+                    mainContainer.style.padding = '0';
+                    mainContainer.style.margin = '0';
                 }
 
                 // Append cleaned content to PDF container
