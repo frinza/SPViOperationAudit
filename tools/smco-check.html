@@ -2132,7 +2132,7 @@
                 // Create temporary div for PDF content with professional header
                 const pdfContent = document.createElement('div');
                 pdfContent.style.width = '210mm';
-                pdfContent.style.padding = '15mm 20mm';
+                pdfContent.style.padding = '10mm 12mm'; // Reduced padding for more content space
                 pdfContent.style.backgroundColor = 'white';
                 pdfContent.style.fontFamily = 'Sarabun, sans-serif';
                 pdfContent.style.fontSize = '12pt';
@@ -2217,6 +2217,12 @@
                         tab.remove(); // Remove other tabs (like byGroupTab)
                     }
                 });
+
+                // Add detail diff tables for branches with discrepancies
+                const detailDiffSection = generateDetailDiffSection();
+                if (detailDiffSection) {
+                    contentClone.appendChild(detailDiffSection);
+                }
 
                 // Improve table styling for PDF and make it fill A4 size
                 const tables = contentClone.querySelectorAll('.data-table');
@@ -2716,20 +2722,39 @@
 
                 let tableHtml = headerHtml;
 
-                diffRows.forEach(row => {
+                diffRows.forEach((row, index) => {
                     const isSOHUpdated = hasSOHData && row['Final OH'] !== undefined;
                     const rowClass = isSOHUpdated ? 'diff-row soh-updated' : 'diff-row';
                     const fullBranchName = getFullBranchName(row['Branch']);
+                    const rowId = `detail-row-${index}`;
                     
                     tableHtml += `
-                        <tr class="${rowClass}">
+                        <tr class="${rowClass}" id="${rowId}">
                             <td>${fullBranchName}</td>
                             <td>${row['SKU']}</td>
                             <td>${row['SKU Description']}</td>
                             <td>${row['OH']}</td>
-                            <td>${row['Scan']}</td>
-                            <td>${row['Diff']}</td>
-                            <td style="background-color: #fffbf0; font-style: ${row['Reason'] ? 'normal' : 'italic'}; color: ${row['Reason'] ? '#856404' : '#9ca3af'};">${row['Reason'] || 'No reason provided'}</td>`;
+                            <td>
+                                <input type="number" 
+                                       value="${row['Scan']}" 
+                                       data-original="${row['Scan']}"
+                                       data-row-index="${index}"
+                                       data-sku="${row['SKU']}"
+                                       data-field="Scan"
+                                       style="width: 80px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center;"
+                                       onchange="updateDetailDiff(this, '${docNo}', '${groupName}')">
+                            </td>
+                            <td id="diff-${index}" style="font-weight: bold; color: ${parseFloat(row['Diff']) < 0 ? '#dc2626' : parseFloat(row['Diff']) > 0 ? '#059669' : '#374151'};">${row['Diff']}</td>
+                            <td style="background-color: #fffbf0;">
+                                <input type="text" 
+                                       value="${row['Reason'] || ''}" 
+                                       data-row-index="${index}"
+                                       data-sku="${row['SKU']}"
+                                       data-field="Reason"
+                                       placeholder="เหตุผลความแตกต่าง..."
+                                       style="width: 200px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; background-color: #fffbf0;"
+                                       onchange="updateDetailReason(this, '${docNo}', '${groupName}')">
+                            </td>`;
                     
                     if (hasSOHData) {
                         const finalOH = row['Final OH'] !== undefined ? row['Final OH'] : '-';
@@ -2926,6 +2951,295 @@
             // Save file
             const fileName = `SMCO_All_Groups_Data_${new Date().toISOString().split('T')[0]}.xlsx`;
             XLSX.writeFile(wb, fileName);
+        }
+
+        // Functions to handle manual detail updates
+        function updateDetailDiff(inputElement, docNo, groupName) {
+            const rowIndex = parseInt(inputElement.getAttribute('data-row-index'));
+            const skuToUpdate = inputElement.getAttribute('data-sku');
+            const newScanValue = parseFloat(inputElement.value) || 0;
+            
+            // Find and update the data in detailFiles
+            const groupDetails = detailFiles[groupName];
+            if (groupDetails && groupDetails[docNo]) {
+                const detailData = groupDetails[docNo].data;
+                
+                // Find the target row by SKU (more reliable than filtered index)
+                const targetRow = detailData.find(row => row['SKU'] === skuToUpdate);
+                
+                if (targetRow) {
+                    // Update the Scan value
+                    targetRow['Scan'] = newScanValue;
+                    
+                    // Recalculate Diff
+                    const oh = parseFloat(targetRow['OH']) || 0;
+                    const newDiff = newScanValue - oh;
+                    targetRow['Diff'] = newDiff;
+                    
+                    // Update the visual diff cell
+                    const diffCell = document.getElementById(`diff-${rowIndex}`);
+                    if (diffCell) {
+                        diffCell.textContent = newDiff;
+                        diffCell.style.color = newDiff < 0 ? '#dc2626' : newDiff > 0 ? '#059669' : '#374151';
+                    }
+                    
+                    console.log(`Updated ${targetRow['SKU']}: Scan=${newScanValue}, Diff=${newDiff}`);
+                }
+            }
+        }
+        
+        function updateDetailReason(inputElement, docNo, groupName) {
+            const skuToUpdate = inputElement.getAttribute('data-sku');
+            const newReason = inputElement.value;
+            
+            // Find and update the data in detailFiles
+            const groupDetails = detailFiles[groupName];
+            if (groupDetails && groupDetails[docNo]) {
+                const detailData = groupDetails[docNo].data;
+                
+                // Find the target row by SKU (more reliable than filtered index)
+                const targetRow = detailData.find(row => row['SKU'] === skuToUpdate);
+                
+                if (targetRow) {
+                    targetRow['Reason'] = newReason;
+                    
+                    console.log(`Updated reason for ${targetRow['SKU']}: ${newReason}`);
+                }
+            }
+        }
+
+        // Function to generate detail diff section for PDF export
+        function generateDetailDiffSection() {
+            if (Object.keys(detailFiles).length === 0) {
+                return null;
+            }
+
+            const detailSection = document.createElement('div');
+            detailSection.style.pageBreakBefore = 'always';
+            detailSection.style.marginTop = '40px';
+            
+            // Add section header
+            const sectionHeader = document.createElement('h2');
+            sectionHeader.textContent = 'รายละเอียดความแตกต่างแยกตามสาขา (Detail Discrepancies by Branch)';
+            sectionHeader.style.fontSize = '16pt';
+            sectionHeader.style.fontWeight = 'bold';
+            sectionHeader.style.color = '#1e40af';
+            sectionHeader.style.borderBottom = '2px solid #3b82f6';
+            sectionHeader.style.paddingBottom = '10px';
+            sectionHeader.style.marginBottom = '20px';
+            detailSection.appendChild(sectionHeader);
+
+            // Collect all discrepancy data by branch
+            const branchDiscrepancies = {};
+            const hasSOHData = sohData && sohData.length > 0;
+
+            Object.keys(detailFiles).forEach(groupName => {
+                Object.keys(detailFiles[groupName]).forEach(docNo => {
+                    const detailData = detailFiles[groupName][docNo].data;
+                    
+                    // Filter only SKUs with negative differences (Diff < 0 only)
+                    const discrepancyRows = detailData.filter(row => {
+                        const diff = parseFloat(row['Diff']) || 0;
+                        if (diff >= 0) return false;
+                        
+                        if (hasSOHData) {
+                            const finalOH = row['Final OH'];
+                            if (finalOH === 0 || finalOH === '' || finalOH === '-' || finalOH === undefined) {
+                                return false;
+                            }
+                        }
+                        
+                        if (groupName === 'iCenter') {
+                            const skuDesc = (row['SKU Description'] || '').toString().toUpperCase();
+                            if (skuDesc.includes('GLUE') || skuDesc.includes('ADHESIVE')) {
+                                return false;
+                            }
+                        }
+                        
+                        return true;
+                    });
+
+                    discrepancyRows.forEach(row => {
+                        const branchName = getFullBranchName(row['Branch']);
+                        if (!branchDiscrepancies[branchName]) {
+                            branchDiscrepancies[branchName] = {
+                                group: groupName,
+                                docNo: docNo,
+                                items: []
+                            };
+                        }
+                        branchDiscrepancies[branchName].items.push(row);
+                    });
+                });
+            });
+
+            // Generate tables for each branch with discrepancies
+            const branchNames = Object.keys(branchDiscrepancies).sort();
+            
+            if (branchNames.length === 0) {
+                const noDataDiv = document.createElement('div');
+                noDataDiv.style.textAlign = 'center';
+                noDataDiv.style.padding = '20px';
+                noDataDiv.style.color = '#666';
+                noDataDiv.style.fontStyle = 'italic';
+                noDataDiv.textContent = 'ไม่พบรายการที่มีความแตกต่าง';
+                detailSection.appendChild(noDataDiv);
+                return detailSection;
+            }
+
+            branchNames.forEach(branchName => {
+                const branchData = branchDiscrepancies[branchName];
+                
+                // Branch header
+                const branchHeader = document.createElement('div');
+                branchHeader.style.marginTop = '25px';
+                branchHeader.style.marginBottom = '15px';
+                branchHeader.style.pageBreakAfter = 'avoid';
+                
+                const branchTitle = document.createElement('h3');
+                branchTitle.textContent = `${branchName} (${branchData.group}) - ${branchData.items.length} รายการ`;
+                branchTitle.style.fontSize = '12pt';
+                branchTitle.style.fontWeight = 'bold';
+                branchTitle.style.color = '#1e40af';
+                branchTitle.style.margin = '0 0 5px 0';
+                
+                const docInfo = document.createElement('p');
+                docInfo.textContent = `Doc No: ${branchData.docNo}`;
+                docInfo.style.fontSize = '10pt';
+                docInfo.style.color = '#666';
+                docInfo.style.margin = '0';
+                
+                branchHeader.appendChild(branchTitle);
+                branchHeader.appendChild(docInfo);
+                detailSection.appendChild(branchHeader);
+
+                // Create table
+                const table = document.createElement('table');
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                table.style.fontSize = '9pt';
+                table.style.marginBottom = '20px';
+                table.style.pageBreakInside = 'avoid';
+                table.style.border = '1px solid #ddd';
+                table.style.tableLayout = 'fixed'; // Force consistent column widths
+
+                // Table header
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                headerRow.style.backgroundColor = '#f5f5f5';
+                
+                const headers = ['SKU', 'SKU Description', 'OH', 'Scan', 'Diff', 'Reason'];
+                if (hasSOHData) {
+                    headers.push('Final OH');
+                }
+                
+                // Define consistent column widths - optimized for better content display
+                const columnWidths = hasSOHData ? 
+                    ['15%', '29%', '6%', '6%', '6%', '32%', '6%'] :  // With SOH data - reduced numeric columns, increased Reason
+                    ['18%', '38%', '6%', '6%', '6%', '26%'];         // Without SOH data - reduced numeric columns, increased Reason
+                
+                headers.forEach((headerText, index) => {
+                    const th = document.createElement('th');
+                    th.textContent = headerText;
+                    th.style.border = '1px solid #ddd';
+                    th.style.padding = '6px';
+                    th.style.fontSize = '9pt';
+                    th.style.fontWeight = 'bold';
+                    
+                    // Set text alignment based on column type
+                    if (headerText === 'OH' || headerText === 'Scan' || headerText === 'Diff' || headerText === 'Final OH') {
+                        th.style.textAlign = 'center'; // Center align numeric columns
+                    } else {
+                        th.style.textAlign = 'left'; // Left align text columns
+                    }
+                    
+                    th.style.width = columnWidths[index]; // Set consistent width
+                    th.style.overflow = 'hidden';
+                    th.style.textOverflow = 'ellipsis';
+                    th.style.whiteSpace = 'nowrap';
+                    
+                    if (headerText === 'Reason') {
+                        th.style.backgroundColor = '#fff3cd';
+                        th.style.color = '#856404';
+                        th.style.whiteSpace = 'normal'; // Allow wrapping for reason column
+                    }
+                    headerRow.appendChild(th);
+                });
+                
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                // Table body
+                const tbody = document.createElement('tbody');
+                
+                branchData.items.forEach(row => {
+                    const tr = document.createElement('tr');
+                    
+                    const cells = [
+                        row['SKU'] || '',
+                        row['SKU Description'] || '',
+                        row['OH'] || '0',
+                        row['Scan'] || '0',
+                        row['Diff'] || '0',
+                        row['Reason'] || 'ไม่ระบุเหตุผล'
+                    ];
+                    
+                    if (hasSOHData) {
+                        cells.push(row['Final OH'] !== undefined ? row['Final OH'] : '-');
+                    }
+                    
+                    cells.forEach((cellText, index) => {
+                        const td = document.createElement('td');
+                        td.textContent = cellText;
+                        td.style.border = '1px solid #ddd';
+                        td.style.padding = '6px';
+                        td.style.fontSize = '9pt';
+                        td.style.lineHeight = '1.2';
+                        td.style.overflow = 'hidden';
+                        td.style.textOverflow = 'ellipsis';
+                        td.style.whiteSpace = 'nowrap';
+                        
+                        // Special styling for specific columns
+                        if (index === 0) { // SKU column
+                            td.style.fontFamily = 'monospace'; // Better for SKU codes
+                            td.style.textAlign = 'left';
+                        } else if (index === 1) { // SKU Description column
+                            td.style.whiteSpace = 'normal'; // Allow wrapping for descriptions
+                            td.style.wordWrap = 'break-word';
+                            td.style.textAlign = 'left';
+                        } else if (index === 2 || index === 3 || index === 4) { // OH, Scan, Diff columns
+                            td.style.textAlign = 'center';
+                            td.style.fontWeight = 'bold';
+                        } else if (index === 5) { // Reason column
+                            td.style.backgroundColor = '#fffbf0';
+                            td.style.fontStyle = cellText === 'ไม่ระบุเหตุผล' ? 'italic' : 'normal';
+                            td.style.color = cellText === 'ไม่ระบุเหตุผล' ? '#9ca3af' : '#856404';
+                            td.style.whiteSpace = 'normal'; // Allow wrapping for reason
+                            td.style.wordWrap = 'break-word';
+                            td.style.textAlign = 'left'; // Keep reason text left-aligned for readability
+                        } else if (hasSOHData && index === 6) { // Final OH column
+                            td.style.backgroundColor = '#f0f8f0';
+                            td.style.fontWeight = row['Final OH'] !== undefined ? 'bold' : 'normal';
+                            td.style.textAlign = 'center';
+                        }
+                        
+                        // Apply special color for Diff column values
+                        if (index === 4) { // Diff column
+                            const diff = parseFloat(cellText) || 0;
+                            td.style.color = diff < 0 ? '#dc2626' : diff > 0 ? '#059669' : '#374151';
+                        }
+                        
+                        tr.appendChild(td);
+                    });
+                    
+                    tbody.appendChild(tr);
+                });
+                
+                table.appendChild(tbody);
+                detailSection.appendChild(table);
+            });
+
+            return detailSection;
         }
 
     </script>
