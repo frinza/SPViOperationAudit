@@ -2751,7 +2751,7 @@
                                        data-row-index="${index}"
                                        data-sku="${row['SKU']}"
                                        data-field="Reason"
-                                       placeholder="เหตุผลความแตกต่าง..."
+                                       placeholder="ระบุเหตุผล..."
                                        style="width: 200px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; background-color: #fffbf0;"
                                        onchange="updateDetailReason(this, '${docNo}', '${groupName}')">
                             </td>`;
@@ -3020,7 +3020,7 @@
             
             // Add section header
             const sectionHeader = document.createElement('h2');
-            sectionHeader.textContent = 'รายละเอียดความแตกต่างแยกตามสาขา (Detail Discrepancies by Branch)';
+            sectionHeader.textContent = 'รายละเอียดผลต่างแยกตามสาขา (Discrepancies by Branch)';
             sectionHeader.style.fontSize = '16pt';
             sectionHeader.style.fontWeight = 'bold';
             sectionHeader.style.color = '#1e40af';
