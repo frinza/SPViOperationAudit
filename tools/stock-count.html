@@ -3573,32 +3573,46 @@ def calculate_serial_sku_score(text, pattern_type):
                     sohUpdatedSkus: new Set(), // Track SKUs that had SOH updated
                 };
             }
-            
-            function showLoader(message = "Processing...") { 
-                getEl('loader-message').textContent = message;
-                getEl('loader-overlay').classList.remove('hidden'); 
+              function showLoader(message = "Processing...") { 
+                const loaderMessageEl = getEl('loader-message');
+                const loaderOverlayEl = getEl('loader-overlay');
+                if (loaderMessageEl) loaderMessageEl.textContent = message;
+                if (loaderOverlayEl) loaderOverlayEl.classList.remove('hidden'); 
             }
-            function hideLoader() { getEl('loader-overlay').classList.add('hidden'); }
-            
-            function showModal(title, message, options = {}) {
-                getEl('modal-title').textContent = title;
-                getEl('modal-message').innerHTML = message;
+            function hideLoader() { 
+                const loaderOverlayEl = getEl('loader-overlay');
+                if (loaderOverlayEl) loaderOverlayEl.classList.add('hidden'); 
+            }
+              function showModal(title, message, options = {}) {
+                const modalTitleEl = getEl('modal-title');
+                const modalMessageEl = getEl('modal-message');
                 const confirmBtn = getEl('modal-confirm-btn');
                 const cancelBtn = getEl('modal-cancel-btn');
-                confirmBtn.textContent = options.confirmText || 'OK';
-                confirmBtn.onclick = () => { hideModal(); if (options.onConfirm) options.onConfirm(); };
-                cancelBtn.classList.toggle('hidden', !options.onCancel);
-                if (options.onCancel) {
-                    cancelBtn.textContent = options.cancelText || 'Cancel';
-                    cancelBtn.onclick = () => { hideModal(); options.onCancel(); };
+                const modalContainerEl = getEl('modal-container');
+                const modalBoxEl = getEl('modal-box');
+                
+                if (modalTitleEl) modalTitleEl.textContent = title;
+                if (modalMessageEl) modalMessageEl.innerHTML = message;
+                if (confirmBtn) {
+                    confirmBtn.textContent = options.confirmText || 'OK';
+                    confirmBtn.onclick = () => { hideModal(); if (options.onConfirm) options.onConfirm(); };
                 }
-                getEl('modal-container').classList.remove('hidden');
-                setTimeout(() => getEl('modal-box').classList.add('scale-100', 'opacity-100'), 10);
+                if (cancelBtn) {
+                    cancelBtn.classList.toggle('hidden', !options.onCancel);
+                    if (options.onCancel) {
+                        cancelBtn.textContent = options.cancelText || 'Cancel';
+                        cancelBtn.onclick = () => { hideModal(); options.onCancel(); };
+                    }
+                }
+                if (modalContainerEl) modalContainerEl.classList.remove('hidden');
+                if (modalBoxEl) setTimeout(() => modalBoxEl.classList.add('scale-100', 'opacity-100'), 10);
             }
 
             function hideModal() {
-                getEl('modal-box').classList.add('scale-95', 'opacity-0');
-                setTimeout(() => getEl('modal-container').classList.add('hidden'), 200);
+                const modalBoxEl = getEl('modal-box');
+                const modalContainerEl = getEl('modal-container');
+                if (modalBoxEl) modalBoxEl.classList.add('scale-95', 'opacity-0');
+                if (modalContainerEl) setTimeout(() => modalContainerEl.classList.add('hidden'), 200);
             }
 
             let saveStatusTimeout;
@@ -3610,15 +3624,24 @@ def calculate_serial_sku_score(text, pattern_type):
                 if (!isWarning) {
                     saveStatusTimeout = setTimeout(() => statusEl.classList.add('opacity-0'), 3000);
                 }
-            }
-            function updateInfoBox() {
-                if (state.branchName) {
-                    getEl('info-branch-code').textContent = state.branchCode || '';
-                    getEl('info-branch-name').textContent = state.branchName;
-                    getEl('info-count-date').textContent = state.countDate;
-                    getEl('info-box-container').classList.remove('hidden');
-                } else {
-                    getEl('info-box-container').classList.add('hidden');
+            }            function updateInfoBox() {
+                try {
+                    if (state.branchName) {
+                        const branchCodeEl = getEl('info-branch-code');
+                        const branchNameEl = getEl('info-branch-name');
+                        const countDateEl = getEl('info-count-date');
+                        const containerEl = getEl('info-box-container');
+                        
+                        if (branchCodeEl) branchCodeEl.textContent = state.branchCode || '';
+                        if (branchNameEl) branchNameEl.textContent = state.branchName;
+                        if (countDateEl) countDateEl.textContent = state.countDate;
+                        if (containerEl) containerEl.classList.remove('hidden');
+                    } else {
+                        const containerEl = getEl('info-box-container');
+                        if (containerEl) containerEl.classList.add('hidden');
+                    }
+                } catch (error) {
+                    console.warn('Error updating info box:', error);
                 }
             }
             function resetAppState() {
@@ -3649,31 +3672,48 @@ def calculate_serial_sku_score(text, pattern_type):
                     preprocessing: 'enhanced',
                     speed: 800
                 };
-            }
-            function resetUI() {
+            }            function resetUI() {
                 // Hide/show main containers
-                getEl('workspace-container').classList.add('hidden');
-                getEl('final-report-container').classList.add('hidden');
-                getEl('upload-container').classList.remove('hidden');
-                  // Clear all file inputs
+                const workspaceContainerEl = getEl('workspace-container');
+                const finalReportContainerEl = getEl('final-report-container');
+                const uploadContainerEl = getEl('upload-container');
+                
+                if (workspaceContainerEl) workspaceContainerEl.classList.add('hidden');
+                if (finalReportContainerEl) finalReportContainerEl.classList.add('hidden');
+                if (uploadContainerEl) uploadContainerEl.classList.remove('hidden');
+                
+                // Clear all file inputs
                 ['initialSohFile', 'firstScanLogfile', 'secondScanLogfile', 'latestSohFile', 'salesDataFile', 'firstMasterFile', 'secondMasterFile'].forEach(id => {
                     const el = getEl(id);
                     if (el) el.value = '';
                 });
                 
                 // Reset file name displays
-                getEl('initialSohFileName').textContent = '(.xlsx, .csv)';
-                getEl('latestSohFileName').textContent = '';
+                const initialSohFileNameEl = getEl('initialSohFileName');
+                const latestSohFileNameEl = getEl('latestSohFileName');
+                if (initialSohFileNameEl) initialSohFileNameEl.textContent = '(.xlsx, .csv)';
+                if (latestSohFileNameEl) latestSohFileNameEl.textContent = '';
                 
                 // Hide info box and result containers
-                getEl('info-box-container').classList.add('hidden');
-                getEl('step2-results').classList.add('hidden');
-                getEl('sales-processing-results').classList.add('hidden');                // Clear result container contents
-                getEl('netdiff-summary-container').innerHTML = '';
-                getEl('demo-count-container').innerHTML = '';
-                getEl('demo-summary').innerHTML = '';
-                getEl('final-report-table-container').innerHTML = '';
-                getEl('final-summary').innerHTML = '';
+                const infoBoxEl = getEl('info-box-container');
+                const step2ResultsEl = getEl('step2-results');
+                const salesProcessingEl = getEl('sales-processing-results');
+                
+                if (infoBoxEl) infoBoxEl.classList.add('hidden');
+                if (step2ResultsEl) step2ResultsEl.classList.add('hidden');                if (salesProcessingEl) salesProcessingEl.classList.add('hidden');
+                
+                // Clear result container contents
+                const netdiffSummaryEl = getEl('netdiff-summary-container');
+                const demoCountEl = getEl('demo-count-container');
+                const demoSummaryEl = getEl('demo-summary');
+                const finalReportTableEl = getEl('final-report-table-container');
+                const finalSummaryEl = getEl('final-summary');
+                
+                if (netdiffSummaryEl) netdiffSummaryEl.innerHTML = '';
+                if (demoCountEl) demoCountEl.innerHTML = '';
+                if (demoSummaryEl) demoSummaryEl.innerHTML = '';
+                if (finalReportTableEl) finalReportTableEl.innerHTML = '';
+                if (finalSummaryEl) finalSummaryEl.innerHTML = '';
                 
                 // Clear floating scanner results
                 const floatingResults = getEl('floating-scanner-results');
@@ -3684,15 +3724,22 @@ def calculate_serial_sku_score(text, pattern_type):
                 if (floatingScanner && floatingScanner.classList.contains('active')) {
                     closeFloatingScanner();
                 }
+                  // Reset button states
+                const downloadBtn = getEl('downloadMasterForScan');
+                const processFirstBtn = getEl('processFirstCount');
+                const finalizeBtn = getEl('finalizeFromFirstCount');
+                const generateRecountBtn = getEl('generateRecountMasterFile');
+                const processSecondBtn = getEl('processSecondCount');
+                const processSalesBtn = getEl('processSalesData');
+                const latestSohBtn = getEl('latestSohFile');
                 
-                // Reset button states
-                getEl('downloadMasterForScan').disabled = true;
-                getEl('processFirstCount').disabled = true;
-                getEl('finalizeFromFirstCount').disabled = true;
-                getEl('generateRecountMasterFile').disabled = true;                
-                getEl('processSecondCount').disabled = true;
-                getEl('processSalesData').disabled = true;
-                getEl('latestSohFile').disabled = true;
+                if (downloadBtn) downloadBtn.disabled = true;
+                if (processFirstBtn) processFirstBtn.disabled = true;
+                if (finalizeBtn) finalizeBtn.disabled = true;
+                if (generateRecountBtn) generateRecountBtn.disabled = true;
+                if (processSecondBtn) processSecondBtn.disabled = true;
+                if (processSalesBtn) processSalesBtn.disabled = true;
+                if (latestSohBtn) latestSohBtn.disabled = true;
                 
                 // Reset search inputs
                 const demoSearchInput = getEl('demoSearchInput');
@@ -4001,6 +4048,10 @@ def calculate_serial_sku_score(text, pattern_type):
                 
                 console.log(`Branch: ${targetBranchName}, iCenter: ${isICenter}, iStudio: ${isIStudio}, Advanced Mode: ${useAdvancedMode}`);
                 
+                if (useAdvancedMode) {
+                    console.log(`Enhanced SPP filtering active for ${isICenter ? 'iCenter' : 'iStudio'} branch (CLASS_CODE, SUBCLASS_CODE detection enabled)`);
+                }
+                
                 // Step 3: Filter by warehouse and apply transformations
                 let processedData = sohData.filter(row => row.WH_CODE === targetWhCode);
                 
@@ -4069,11 +4120,15 @@ def calculate_serial_sku_score(text, pattern_type):
                     const qty = parseInt(String(row.AVAILABLE_QTY ?? 0).replace(/,/g, ''), 10);                    
                     const srpRaw = row.SRP_AMT_INC_VAT;
                     const srp = srpRaw === null || srpRaw === undefined || srpRaw === '' ? 0 : parseFloat(String(srpRaw).replace(/,/g, ''));
-                    
-                    // Enhanced categorization for advanced mode
+                      // Enhanced categorization for advanced mode
                     let category = 'REGULAR';
                     if (useAdvancedMode) {
-                        category = determineAdvancedCategory(row, isDemo, isIStudio);
+                        // Add branch type to row for enhanced detection
+                        const rowWithBranchType = {
+                            ...row,
+                            branchType: isICenter ? 'iCenter' : 'iStudio'
+                        };
+                        category = determineAdvancedCategory(rowWithBranchType, isDemo, isIStudio);
                     }
                     
                     // Aggregation logic (Power Query sequence step 6)
@@ -4103,9 +4158,10 @@ def calculate_serial_sku_score(text, pattern_type):
                             branchType: useAdvancedMode ? (isICenter ? 'iCenter' : 'iStudio') : 'Standard'
                         };
                     }
-                });
-                // Final separation logic (Power Query sequence step 7)
+                });                // Final separation logic (Power Query sequence step 7)
                 const forSpp = { spareParts: [], glue: [], tools: [] };
+                let sppStats = { glue: 0, tools: 0, spareParts: 0 };
+                
                 Object.values(lookup).forEach(item => {
                     if (item.SOH > 0) {
                         if (item.isDemo || item.category === 'DEMO') {
@@ -4114,18 +4170,30 @@ def calculate_serial_sku_score(text, pattern_type):
                             // Separate SPP items by category for iCenter/iStudio branches
                             if (item.category === 'SPP_GLUE_ADHESIVE') {
                                 forSpp.glue.push(item);
+                                sppStats.glue++;
                             } else if (item.category === 'SPP_TOOLS' || item.category === 'SPP_SLED_FIXTURE') {
                                 // Both SPP_TOOLS and legacy SPP_SLED_FIXTURE go to tools section
                                 forSpp.tools.push(item);
+                                sppStats.tools++;
                             } else {
                                 // SPP_OTHER goes to spare parts
                                 forSpp.spareParts.push(item);
+                                sppStats.spareParts++;
                             }
                         } else {
                             forScan.push(item);
                         }
                     }
                 });
+                
+                // Log SPP categorization summary for advanced branches
+                if (useAdvancedMode && (sppStats.glue > 0 || sppStats.tools > 0 || sppStats.spareParts > 0)) {
+                    console.log(`SPP Categorization Summary for ${isICenter ? 'iCenter' : 'iStudio'} branch:`);
+                    console.log(`  - GLUE/ADHESIVE items: ${sppStats.glue}`);
+                    console.log(`  - TOOLS items: ${sppStats.tools}`);  
+                    console.log(`  - OTHER SPP items: ${sppStats.spareParts}`);
+                    console.log(`  - Enhanced SOH-based detection active`);
+                }
                 
                 return { forScan, forDemo, forSpp, lookup };
             }              
@@ -4212,26 +4280,79 @@ def calculate_serial_sku_score(text, pattern_type):
                 }
                 
                 return transformed;
-            }
-            
-            function determineAdvancedCategory(row, isDemo, isIStudio) {
+            }            function determineAdvancedCategory(row, isDemo, isIStudio) {
                 if (isDemo) return 'DEMO';
                 
                 const groupCode = String(row.GROUP_CODE || '').toUpperCase();
                 const subclassCode = String(row.SUBCLASS_CODE || '').toUpperCase();
+                const classCode = String(row.CLASS_CODE || '').toUpperCase();
                 const desc = String(row.DESCRIPTION || '').toUpperCase();
-                  // Special categorization for iStudio SPP items
-                if (isIStudio && groupCode.includes('SPP')) {
-                    if (desc.includes('GLUE') || desc.includes('ADHESIVE')) {
+                const sku = String(row.SKU || '').toUpperCase();
+                
+                // Determine if this is an iCenter branch (since isICenter isn't passed to this function)
+                const branchType = row.branchType || 'Standard';
+                const isICenter = branchType === 'iCenter';
+                
+                // Enhanced categorization for both iStudio and iCenter SPP items with SOH-based detection
+                if ((isIStudio || isICenter) && groupCode.includes('SPP')) {
+                    // Enhanced GLUE/ADHESIVE detection using SOH data
+                    if (shouldExcludeFromSPP(sku, desc, classCode, subclassCode, 'GLUE_ADHESIVE')) {
                         return 'SPP_GLUE_ADHESIVE';
                     }
-                    if (desc.includes('SLED') || desc.includes('FIXTURE') || subclassCode === 'OTH' || desc.includes('TOOL')) {
+                    
+                    // Enhanced TOOLS detection using SOH data  
+                    if (shouldExcludeFromSPP(sku, desc, classCode, subclassCode, 'TOOLS')) {
                         return 'SPP_TOOLS';
                     }
+                    
                     return 'SPP_OTHER';
                 }
                 
                 return 'REGULAR';
+            }
+              // Enhanced SPP filtering function using SOH data (similar to SMCO Check tool)
+            // Supports both iCenter and iStudio branches with CLASS_CODE and SUBCLASS_CODE detection
+            function shouldExcludeFromSPP(sku, description, classCode, subclassCode, category) {
+                // Enhanced detection criteria based on SOH data
+                if (classCode && subclassCode) {
+                    // SOH-based detection criteria
+                    if (category === 'GLUE_ADHESIVE') {
+                        if (classCode === 'SP-GLUE' || 
+                            subclassCode === 'ADHS-DP' || 
+                            subclassCode === 'ADHS') {
+                            console.log(`SPP filtering (SOH): Excluding SKU ${sku} for ${category} - CLASS_CODE: ${classCode}, SUBCLASS_CODE: ${subclassCode}`);
+                            return true;
+                        }
+                    }
+                    
+                    if (category === 'TOOLS') {
+                        if (subclassCode === 'OTH') {
+                            console.log(`SPP filtering (SOH): Excluding SKU ${sku} for ${category} - SUBCLASS_CODE: ${subclassCode}`);
+                            return true;
+                        }
+                    }
+                }
+                
+                // Fallback to description-based detection
+                const desc = (description || '').toString().toUpperCase();
+                
+                if (category === 'GLUE_ADHESIVE') {
+                    const shouldExclude = desc.includes('GLUE') || desc.includes('ADHESIVE');
+                    if (shouldExclude) {
+                        console.log(`SPP filtering (fallback): Excluding SKU ${sku} for ${category} - description contains GLUE/ADHESIVE`);
+                    }
+                    return shouldExclude;
+                }
+                
+                if (category === 'TOOLS') {
+                    const shouldExclude = desc.includes('SLED') || desc.includes('FIXTURE') || desc.includes('TOOL');
+                    if (shouldExclude) {
+                        console.log(`SPP filtering (fallback): Excluding SKU ${sku} for ${category} - description contains TOOLS keywords`);
+                    }
+                    return shouldExclude;
+                }
+                
+                return false;
             }
             function restoreState(loadedState) {
                 resetAppState();

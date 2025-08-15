@@ -953,9 +953,12 @@
                         throw new Error(`ไฟล์ SOH ขาดคอลัมน์ที่จำเป็น: ${missingColumns.join(', ')}`);
                     }
 
-                    // Check for SUBCLASS_CODE column (needed for iCenter filtering)
+                    // Check for SUBCLASS_CODE and CLASS_CODE columns (needed for enhanced iCenter filtering)
                     if (!('SUBCLASS_CODE' in firstRow)) {
-                        console.warn('ไฟล์ SOH ไม่มีคอลัมน์ SUBCLASS_CODE - การกรองข้อมูล iCenter อาจไม่ทำงาน');
+                        console.warn('ไฟล์ SOH ไม่มีคอลัมน์ SUBCLASS_CODE - การกรองข้อมูล iCenter อาจใช้ fallback method');
+                    }
+                    if (!('CLASS_CODE' in firstRow)) {
+                        console.warn('ไฟล์ SOH ไม่มีคอลัมน์ CLASS_CODE - การกรองข้อมูล iCenter อาจใช้ fallback method');
                     }
 
                     // Check if detail files exist
@@ -1014,6 +1017,51 @@
 
         // SOH data storage
         let sohData = [];
+
+        // Enhanced iCenter filtering function using SOH data
+        function shouldExcludeFromiCenter(sku, skuDescription) {
+            // Fallback to original description-based detection if no SOH data
+            if (!sohData || sohData.length === 0) {
+                const skuDesc = (skuDescription || '').toString().toUpperCase();
+                const shouldExclude = skuDesc.includes('GLUE') || skuDesc.includes('ADHESIVE');
+                if (shouldExclude) {
+                    console.log(`iCenter filtering (fallback): Excluding SKU ${sku} - description contains GLUE/ADHESIVE`);
+                }
+                return shouldExclude;
+            }
+            
+            // Find matching SOH record for this SKU
+            const sohRecord = sohData.find(sohRow => {
+                const sohSku = (sohRow['SKU'] || '').toString().trim();
+                const detailSku = (sku || '').toString().trim();
+                return sohSku === detailSku;
+            });
+            
+            if (sohRecord) {
+                // Check SOH-based criteria
+                const classCode = (sohRecord['CLASS_CODE'] || '').toString().trim().toUpperCase();
+                const subclassCode = (sohRecord['SUBCLASS_CODE'] || '').toString().trim().toUpperCase();
+                
+                // Enhanced detection criteria
+                if (classCode === 'SP-GLUE' || 
+                    subclassCode === 'ADHS-DP' || 
+                    subclassCode === 'ADHS' ||
+                    subclassCode === 'OTH') {
+                    console.log(`iCenter filtering (SOH): Excluding SKU ${sku} - CLASS_CODE: ${classCode}, SUBCLASS_CODE: ${subclassCode}`);
+                    return true; // Exclude this item
+                }
+                
+                return false; // Include this item
+            } else {
+                // No SOH record found, fallback to description-based detection
+                const skuDesc = (skuDescription || '').toString().toUpperCase();
+                const shouldExclude = skuDesc.includes('GLUE') || skuDesc.includes('ADHESIVE');
+                if (shouldExclude) {
+                    console.log(`iCenter filtering (no SOH match): Excluding SKU ${sku} - description contains GLUE/ADHESIVE`);
+                }
+                return shouldExclude;
+            }
+        }
 
         function updateDetailFilesWithSOH(sohJsonData) {
             sohData = sohJsonData;
@@ -1135,6 +1183,7 @@
                 if (totalRemovals > 0) {
                     summaryMessage += `, กรองออก ${totalRemovals} รายการ (iCenter SUBCLASS_CODE = OTH)`;
                 }
+                summaryMessage += ` | Enhanced iCenter filtering active (CLASS_CODE, SUBCLASS_CODE detection)`;
                 showSOHStatus('success', summaryMessage);
             }, 500);
         }
@@ -1918,10 +1967,9 @@
                             }
                         }
                         
-                        // Additional filter for iCenter group: exclude GLUE and ADHESIVE
+                        // Enhanced filter for iCenter group using SOH data
                         if (groupName === 'iCenter') {
-                            const skuDesc = (row['SKU Description'] || '').toString().toUpperCase();
-                            if (skuDesc.includes('GLUE') || skuDesc.includes('ADHESIVE')) {
+                            if (shouldExcludeFromiCenter(row['SKU'], row['SKU Description'])) {
                                 return false;
                             }
                         }
@@ -2403,7 +2451,7 @@
                     }
 
                     // Filter data: OH <> 0 and SKU/SKU Description not contain DEMO and SKU not end with -D
-                    // For iCenter group, also filter out SKUs with GLUE or ADHESIVE in SKU Description
+                    // For iCenter group, also filter out SKUs with enhanced SOH-based detection
                     const filteredData = jsonData.filter(row => {
                         const oh = parseFloat(row['OH']) || 0;
                         const sku = (row['SKU'] || '').toString().toUpperCase();
@@ -2412,9 +2460,9 @@
                         // Basic filter: OH not 0, no DEMO, and SKU doesn't end with -D
                         let shouldInclude = oh !== 0 && !sku.includes('DEMO') && !skuDesc.includes('DEMO') && !sku.endsWith('-D');
                         
-                        // Additional filter for iCenter group: exclude GLUE and ADHESIVE
+                        // Enhanced filter for iCenter group using SOH data
                         if (shouldInclude && groupName === 'iCenter') {
-                            shouldInclude = !skuDesc.includes('GLUE') && !skuDesc.includes('ADHESIVE');
+                            shouldInclude = !shouldExcludeFromiCenter(row['SKU'], row['SKU Description']);
                         }
                         
                         return shouldInclude;
@@ -2662,7 +2710,7 @@
             
             // Filter to show only rows with negative differences (Diff < 0 only)
             // Also filter out rows where Final OH is 0 or blank when SOH data is available
-            // For iCenter group, also filter out SKUs with GLUE or ADHESIVE in SKU Description
+            // For iCenter group, also filter out SKUs with enhanced SOH-based detection
             const diffRows = detailData.data.filter(row => {
                 const diff = parseFloat(row['Diff']) || 0;
                 // Only show negative differences (shortages/undercounts)
@@ -2677,10 +2725,9 @@
                     }
                 }
                 
-                // Additional filter for iCenter group: exclude GLUE and ADHESIVE
+                // Enhanced filter for iCenter group using SOH data
                 if (groupName === 'iCenter') {
-                    const skuDesc = (row['SKU Description'] || '').toString().toUpperCase();
-                    if (skuDesc.includes('GLUE') || skuDesc.includes('ADHESIVE')) {
+                    if (shouldExcludeFromiCenter(row['SKU'], row['SKU Description'])) {
                         return false;
                     }
                 }
@@ -3050,8 +3097,7 @@
                         }
                         
                         if (groupName === 'iCenter') {
-                            const skuDesc = (row['SKU Description'] || '').toString().toUpperCase();
-                            if (skuDesc.includes('GLUE') || skuDesc.includes('ADHESIVE')) {
+                            if (shouldExcludeFromiCenter(row['SKU'], row['SKU Description'])) {
                                 return false;
                             }
                         }

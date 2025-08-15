@@ -2,8 +2,13 @@
 
 > A comprehensive web-based application for operational auditing and branch management with Firebase authentication, user management, and professional print-optimized reporting.
 
-[![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange)](https://firebase.google.com/)
-[![Authentication](https://img.shields.io/badge/Auth-Firebase%20Auth-blue)](https://firebase.google.com/products/auth)
+[![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange)](https://firebase.google### 7. 📊 Report Comparison Tool
+- Side-by-side report analysis
+- Change detection and highlighting
+- Trend analysis
+- Variance reporting
+
+### 8. ⚠️ Risk Analyzer Tool[![Authentication](https://img.shields.io/badge/Auth-Firebase%20Auth-blue)](https://firebase.google.com/products/auth)
 [![Language](https://img.shields.io/badge/Language-Thai%20%2F%20English-green)](https://fonts.google.com/specimen/Sarabun)
 [![Mobile](https://img.shields.io/badge/Mobile-Responsive-brightgreen)](https://tailwindcss.com/)
 [![Print](https://img.shields.io/badge/Print-Optimized-purple)](https://github.com/)
@@ -264,6 +269,11 @@ const firebaseConfig = {
 - **Fixed input functionality** - Final count fields now properly update calculations
 - **Professional reporting** with print-optimized layouts
 - **Multi-format support** - Logfile or Master.csv input methods
+- **🔬 Enhanced SPP Detection** - Advanced GLUE, ADHESIVE, and TOOLS classification using SOH data:
+  - **SOH-based Detection**: Uses CLASS_CODE (`SP-GLUE`) and SUBCLASS_CODE (`ADHS-DP`, `ADHS`, `OTH`)
+  - **Smart Fallback**: Description-based detection when SOH data unavailable
+  - **Branch Coverage**: Works for both iCenter and iStudio branches
+  - **Detailed Logging**: Console logs show detection criteria and results
 
 ### 2. 💰 Cash Control Tool
 - End-of-day cash reconciliation
@@ -277,19 +287,31 @@ const firebaseConfig = {
 - Multi-auditor support
 - Progress tracking and reporting
 
-### 4. 📅 Audit Calendar Tool
+### 4. 📊 SMCO Check Tool
+- **Stock Movement Control Operations** analysis and verification
+- **Multi-group processing** (AIS, U-Store, iStudio/iBeat, iCenter, Head Office)
+- **Detail file upload** with automatic Doc No matching and validation
+- **Manual editing** of detail differences with real-time calculation updates
+- **Enhanced PDF export** with detailed branch discrepancy tables
+- **🔬 Advanced iCenter Filtering** - SOH-based GLUE/ADHESIVE/TOOLS detection:
+  - **SOH Integration**: Uses CLASS_CODE (`SP-GLUE`) and SUBCLASS_CODE (`ADHS-DP`, `ADHS`, `OTH`)
+  - **Smart Fallback**: Description-based detection when SOH data unavailable
+  - **Enhanced Validation**: SOH file validation for required columns
+  - **Detailed Logging**: Console logs show which criteria triggered exclusion
+
+### 5. 📅 Audit Calendar Tool
 - Schedule management
 - Audit planning and tracking
 - Calendar view of activities
 - Event management
 
-### 5. 🔍 Issue Tracker Tool
+### 6. 🔍 Issue Tracker Tool
 - Issue identification and logging
 - Assignment and follow-up
 - Status tracking
 - Resolution management
 
-### 6. 📊 Report Comparison Tool
+### 7. 📊 Report Comparison Tool
 - Side-by-side report analysis
 - Change detection and highlighting
 - Trend analysis
