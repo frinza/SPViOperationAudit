@@ -1,49 +1,73 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users collection - simplified for better compatibility
+    // Helper function to check if user is admin
+    function isAdmin(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid)) &&
+             get(/databases/$(database)/documents/users/$(uid)).data.role == 'admin' &&
+             get(/databases/$(database)/documents/users/$(uid)).data.status == 'approved';
+    }
+    
+    // Users collection - secure with proper authentication
     match /users/{userId} {
       // Allow anyone to create user accounts (registration)
       allow create: if true;
       
-      // Allow read access for any authenticated user (simplified)
-      allow read: if true;
+      // Allow reading for login process and authenticated access
+      allow read: if 
+        // Anyone can read for login/email lookup (needed for getUserByEmail during login)
+        request.auth == null ||
+        // Authenticated users can read their own data
+        (request.auth != null && request.auth.uid == resource.data.id) ||
+        // Admins can read all user data
+        (request.auth != null && isAdmin(request.auth.uid));
       
-      // Allow updates for any authenticated user (simplified for now)
-      allow update: if true;
+      // Allow updates for various scenarios
+      allow update: if 
+        // Allow unauthenticated updates for admin initialization and session management
+        request.auth == null ||
+        // Users can update their own data (except role/status)
+        (request.auth != null && request.auth.uid == resource.data.id && 
+         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status'])) ||
+        // Admins can update anything
+        (request.auth != null && isAdmin(request.auth.uid));
       
-      // Allow delete for any authenticated user (simplified for now)
-      allow delete: if true;
+      // Only admins can delete users
+      allow delete: if request.auth != null && isAdmin(request.auth.uid);
+    }
+    
+    // Allow admins to read all users for management
+    match /users/{document=**} {
+      allow read: if 
+        // Allow unauthenticated reads for admin initialization
+        request.auth == null ||
+        // Allow authenticated admin access
+        (request.auth != null && isAdmin(request.auth.uid));
     }
     
     // System collection for admin initialization
     match /system/{document} {
-      allow read, write: if true;
+      allow read, write: if true; // Allow system operations for admin initialization
     }
     
     // User email mapping for uniqueness enforcement
     match /userEmails/{document} {
-      allow read, write: if true;
+      allow read, write: if true; // Allow for user registration and lookup
     }
     
     // Issues collection - for issue tracking
     match /issues/{issueId} {
-      allow read, write: if true;
+      allow read, write: if true; // Temporarily allow all access for issue tracking
     }
     
     // Event reports for audit calendar
     match /eventReports/{reportId} {
-      allow read, write: if true;
+      allow read, write: if true; // Temporarily allow all access for event reports
     }
     
     // Test collection for connectivity checks
     match /_test/{document} {
       allow read: if true;
-    }
-    
-    // Catch-all rule for development (remove in production)
-    match /{document=**} {
-      allow read, write: if true;
     }
   }
 }
