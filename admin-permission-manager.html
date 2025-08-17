@@ -200,6 +200,18 @@
                         <div class="text-xs sm:text-sm text-gray-600 truncate">smcoCheck</div>
                     </div>
                 </div>
+                
+                <div class="flex items-center gap-2 sm:gap-3 p-3 bg-rose-50 rounded-lg">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-rose-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M4.93 4.93a10.5 10.5 0 1114.14 14.14A10.5 10.5 0 014.93 4.93z"/>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="font-medium text-gray-900 text-sm sm:text-base truncate">CN Fraud Checker</div>
+                        <div class="text-xs sm:text-sm text-gray-600 truncate">cnCheck</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -291,7 +303,8 @@
             { name: 'issueTracker', title: 'ติดตามประเด็น' },
             { name: 'reportComparison', title: 'เปรียบเทียบรายงาน' },
             { name: 'riskAnalyzer', title: 'วิเคราะห์ความเสี่ยง' },
-            { name: 'smcoCheck', title: 'SMCO Check' }
+            { name: 'smcoCheck', title: 'SMCO Check' },
+            { name: 'cnCheck', title: 'CN Fraud Checker' }
         ];
 
         let selectedUsers = new Set();

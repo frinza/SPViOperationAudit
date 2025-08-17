@@ -98,6 +98,7 @@
                 reportComparison: true,
                 issueTracker: true,
                 smcoCheck: true,
+                cnCheck: true,
                 userManagement: false // Only admins
             },
             sessionInfo: userData.sessionInfo || {
@@ -701,6 +702,7 @@
                     auditCalendar: true,
                     reportComparison: true,
                     issueTracker: true,
+                    cnCheck: true,
                     userManagement: true
                 } : {
                     stockCount: true,
@@ -710,6 +712,7 @@
                     auditCalendar: true,
                     reportComparison: true,
                     issueTracker: true,
+                    cnCheck: true,
                     userManagement: false
                 };
 
@@ -724,18 +727,46 @@
             await initializeFirebase();
             
             try {
-                // Prevent multiple admin initialization attempts
+                // Prevent multiple admin initialization attempts in-session
                 if (window.adminInitialized) {
-                    console.log('Admin already initialized, skipping...');
+                    console.log('Admin already initialized (session flag), skipping...');
                     return;
                 }
                 
-                // Get admin configuration from config manager
                 const adminConfig = window.SPViConfig.getAdminConfig();
                 const adminEmail = adminConfig.email;
+
+                // Use a Firestore lock doc to avoid race conditions across multiple pages/tabs
+                const systemCol = db.collection('system');
+                const adminInitDocRef = systemCol.doc('adminInit');
                 
-                const existingAdmin = await this.getUserByEmail(adminEmail);
-                
+                // Read current state
+                const adminInitSnap = await adminInitDocRef.get();
+                const adminInitData = adminInitSnap.exists ? adminInitSnap.data() : null;
+
+                // If already initialized, just ensure admin user exists and exit
+                if (adminInitData && adminInitData.initialized === true) {
+                    const existing = await this.getUserByEmail(adminEmail);
+                    if (!existing) {
+                        console.warn('Admin init flag set but admin user not found. Recreating admin...');
+                        // Fall through to creation path below
+                    } else {
+                        window.adminInitialized = true;
+                        return;
+                    }
+                }
+
+                // Acquire initialization lock transactionally
+                await db.runTransaction(async (tx) => {
+                    const snap = await tx.get(adminInitDocRef);
+                    if (snap.exists && snap.data().initialized === true) {
+                        return; // Another client already initialized
+                    }
+                    tx.set(adminInitDocRef, { initialized: true, initializedAt: new Date().toISOString() }, { merge: true });
+                });
+
+                // Double-check if admin exists after acquiring lock
+                let existingAdmin = await this.getUserByEmail(adminEmail);
                 if (!existingAdmin) {
                     const adminUser = {
                         name: 'System Administrator',
@@ -754,30 +785,28 @@
                             reportComparison: true,
                             issueTracker: true,
                             smcoCheck: true,
+                            cnCheck: true,
                             userManagement: true
                         }
                     };
 
                     // Register admin user
-                    const createdAdmin = await this.registerUser(adminUser);
+                    await this.registerUser(adminUser);
                     console.log('Admin user created successfully');
                 } else {
-                    // Only add password if it's completely missing - DON'T reset existing passwords
-                    if (!existingAdmin.hasOwnProperty('password') || !existingAdmin.password || existingAdmin.password === undefined || existingAdmin.password === null || existingAdmin.password === '') {
-                        console.log('Admin user exists but password is missing. Adding default password...');
-                        const newPasswordHash = hashPassword(adminConfig.defaultPassword);
-                        await this.updateUser(existingAdmin.id, { 
-                            password: newPasswordHash 
-                        });
-                        console.log('Admin password has been set to default with hash:', newPasswordHash);
-                    } else {
-                        console.log('Admin user exists with existing password - leaving password unchanged');
-                        console.log('Password format:', existingAdmin.password.startsWith('spvi_') ? 'NEW' : 'OLD/OTHER');
-                        // DO NOT automatically update passwords - let the login function handle migration
+                    // Ensure critical permissions include cnCheck for existing admin
+                    if (!existingAdmin.permissions || existingAdmin.permissions.cnCheck !== true) {
+                        const updatedPerms = {
+                            ...(existingAdmin.permissions || {}),
+                            cnCheck: true,
+                            userManagement: true
+                        };
+                        await this.updateUser(existingAdmin.id, { permissions: updatedPerms });
+                        console.log('Admin permissions updated to include cnCheck');
                     }
                 }
                 
-                // Mark admin as initialized to prevent duplicate creation
+                // Mark admin as initialized to prevent duplicate creation (session-level flag)
                 window.adminInitialized = true;
             } catch (error) {
                 console.error('Admin initialization error:', error);
@@ -848,6 +877,53 @@
             }
         }
     };
+
+    // Utility: find duplicate users by email (case-insensitive)
+    async function findDuplicateUsers() {
+        await initializeFirebase();
+        const users = await FirebaseUserManager.getAllUsers();
+        const groups = {};
+        users.forEach(u => {
+            const key = (u.email || '').toLowerCase();
+            if (!key) return;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(u);
+        });
+        const duplicates = Object.entries(groups)
+            .filter(([, arr]) => arr.length > 1)
+            .map(([email, arr]) => ({ email, users: arr }));
+        return duplicates;
+    }
+
+    // Utility: deduplicate users by keeping one per email and deleting the rest
+    // strategy: 'keepOldest' | 'keepNewest' (default: keepOldest)
+    async function deduplicateUsers(strategy = 'keepOldest') {
+        await initializeFirebase();
+        const duplicates = await findDuplicateUsers();
+        const results = [];
+        for (const group of duplicates) {
+            const { email, users } = group;
+            // Choose the one to keep
+            const sorted = [...users].sort((a, b) => {
+                const ta = new Date(a.createdAt || 0).getTime();
+                const tb = new Date(b.createdAt || 0).getTime();
+                return strategy === 'keepNewest' ? tb - ta : ta - tb;
+            });
+            const keep = sorted[0];
+            const remove = sorted.slice(1);
+
+            // Never delete the one referenced by admin email if it's the only admin
+            for (const u of remove) {
+                try {
+                    await FirebaseUserManager.deleteUser(u.id);
+                } catch (err) {
+                    console.warn('Failed to delete duplicate user', u.email, u.id, err);
+                }
+            }
+            results.push({ email, keptId: keep.id, removedIds: remove.map(r => r.id) });
+        }
+        return results;
+    }
 
     // Authentication checker
     async function checkAuth() {
@@ -1133,6 +1209,12 @@
                 url: 'smco-check.html',
                 title: 'SMCO Check',
                 icon: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H9m0 0V4a1 1 0 011-1h2a1 1 0 011 1v3M4 7h16'
+            },
+            {
+                name: 'cnCheck',
+                url: 'cn-check.html',
+                title: 'CN Fraud Checker',
+                icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
             }
         ];
 
@@ -1759,6 +1841,10 @@
             }
         },
         
+        // Duplicate Management
+        findDuplicateUsers,
+        deduplicateUsers,
+
         // Configuration access
         getConfig: function() {
             return window.SPViConfig;

@@ -541,6 +541,25 @@
             </div>
         </div>
 
+        <!-- Duplicate Users Utilities -->
+        <div class="bg-white rounded-xl shadow-sm border p-6 mb-8" id="duplicate-users-utilities">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Duplicate Users
+                </h3>
+                <div class="flex gap-2">
+                    <button onclick="scanDuplicates()" class="bg-amber-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors">Scan</button>
+                    <button onclick="dedupeDuplicates()" class="bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors" title="Remove duplicates keeping oldest record">Dedupe</button>
+                </div>
+            </div>
+            <div id="duplicates-result" class="text-sm text-slate-600">
+                <p class="text-slate-500">Use Scan to find users with the same email. Use Dedupe to keep oldest and remove the rest.</p>
+            </div>
+        </div>
+
         <!-- Filters -->
         <div class="bg-white rounded-xl shadow-sm border p-6 mb-8">
             <div class="flex flex-wrap gap-4 items-center">
@@ -830,6 +849,11 @@
                         <label class="flex items-center">
                             <input type="checkbox" id="perm-smcoCheck" class="rounded mr-3">
                             <span class="text-sm">SMCO Check</span>
+                        </label>
+                        <!-- Added CN Fraud Checker permission -->
+                        <label class="flex items-center">
+                            <input type="checkbox" id="perm-cnCheck" class="rounded mr-3">
+                            <span class="text-sm">CN Fraud Checker</span>
                         </label>
                     </div>
                     <div class="space-y-3">
@@ -1915,6 +1939,9 @@
             document.getElementById('perm-checklist').checked = permissions.checklist || false;
             document.getElementById('perm-riskAnalyzer').checked = permissions.riskAnalyzer || false;
             document.getElementById('perm-smcoCheck').checked = permissions.smcoCheck || false;
+            // CN Fraud Checker
+            const cnCheckBox = document.getElementById('perm-cnCheck');
+            if (cnCheckBox) cnCheckBox.checked = permissions.cnCheck || false;
             document.getElementById('perm-auditCalendar').checked = permissions.auditCalendar || false;
             document.getElementById('perm-reportComparison').checked = permissions.reportComparison || false;
             document.getElementById('perm-issueTracker').checked = permissions.issueTracker || false;
@@ -1930,6 +1957,8 @@
                 checklist: document.getElementById('perm-checklist').checked,
                 riskAnalyzer: document.getElementById('perm-riskAnalyzer').checked,
                 smcoCheck: document.getElementById('perm-smcoCheck').checked,
+                // Include CN Fraud Checker
+                cnCheck: document.getElementById('perm-cnCheck') ? document.getElementById('perm-cnCheck').checked : false,
                 auditCalendar: document.getElementById('perm-auditCalendar').checked,
                 reportComparison: document.getElementById('perm-reportComparison').checked,
                 issueTracker: document.getElementById('perm-issueTracker').checked,
@@ -2124,6 +2153,44 @@
                 }
             } catch (error) {
                 showToast('Error loading analytics: ' + error.message, 'error');
+            }
+        }
+
+        // Duplicate Users Utilities
+        async function scanDuplicates() {
+            try {
+                const results = await SPViAuth.findDuplicateUsers();
+                const container = document.getElementById('duplicates-result');
+                if (!results || results.length === 0) {
+                    container.innerHTML = '<div class="text-green-600">No duplicate users found.</div>';
+                    return;
+                }
+                container.innerHTML = `
+                    <div class="space-y-3">
+                        ${results.map(r => `
+                            <div class="border rounded p-3">
+                                <div class="font-medium text-slate-900">${r.email}</div>
+                                <ul class="list-disc ml-6 mt-1">
+                                    ${r.users.map(u => `<li>ID: <code>${u.id}</code> • Name: ${u.name} • Created: ${u.createdAt || 'N/A'}</li>`).join('')}
+                                </ul>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (e) {
+                showToast('Error scanning duplicates: ' + e.message, 'error');
+            }
+        }
+
+        async function dedupeDuplicates() {
+            if (!confirm('Proceed to remove duplicate user records by email? Oldest will be kept. This cannot be undone.')) return;
+            try {
+                const res = await SPViAuth.deduplicateUsers('keepOldest');
+                showToast('Deduplication complete: ' + res.length + ' email groups processed', 'success');
+                await refreshUsers();
+                await scanDuplicates();
+            } catch (e) {
+                showToast('Error during deduplication: ' + e.message, 'error');
             }
         }
 

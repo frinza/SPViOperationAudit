@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CN Fraud Checker — Cash to Partial Cash+Card Swap (Excel)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+
+  <!-- Configuration Manager -->
+  <script src="../config.js"></script>
+
+  <!-- Session Manager -->
+  <script src="../session-manager.js"></script>
+
+  <!-- Firebase Auth System -->
+  <script src="../firebase-auth.js"></script>
+
+  <!-- Excel Parser -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="../styles/spvi-main.css" />
+  <link rel="stylesheet" href="../styles/print-legal.css" />
+  <link rel="stylesheet" href="../styles/print-header.css" />
+  <style>
+    body { font-family: 'Sarabun', sans-serif; }
+    th { position: sticky; top: 0; background-color: #f1f5f9; z-index: 10; cursor: pointer; user-select: none; }
+    .table-container { max-height: 70vh; overflow-y: auto; }
+    .badge { font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: 9999px; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-yellow { background: #fef9c3; color: #854d0e; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+
+    @media print {
+      header, .no-print, .controls, .actions { display: none !important; }
+      .print-header { display: block !important; }
+      .print-header-section { display: block !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 logged-in">
+  <!-- Global Print Header Section -->
+  <div class="print-header-section"></div>
+
+  <main>
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+      <header class="text-center mb-6">
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-900">ระบบตรวจสอบ CN</h1>
+        <p class="mt-2 text-slate-500">CN Fraud Checker</p>
+      </header>
+
+      <!-- Controls -->
+      <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 mb-6 controls">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-5">
+            <h2 class="text-xl font-semibold text-slate-800 mb-3">1) นำเข้าไฟล์ RD019... (.xlsx)</h2>
+            <label for="import-xlsx" class="w-full bg-blue-600 text-white font-bold py-2.5 px-5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-center cursor-pointer block">เลือกไฟล์ .XLSX</label>
+            <input id="import-xlsx" type="file" accept=".xlsx,.xls" multiple class="hidden" />
+            <p id="file-info" class="text-xs text-slate-500 mt-2">โหลด RD019 จากระบบ SMCO เพื่อใช้ประมวลผล</p>
+          </div>
+          <div class="lg:col-span-4">
+            <h2 class="text-xl font-semibold text-slate-800 mb-3">2) ตั้งค่า Logic</h2>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">ช่วงเวลา (ชั่วโมง)</label>
+                <input id="window-hours" type="number" value="24" min="1" max="168" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                <p class="text-xs text-slate-500 mt-1">ระยะห่างสูงสุด Invoice/CN ที่เกี่ยวข้อง</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">ยอมให้คลาดเคลื่อน (%)</label>
+                <input id="tolerance-pct" type="number" value="0.5" step="0.1" min="0" max="5" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                <p class="text-xs text-slate-500 mt-1">ใช้เปรียบเทียบยอดรวม เทียบเท่า</p>
+              </div>
+            </div>
+            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label class="inline-flex items-center gap-2 text-sm"><input id="require-same-bank" type="checkbox" checked class="rounded" /> ต้องเป็นบัตรธนาคารเดียวกัน</label>
+              <label class="inline-flex items-center gap-2 text-sm"><input id="require-same-customer" type="checkbox" checked class="rounded" /> ลูกค้าคนเดิม</label>
+              <label class="inline-flex items-center gap-2 text-sm"><input id="require-same-branch" type="checkbox" checked class="rounded" /> สาขาเดียวกัน</label>
+              <label class="inline-flex items-center gap-2 text-sm"><input id="show-all-suspects" type="checkbox" class="rounded" /> แสดงกรณีไม่พบ CN บัตร</label>
+              <label class="inline-flex items-center gap-2 text-sm"><input id="debug-mode" type="checkbox" class="rounded" /> Debug Mode (Console Log)</label>
+            </div>
+          </div>
+          <div class="lg:col-span-3 flex items-end">
+            <button id="analyze-btn" class="w-full bg-green-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>ประมวลผล</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl font-semibold text-slate-800">ผลการตรวจจับ</h2>
+          <div class="actions flex gap-2">
+            <button id="export-json" class="bg-slate-700 text-white text-sm py-2 px-3 rounded-md hover:bg-slate-800 disabled:opacity-50" disabled>ส่งออก JSON</button>
+            <button id="export-csv" class="bg-slate-700 text-white text-sm py-2 px-3 rounded-md hover:bg-slate-800 disabled:opacity-50" disabled>ส่งออก CSV</button>
+          </div>
+        </div>
+        <div id="results" class="table-container">
+          <div class="text-center text-slate-500 py-14">
+            <p>นำเข้าไฟล์แล้วกด "ประมวลผล" เพื่อเริ่มตรวจจับรูปแบบทุจริต</p>
+          </div>
+        </div>
+        <div id="loader" class="text-center text-slate-500 py-14 hidden">
+          <div class="mx-auto border-4 border-slate-200 border-t-blue-500 rounded-full w-10 h-10 animate-spin"></div>
+          <p class="mt-4">กำลังประมวลผล...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // --- Utilities ---
+    function excelSerialToDate(serial) {
+      if (serial === undefined || serial === null || serial === '') return null;
+      const n = Number(serial);
+      if (!isFinite(n)) return null;
+      const epoch = new Date(Date.UTC(1899, 11, 30)).getTime();
+      const ms = epoch + n * 24 * 60 * 60 * 1000;
+      return new Date(ms);
+    }
+
+    function parseMaybeDate(v) {
+      if (!v) return null;
+      
+      // Handle Excel date numbers
+      if (typeof v === 'number' && v > 1) {
+        const d1 = excelSerialToDate(v);
+        if (d1) return d1;
+      }
+      
+      // Handle Excel date objects
+      if (v instanceof Date && !isNaN(v.getTime())) {
+        return v;
+      }
+      
+      // Handle string dates
+      if (typeof v === 'string') {
+        // Try excel serial first
+        const num = Number(v);
+        if (!isNaN(num) && num > 1) {
+          const d1 = excelSerialToDate(num);
+          if (d1) return d1;
+        }
+        
+        // Try ISO/locale parsing
+        const d2 = new Date(v);
+        if (!isNaN(d2.getTime())) return d2;
+      }
+      
+      return null;
+    }
+
+    function normalizeStr(s) {
+      return (s || '').toString().trim();
+    }
+
+    function parseNumber(n) {
+      if (typeof n === 'number') return n;
+      if (typeof n === 'string') {
+        const cleaned = n.replace(/[,\s]/g, '');
+        const v = Number(cleaned);
+        return isFinite(v) ? v : 0;
+      }
+      return 0;
+    }
+
+    function approxEqual(a, b, pct = 0.5) {
+      const A = Math.abs(a);
+      const B = Math.abs(b);
+      const tol = Math.max(1, (Math.max(A, B) * (pct / 100)));
+      return Math.abs(A - B) <= tol;
+    }
+
+    const cardBankKeywords = ['KBANK', 'KTB', 'SCB', 'BBL', 'BAY', 'KTC', 'UOB', 'TMB', 'VISA', 'MASTER', 'JCB', 'AMEX'];
+
+    function classifyPaymentType(ptRaw) {
+      const pt = normalizeStr(ptRaw).toUpperCase();
+      if (!pt) return { method: 'other', bank: '', raw: ptRaw };
+
+      // Try detect cash in Thai, English, or mojibake patterns
+      const cashMarkers = [
+        'CASH', 'เงินสด', 'เงิน', 'สด', 'ＣＡＳＨ', // Thai and full-width
+        '����', '���', '���ʴ', // Common mojibake patterns for Thai cash
+        'TUNM', 'TUN', // Possible encoding issues
+      ];
+      const isCash = cashMarkers.some(m => pt.includes(m.toUpperCase())) || 
+                     pt.includes('����') || // More mojibake patterns
+                     (pt.length < 10 && !pt.includes('CREDIT') && !pt.includes('CARD') && !cardBankKeywords.some(b => pt.includes(b)));
+
+      // Enhanced card detection with Thai bank names
+      const cardMarkers = ['CREDIT', 'CARD', 'DEBIT', 'บัตร', 'เครดิต'];
+      const isCard = cardMarkers.some(m => pt.includes(m)) || cardBankKeywords.some(b => pt.includes(b));
+
+      let bank = '';
+      if (isCard) {
+        const found = cardBankKeywords.find(b => pt.includes(b));
+        bank = found || (pt.match(/[A-Z]{2,}/g)?.[0] || 'CARD');
+      }
+
+      // Special handling for your sample data patterns
+      if (pt === 'เงินสด' || pt.includes('เงิน')) return { method: 'cash', bank: '', raw: ptRaw };
+      if (isCash && !isCard) return { method: 'cash', bank: '', raw: ptRaw };
+      if (isCard) return { method: 'card', bank, raw: ptRaw };
+      return { method: 'other', bank: '', raw: ptRaw };
+    }
+
+    // --- Parsing and Modeling ---
+    function buildBills(rows) {
+      const bills = new Map();
+      const byRefer = new Map();
+
+      for (const r of rows) {
+        const billNo = normalizeStr(r['Bill No'] || r['BillNo'] || r['BILL NO'] || r['เลขที่บิล']);
+        if (!billNo) continue;
+        const key = billNo;
+        const saleCategory = normalizeStr(r['Sale Category'] || r['SaleCategory']).toUpperCase(); // 'INVOICE' or 'CN'
+        const saleType = normalizeStr(r['Sale Type'] || r['SaleType']);
+        const paymentType = normalizeStr(r['Payment Type'] || r['PaymentType'] || r['Payment Type ']);
+        const paymentAmt = parseNumber(r['Payment Amt'] || r['PaymentAmt'] || r['Amount']);
+        const customerCode = normalizeStr(r['Customer Code'] || r['CustomerCode']);
+        const customerName = normalizeStr(r['Customer Name'] || r['CustomerName']);
+        const branchCode = normalizeStr(r['Branch Code'] || r['BranchCode']);
+        const branchName = normalizeStr(r['Branch Name'] || r['BranchName']);
+        const storeCode = normalizeStr(r['Store Code'] || r['StoreCode']);
+        const storeName = normalizeStr(r['Store Name'] || r['StoreName']);
+        const billDateRaw = r['Bill Date'] || r['BillDate'];
+        const billDate = parseMaybeDate(billDateRaw);
+        const referBillNo = normalizeStr(r['Refer Bill No.'] || r['Refer Bill No'] || r['ReferBillNo'] || r['อ้างอิงเลขที่บิล']);
+        const referBillDate = parseMaybeDate(r['Refer Bill Date'] || r['ReferBillDate']);
+
+        if (!bills.has(key)) {
+          bills.set(key, {
+            billNo,
+            saleCategory,
+            customerCode,
+            customerName,
+            branchCode,
+            branchName,
+            storeCode,
+            storeName,
+            billDate,
+            billDateRaw,
+            saleTypeSet: new Set(),
+            payments: [],
+            totals: { cash: 0, card: 0, other: 0, net: 0 },
+            cardByBank: {},
+            referBillNo,
+            referBillDate,
+          });
+        }
+        const b = bills.get(key);
+        if (saleCategory) b.saleCategory = saleCategory; // last wins if inconsistent
+        if (billDate && (!b.billDate || billDate < b.billDate)) b.billDate = billDate; // earliest line time
+        if (referBillNo) b.referBillNo = referBillNo;
+        if (referBillDate && (!b.referBillDate || referBillDate < b.referBillDate)) b.referBillDate = referBillDate;
+        if (saleType) b.saleTypeSet.add(saleType);
+
+        const cls = classifyPaymentType(paymentType);
+        const line = { method: cls.method, bank: cls.bank, rawType: paymentType, amount: paymentAmt };
+        b.payments.push(line);
+        b.totals.net += paymentAmt;
+        if (line.method === 'cash') b.totals.cash += paymentAmt;
+        else if (line.method === 'card') {
+          b.totals.card += paymentAmt;
+          b.cardByBank[line.bank] = (b.cardByBank[line.bank] || 0) + paymentAmt;
+        } else b.totals.other += paymentAmt;
+
+        if (b.referBillNo) {
+          if (!byRefer.has(b.referBillNo)) byRefer.set(b.referBillNo, []);
+          byRefer.get(b.referBillNo).push(b);
+        }
+      }
+
+      return { bills, byRefer };
+    }
+
+    function getAll(map) {
+      return Array.from(map.values());
+    }
+
+    function isInvoice(b) { return (b.saleCategory || '').includes('INVOICE'); }
+    function isCN(b) { return (b.saleCategory || '').includes('CN'); }
+
+    function withinWindow(d1, d2, hours) {
+      if (!d1 || !d2) return true; // if missing, be lenient
+      const diff = Math.abs(d1.getTime() - d2.getTime());
+      return diff <= hours * 3600 * 1000;
+    }
+
+    function totalAbs(b) { return Math.abs(b.totals.net); }
+
+    function analyzeFraud(model, opts) {
+      const { bills, byRefer } = model;
+      const allBills = getAll(bills);
+      const invoices = allBills.filter(isInvoice);
+      const cnBills = allBills.filter(isCN);
+
+      const debug = opts.debug || false;
+      if (debug) console.log(`Total bills: ${allBills.length}, Invoices: ${invoices.length}, CNs: ${cnBills.length}`);
+
+      // Index helpers
+      const byCustomer = new Map();
+      const byBranch = new Map();
+      for (const b of invoices) {
+        if (!byCustomer.has(b.customerCode)) byCustomer.set(b.customerCode, []);
+        byCustomer.get(b.customerCode).push(b);
+        if (!byBranch.has(b.branchCode)) byBranch.set(b.branchCode, []);
+        byBranch.get(b.branchCode).push(b);
+      }
+
+      // Identify: original pure cash invoice canceled by CN
+      const suspectCases = [];
+      for (const inv of invoices) {
+        const isPureCash = inv.totals.card === 0 && inv.totals.cash > 0 && Math.abs(inv.totals.net - inv.totals.cash) < 0.01;
+        if (!isPureCash) continue;
+
+        if (debug) console.log(`Checking pure cash invoice: ${inv.billNo}, Cash: ${inv.totals.cash}, Card: ${inv.totals.card}`);
+
+        const cnList = byRefer.get(inv.billNo) || [];
+        if (debug) console.log(`Found ${cnList.length} CNs referring to ${inv.billNo}`);
+        
+        const cancelCN = cnList.find(cn => {
+          const isCNMatch = isCN(cn) && approxEqual(totalAbs(cn), totalAbs(inv), opts.tolPct);
+          if (debug && isCNMatch) console.log(`Found canceling CN: ${cn.billNo}, Amount: ${cn.totals.net}`);
+          return isCNMatch;
+        });
+        if (!cancelCN) {
+          if (debug) console.log(`No canceling CN found for ${inv.billNo}`);
+          continue; // not cancelled fully
+        }
+
+        // Find replacement invoice for same customer and similar total within window
+        const candidates = (opts.requireSameCustomer ? (byCustomer.get(inv.customerCode) || []) : invoices)
+          .filter(b => {
+            const isCandidate = b.billNo !== inv.billNo && 
+                              withinWindow(inv.billDate || cancelCN.billDate, b.billDate, opts.windowH) && 
+                              approxEqual(totalAbs(b), totalAbs(inv), opts.tolPct) && 
+                              b.totals.card > 0;
+            if (debug && isCandidate) {
+              console.log(`Found replacement candidate: ${b.billNo}, Cash: ${b.totals.cash}, Card: ${b.totals.card}`);
+            }
+            return isCandidate;
+          });
+
+        if (debug) console.log(`Found ${candidates.length} replacement candidates for ${inv.billNo}`);
+
+        for (const rep of candidates) {
+          if (opts.requireSameBranch && rep.branchCode !== inv.branchCode) continue;
+
+          // Card by bank in replacement
+          const repCardBanks = Object.entries(rep.cardByBank)
+            .filter(([bank, amt]) => Math.abs(amt) > 0)
+            .map(([bank, amt]) => ({ bank, amount: Math.abs(amt) }));
+
+          if (debug) console.log(`Replacement ${rep.billNo} card banks:`, repCardBanks);
+
+          // Optional: find card refund CN from other bill(s)
+          const cardRefundMatches = [];
+          if (repCardBanks.length) {
+            for (const { bank, amount } of repCardBanks) {
+              if (opts.requireSameBank && !bank) continue;
+              
+              // Search CNs that are not tied to original cash invoice and refer to a DIFFERENT invoice having card with same bank
+              const matches = cnBills.filter(cn => {
+                if (cn.billNo === cancelCN.billNo) return false;
+                if (!withinWindow(rep.billDate, cn.billDate, opts.windowH)) return false;
+                
+                // Must be a card CN (negative) with same bank
+                const cnCardAmt = Math.abs(cn.totals.card);
+                const bankOk = !opts.requireSameBank || Object.keys(cn.cardByBank).some(bk => 
+                  bk && bank && bk.toUpperCase() === bank.toUpperCase());
+                if (!bankOk) return false;
+                
+                // Amount check - be more lenient
+                const amountMatch = approxEqual(cnCardAmt, amount, Math.max(opts.tolPct, 1.0));
+                if (debug && amountMatch) {
+                  console.log(`Found card refund CN match: ${cn.billNo}, Bank: ${bank}, Amount: ${cnCardAmt}`);
+                }
+                return amountMatch;
+              });
+
+              // Prefer matches where the referenced original bill (if any) was a card sale with same bank
+              const prioritized = matches.sort((a, b) => (a.referBillNo ? 0 : 1) - (b.referBillNo ? 0 : 1));
+              if (prioritized[0]) {
+                cardRefundMatches.push({ bank, amount, cn: prioritized[0] });
+              }
+            }
+          }
+
+          const overflowCash = Math.max(0, Math.abs(inv.totals.cash) - Math.abs(rep.totals.cash));
+          const severity = cardRefundMatches.length ? 'HIGH' : 'MEDIUM';
+
+          if (debug) console.log(`Case found: ${inv.billNo} -> ${rep.billNo}, Overflow: ${overflowCash}, Severity: ${severity}`);
+
+          if (cardRefundMatches.length || document.getElementById('show-all-suspects').checked) {
+            suspectCases.push({
+              branchCode: inv.branchCode,
+              branchName: inv.branchName,
+              customerCode: inv.customerCode,
+              customerName: inv.customerName,
+              originalInvoice: summaryBill(inv),
+              cancelCN: summaryBill(cancelCN),
+              replacementInvoice: summaryBill(rep),
+              replacementCardBanks: repCardBanks,
+              cardRefundMatches: cardRefundMatches.map(m => ({ bank: m.bank, amount: m.amount, cn: summaryBill(m.cn) })),
+              overflowCash,
+              severity,
+            });
+          }
+        }
+      }
+
+      if (debug) console.log(`Found ${suspectCases.length} suspect cases`);
+
+      // Sort by severity and overflow desc
+      suspectCases.sort((a, b) => {
+        const sevRank = (s) => (s === 'HIGH' ? 0 : 1);
+        const ds = sevRank(a.severity) - sevRank(b.severity);
+        if (ds !== 0) return ds;
+        return (b.overflowCash || 0) - (a.overflowCash || 0);
+      });
+
+      return suspectCases;
+
+      function summaryBill(b) {
+        if (!b) return null;
+        return {
+          billNo: b.billNo,
+          date: b.billDate ? b.billDate.toISOString() : '',
+          amount: Math.abs(b.totals.net),
+          cash: Math.abs(b.totals.cash),
+          card: Math.abs(b.totals.card),
+          other: Math.abs(b.totals.other),
+          cardByBank: b.cardByBank,
+          referBillNo: b.referBillNo || '',
+        };
+      }
+    }
+
+    // --- Rendering ---
+    function renderResults(cases) {
+      const results = document.getElementById('results');
+      if (!cases.length) {
+        results.innerHTML = '<div class="text-center text-slate-500 py-14"><p>ไม่พบรูปแบบต้องสงสัยตามเงื่อนไขที่ตั้งไว้</p></div>';
+        return;
+      }
+
+      let html = `
+        <table class="w-full text-sm text-left text-slate-600">
+          <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+            <tr>
+              <th class="p-3">Branch</th>
+              <th class="p-3">Customer</th>
+              <th class="p-3">Original Cash Invoice</th>
+              <th class="p-3">CN Cancel</th>
+              <th class="p-3">Replacement Invoice (Cash+Card)</th>
+              <th class="p-3">Card Refund CN (Other Bill)</th>
+              <th class="p-3 text-right">Overflow Cash (฿)</th>
+              <th class="p-3">Severity</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      for (const c of cases) {
+        const repCards = (c.replacementCardBanks || [])
+          .map(x => `${x.bank || 'CARD'}: ${x.amount.toLocaleString()}`)
+          .join('<br/>');
+        const refunds = (c.cardRefundMatches || [])
+          .map(m => `${m.bank || 'CARD'}: ${m.amount.toLocaleString()} ➜ CN ${m.cn.billNo}`)
+          .join('<br/>');
+        const sevCls = c.severity === 'HIGH' ? 'badge-red' : (c.severity === 'MEDIUM' ? 'badge-yellow' : 'badge-green');
+
+        html += `
+          <tr class="border-b">
+            <td class="p-3 align-top">${c.branchCode || ''}<br/><span class="text-slate-500">${c.branchName || ''}</span></td>
+            <td class="p-3 align-top">${escapeHtml(c.customerCode)}<br/><span class="text-slate-500">${escapeHtml(c.customerName)}</span></td>
+            <td class="p-3 align-top">
+              <div><span class="font-semibold">${c.originalInvoice.billNo}</span></div>
+              <div class="text-slate-500">${fmtDate(c.originalInvoice.date)}</div>
+              <div>ยอด: ${c.originalInvoice.amount.toLocaleString()} (Cash ${c.originalInvoice.cash.toLocaleString()})</div>
+            </td>
+            <td class="p-3 align-top">
+              <div><span class="font-semibold">${c.cancelCN.billNo}</span></div>
+              <div class="text-slate-500">${fmtDate(c.cancelCN.date)}</div>
+              <div>ยอด CN: ${c.cancelCN.amount.toLocaleString()}</div>
+            </td>
+            <td class="p-3 align-top">
+              <div><span class="font-semibold">${c.replacementInvoice.billNo}</span></div>
+              <div class="text-slate-500">${fmtDate(c.replacementInvoice.date)}</div>
+              <div>Cash: ${c.replacementInvoice.cash.toLocaleString()} | Card: ${c.replacementInvoice.card.toLocaleString()}</div>
+              <div class="text-slate-500">${repCards}</div>
+            </td>
+            <td class="p-3 align-top">${refunds || '<span class="text-slate-400">-</span>'}</td>
+            <td class="p-3 align-top text-right font-bold text-slate-900">${(c.overflowCash || 0).toLocaleString()}</td>
+            <td class="p-3 align-top"><span class="badge ${sevCls}">${c.severity}</span></td>
+          </tr>
+        `;
+      }
+      html += '</tbody></table>';
+      results.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+      return (str || '').toString().replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));
+    }
+    function fmtDate(iso) {
+      if (!iso) return '';
+      try { const d = new Date(iso); return d.toLocaleString('th-TH'); } catch { return iso; }
+    }
+
+    function exportJSON(cases) {
+      const blob = new Blob([JSON.stringify(cases, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'cn-fraud-cases.json'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportCSV(cases) {
+      const rows = [
+        ['Branch Code','Branch Name','Customer Code','Customer Name','Original Bill','Original Date','Original Amount','CN Bill','CN Date','CN Amount','Replacement Bill','Replacement Date','Replacement Cash','Replacement Card','Replacement Card Banks','Refund CN Matches','Overflow Cash','Severity']
+      ];
+      for (const c of cases) {
+        const repCards = (c.replacementCardBanks || []).map(x => `${x.bank || 'CARD'}:${x.amount}`).join('|');
+        const refunds = (c.cardRefundMatches || []).map(m => `${m.bank || 'CARD'}:${m.amount}:CN ${m.cn.billNo}`).join('|');
+        rows.push([
+          c.branchCode, c.branchName, c.customerCode, c.customerName,
+          c.originalInvoice.billNo, c.originalInvoice.date, c.originalInvoice.amount,
+          c.cancelCN.billNo, c.cancelCN.date, c.cancelCN.amount,
+          c.replacementInvoice.billNo, c.replacementInvoice.date, c.replacementInvoice.cash, c.replacementInvoice.card, repCards, refunds,
+          c.overflowCash, c.severity
+        ]);
+      }
+      const csv = rows.map(r => r.map(v => `"${(v ?? '').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'cn-fraud-cases.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // --- Main ---
+    document.addEventListener('DOMContentLoaded', () => {
+      const importXlsx = document.getElementById('import-xlsx');
+      const analyzeBtn = document.getElementById('analyze-btn');
+      const fileInfo = document.getElementById('file-info');
+      const loader = document.getElementById('loader');
+      const results = document.getElementById('results');
+      const exportJsonBtn = document.getElementById('export-json');
+      const exportCsvBtn = document.getElementById('export-csv');
+
+      let parsedRows = [];
+      let lastCases = [];
+
+      importXlsx.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        analyzeBtn.disabled = true;
+        exportJsonBtn.disabled = true;
+        exportCsvBtn.disabled = true;
+        loader.classList.remove('hidden');
+        results.innerHTML = '';
+
+        const allRows = [];
+        
+        try {
+          for (const file of files) {
+            const arrayBuffer = await file.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            
+            // Process all sheets in the workbook
+            for (const sheetName of workbook.SheetNames) {
+              const worksheet = workbook.Sheets[sheetName];
+              const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+              
+              if (jsonData.length < 2) continue; // Skip empty sheets
+              
+              // Convert to object format with headers
+              const headers = jsonData[0];
+              const rows = jsonData.slice(1).map(row => {
+                const obj = {};
+                headers.forEach((header, index) => {
+                  obj[header] = row[index] || '';
+                });
+                return obj;
+              }).filter(row => Object.values(row).some(val => val !== '')); // Filter out empty rows
+              
+              allRows.push(...rows);
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing Excel files:', error);
+          results.innerHTML = `<div class="text-center text-red-600 py-10">เกิดข้อผิดพลาดในการอ่านไฟล์ Excel: ${escapeHtml(error.message || error)}</div>`;
+          loader.classList.add('hidden');
+          return;
+        }
+
+        parsedRows = allRows;
+        loader.classList.add('hidden');
+        fileInfo.textContent = `${files.length} ไฟล์, ${allRows.length.toLocaleString()} แถวข้อมูล`;
+        analyzeBtn.disabled = allRows.length === 0;
+        results.innerHTML = '<div class="text-center text-slate-500 py-14"><p>พร้อมประมวลผล</p></div>';
+      });
+
+      analyzeBtn.addEventListener('click', () => {
+        if (!parsedRows.length) return;
+        loader.classList.remove('hidden');
+        results.innerHTML = '';
+
+        const windowH = Number(document.getElementById('window-hours').value) || 24;
+        const tolPct = Number(document.getElementById('tolerance-pct').value) || 0.5;
+        const opts = {
+          windowH,
+          tolPct,
+          requireSameBank: document.getElementById('require-same-bank').checked,
+          requireSameCustomer: document.getElementById('require-same-customer').checked,
+          requireSameBranch: document.getElementById('require-same-branch').checked,
+          debug: document.getElementById('debug-mode').checked,
+        };
+
+        setTimeout(() => {
+          try {
+            const model = buildBills(parsedRows);
+            lastCases = analyzeFraud(model, opts);
+            renderResults(lastCases);
+            exportJsonBtn.disabled = lastCases.length === 0;
+            exportCsvBtn.disabled = lastCases.length === 0;
+          } catch (e) {
+            results.innerHTML = `<div class="text-center text-red-600 py-10">เกิดข้อผิดพลาดในการประมวลผล: ${escapeHtml(e.message || e)}</div>`;
+          } finally {
+            loader.classList.add('hidden');
+          }
+        }, 10);
+      });
+
+      exportJsonBtn.addEventListener('click', () => exportJSON(lastCases));
+      exportCsvBtn.addEventListener('click', () => exportCSV(lastCases));
+    });
+
+    // Initialize authentication and devtools protection
+    document.addEventListener('DOMContentLoaded', async function() {
+      try {
+        await SPViAuth.initializeFirebase();
+        const isAuthenticated = await SPViAuth.checkAuthentication();
+        if (!isAuthenticated) { window.location.href = '../index.html'; return; }
+        SPViAuth.setupDevToolsProtection();
+        if (window.SPViSessionManager && window.SPViSessionManager.checkToolAccess) {
+          const hasAccess = await window.SPViSessionManager.checkToolAccess('cnCheck');
+          if (!hasAccess) { document.querySelector('main')?.style.setProperty('display', 'none'); }
+        }
+      } catch (error) {
+        window.location.href = '../index.html';
+      }
+    });
+  </script>
+
+  <!-- Legal Declaration and Signature Section (print only) -->
+  <div class="print-legal-section">
+    <div class="legal-certification">
+      ข้าพเจ้าขอรับรองว่าข้อมูลในรายงานนี้ถูกต้องตามที่ตรวจสอบและเป็นความจริงทุกประการ
+      <div class="english-text">
+        (I hereby certify that the information in this report is accurate and true to the best of my knowledge.)
+      </div>
+    </div>
+
+    <div class="signature-section">
+      <div class="signature-container">
+        <div class="signature-box">
+          <div class="signature-line"></div>
+          <div class="signature-name">ลงชื่อ .................................................</div>
+          <div class="signature-title">(ผู้ตรวจสอบ / Auditor)</div>
+          <div class="signature-date">
+            วันที่: <span class="signature-date-line"></span> / <span class="signature-date-line"></span> / <span class="signature-date-line"></span>
+          </div>
+        </div>
+        <div class="signature-box">
+          <div class="signature-line"></div>
+          <div class="signature-name">ลงชื่อ .................................................</div>
+          <div class="signature-title">(ผู้รับการตรวจสอบ / Auditee)</div>
+          <div class="signature-date">
+            วันที่: <span class="signature-date-line"></span> / <span class="signature-date-line"></span> / <span class="signature-date-line"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
