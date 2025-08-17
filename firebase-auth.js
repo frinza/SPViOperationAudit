@@ -49,7 +49,8 @@
                 if (db && !window.firestoreSettingsApplied) {
                     db.settings({
                         ignoreUndefinedProperties: true,
-                        merge: true
+                        merge: true,
+                        experimentalForceLongPolling: true // Use long polling instead of websockets to avoid CORS
                     });
                     window.firestoreSettingsApplied = true;
                 }

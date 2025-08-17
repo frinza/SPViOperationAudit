@@ -1,12 +1,37 @@
 # Setup files
 setup.sh
 add-permission-checks.sh
-# Environment variables
+
+# Environment variables - NEVER COMMIT THESE
 .env
 .env.local
 .env.development
 .env.production
 .env.test
+.env.example.local
+.env.staging
+.env.backup
+
+# Credentials and API keys - SECURITY CRITICAL
+*.key
+*.pem
+*.p12
+*.p8
+service-account-key.json
+firebase-adminsdk-*.json
+google-services.json
+GoogleService-Info.plist
+
+# Configuration files with credentials
+config.local.js
+config.production.js
+firebase.local.js
+auth.local.js
+
+# Sensitive documentation
+CREDENTIALS.md
+API_KEYS.md
+PASSWORDS.md
 
 # Node modules
 node_modules/
@@ -80,6 +105,14 @@ Thumbs.db
 firebase-debug.log
 firebase-debug.*.log
 .firebaserc
+ui-debug.log
+firebase-export-*
+
+# SPVi Project Specific
+CNAME.backup
+*.old
+*.backup
+*.bak
 
 # Temporary files
 *.tmp
@@ -111,3 +144,59 @@ config/production.json
 config/local.json
 secrets/
 certificates/
+*.key
+*.pem
+*.p12
+service-account-key.json
+
+# Development and testing files
+test-data/
+sample-data/
+debug/
+experiments/
+
+# Documentation that shouldn't be committed
+PRIVATE_NOTES.md
+TODO_PRIVATE.md
+LOCAL_CONFIG.md
+
+# SPVi Operations Audit - Project Specific Ignores
+
+# Local development overrides
+config.local.js
+firebase-auth.local.js
+
+# User uploaded files and reports
+uploads/
+reports/
+audit-files/
+user-data/
+
+# Cache and temporary audit data
+.audit-cache/
+.temp-reports/
+.session-cache/
+
+# Branch-specific configuration
+branch-configs/
+local-branches/
+
+# Testing and development tools
+dev-tools/
+test-reports/
+performance-logs/
+
+# Deployment specific
+deploy-logs/
+.deployment/
+staging-config/
+
+# Local documentation and notes
+DEVELOPMENT_NOTES.md
+DEPLOYMENT_CHECKLIST.md
+TROUBLESHOOTING.md.local
+
+# macOS specific (additional)
+.Trash/
+.fseventsd/
+.VolumeIcon.icns

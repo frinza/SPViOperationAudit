@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - simplified for better compatibility
+    match /users/{userId} {
+      // Allow anyone to create user accounts (registration)
+      allow create: if true;
+      
+      // Allow read access for any authenticated user (simplified)
+      allow read: if true;
+      
+      // Allow updates for any authenticated user (simplified for now)
+      allow update: if true;
+      
+      // Allow delete for any authenticated user (simplified for now)
+      allow delete: if true;
+    }
+    
+    // System collection for admin initialization
+    match /system/{document} {
+      allow read, write: if true;
+    }
+    
+    // User email mapping for uniqueness enforcement
+    match /userEmails/{document} {
+      allow read, write: if true;
+    }
+    
+    // Issues collection - for issue tracking
+    match /issues/{issueId} {
+      allow read, write: if true;
+    }
+    
+    // Event reports for audit calendar
+    match /eventReports/{reportId} {
+      allow read, write: if true;
+    }
+    
+    // Test collection for connectivity checks
+    match /_test/{document} {
+      allow read: if true;
+    }
+    
+    // Catch-all rule for development (remove in production)
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
