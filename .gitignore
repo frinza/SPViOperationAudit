@@ -200,3 +200,4 @@ TROUBLESHOOTING.md.local
 .Trash/
 .fseventsd/
 .VolumeIcon.icns
+.DS_Store

@@ -14,12 +14,6 @@
       "doc/**",
       "README.md"
     ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
     "headers": [
       {
         "source": "**/*.@(js|css|html)",
