@@ -82,6 +82,7 @@
             id: userData.id || generateId(),
             name: userData.name,
             email: userData.email,
+            emailLower: (userData.email || '').toLowerCase(),
             password: userData.password, // Include password field
             department: userData.department || '',
             position: userData.position || '',
@@ -419,12 +420,18 @@
                     throw new Error('Email, password, and name are required');
                 }
                 
+                // Normalize email for uniqueness checks
+                const emailLower = (userData.email || '').trim().toLowerCase();
+                if (!emailLower) {
+                    throw new Error('Invalid email');
+                }
+                
                 // Validate password strength
                 if (userData.password.length < 6) {
                     throw new Error('Password must be at least 6 characters long');
                 }
                 
-                // Check if user already exists
+                // Check if user already exists (case-insensitive)
                 const existingUser = await this.getUserByEmail(userData.email);
                 if (existingUser) {
                     throw new Error('User with this email already exists');
@@ -432,36 +439,39 @@
 
                 // Hash the password before creating user data
                 const hashedPassword = hashPassword(userData.password);
-                console.log('Generated password hash:', hashedPassword);
-
+                
                 const newUser = createUserData({
                     ...userData,
+                    email: userData.email,
+                    emailLower,
                     password: hashedPassword
                 });
 
-                // Verify password is included in newUser object
-                if (!newUser.password) {
-                    throw new Error('Failed to include password in user data structure');
+                // Use deterministic document ID based on emailLower when available
+                let userDocRef = db.collection('users').doc(emailLower);
+                const userDocSnap = await userDocRef.get();
+                if (userDocSnap.exists) {
+                    // Fallback to auto ID if a legacy doc with that ID exists unexpectedly
+                    userDocRef = db.collection('users').doc();
+                }
+                newUser.id = userDocRef.id;
+
+                // Create user document
+                await userDocRef.set(newUser);
+
+                // Maintain a mapping to enforce uniqueness by emailLower
+                try {
+                    const emailMapRef = db.collection('userEmails').doc(emailLower);
+                    await emailMapRef.set({ userId: userDocRef.id, email: newUser.email, createdAt: new Date().toISOString() }, { merge: true });
+                } catch (mapErr) {
+                    console.warn('Could not update userEmails mapping:', mapErr);
                 }
 
-                console.log('Creating user with data structure:', {
-                    ...newUser,
-                    password: '[HASH:' + newUser.password.substring(0, 10) + '...]'
-                });
-
-                // Add to Firestore
-                const docRef = await db.collection('users').add(newUser);
-                newUser.id = docRef.id;
-
-                // Update document with the actual ID
-                await db.collection('users').doc(docRef.id).update({ id: docRef.id });
-
                 // Verify the user was created with a password
-                const verifyDoc = await db.collection('users').doc(docRef.id).get();
+                const verifyDoc = await db.collection('users').doc(userDocRef.id).get();
                 const verifyData = verifyDoc.data();
                 
                 if (!verifyData.password || verifyData.password === null || verifyData.password === '') {
-                    // Additional error details for debugging
                     console.error('Verification failed. Document data:', {
                         ...verifyData,
                         password: verifyData.password ? '[PRESENT]' : '[MISSING]'
@@ -469,8 +479,7 @@
                     throw new Error('User registration failed - password not saved properly');
                 }
 
-                console.log('User registered successfully. Password verification passed.');
-                return newUser;
+                return { id: userDocRef.id, ...verifyData };
             } catch (error) {
                 console.error('Registration error:', error);
                 throw error;
@@ -485,25 +494,16 @@
                     throw new Error('Email and password are required');
                 }
                 
-                console.log('Attempting login for email:', email);
-                
-                // First, get the user by email to check what password format they have
-                const emailOnlySnapshot = await db.collection('users')
-                    .where('email', '==', email)
-                    .get();
-                
-                if (emailOnlySnapshot.empty) {
-                    console.log('No user found with email:', email);
+                // Lookup user by normalized email
+                const foundUser = await this.getUserByEmail(email);
+                if (!foundUser) {
                     return null;
                 }
-                
-                const userDoc = emailOnlySnapshot.docs[0];
-                const userData = userDoc.data();
-                console.log('User found, checking password format...');
+                const userDocId = foundUser.id;
+                const userData = foundUser;
                 
                 // Check if user exists but password is missing
                 if (!userData.password || userData.password === null || userData.password === undefined || userData.password === '') {
-                    console.log('User found but password is missing - user needs admin assistance');
                     throw new Error('Account found but password not set. Please contact administrator.');
                 }
                 
@@ -512,25 +512,15 @@
                 
                 // Check if password is in old format (numeric only without prefix)
                 if (/^-?\d+$/.test(userData.password)) {
-                    console.log('User has old password format - checking with old hash function');
-                    
-                    // Try old hash function (exact match)
                     const oldHash = hashPasswordOldFormat(password);
-                    console.log('Old hash check:', oldHash, 'vs stored:', userData.password);
-                    
                     if (userData.password === oldHash) {
                         passwordMatches = true;
                         needsMigration = true;
-                        console.log('Old password format matched - migration needed');
                     } else {
-                        // Also try with trimmed password in case there were whitespace issues
                         const oldHashTrimmed = hashPasswordOldFormat(password.trim());
-                        console.log('Old hash (trimmed) check:', oldHashTrimmed, 'vs stored:', userData.password);
-                        
                         if (userData.password === oldHashTrimmed) {
                             passwordMatches = true;
                             needsMigration = true;
-                            console.log('Old password format (trimmed) matched - migration needed');
                         }
                     }
                 }
@@ -538,44 +528,37 @@
                 // If old format didn't match, try new format
                 if (!passwordMatches) {
                     const newHash = hashPassword(password);
-                    console.log('New hash check:', newHash, 'vs stored:', userData.password);
-                    
                     if (userData.password === newHash) {
                         passwordMatches = true;
-                        console.log('New password format matched');
                     }
                 }
                 
-                // If still no match, check if it's stored in plain text (emergency fallback)
+                // If still no match, check plain text (fallback)
                 if (!passwordMatches && userData.password === password) {
                     passwordMatches = true;
                     needsMigration = true;
-                    console.log('Plain text password matched - migration needed');
                 }
                 
                 if (!passwordMatches) {
-                    console.log('Password does not match any format');
                     return null;
                 }
                 
                 // Password matched, proceed with login
-                const user = { id: userDoc.id, ...userData };
+                const user = { id: userDocId, ...userData };
                 
                 // Clean up any legacy localStorage data first
                 cleanupLegacyStorage();
                 
                 // Migrate password if needed
                 if (needsMigration) {
-                    console.log('Migrating password to new format...');
                     const newHash = hashPassword(password);
-                    await this.updateUser(userDoc.id, { password: newHash });
-                    console.log('Password migrated successfully');
+                    await this.updateUser(user.id, { password: newHash });
                 }
                 
                 // Update last login and clear any existing sessions
                 await this.updateUser(user.id, { 
                     lastLogin: new Date().toISOString(),
-                    'sessionInfo.isOnline': false, // Clear any existing session first
+                    'sessionInfo.isOnline': false,
                     'sessionInfo.sessionId': null
                 });
                 user.lastLogin = new Date().toISOString();
@@ -583,12 +566,10 @@
                 // Set user in memory and establish secure session
                 setCurrentUser(user);
                 
-                console.log('Login successful for user:', user.name);
                 return user;
                 
             } catch (error) {
                 console.error('Login error:', error);
-                // Handle Firebase-specific errors gracefully
                 if (error.code === 'permission-denied') {
                     throw new Error('Access denied - insufficient permissions');
                 } else if (error.message.includes('CORS') || error.message.includes('fetch')) {
@@ -625,17 +606,36 @@
             await initializeFirebase();
             
             try {
-                const snapshot = await db.collection('users')
+                const emailLower = (email || '').toLowerCase();
+                if (!emailLower) return null;
+
+                // 1) Try deterministic ID lookup first (new users)
+                const directRef = await db.collection('users').doc(emailLower).get();
+                if (directRef.exists) {
+                    return { id: directRef.id, ...directRef.data() };
+                }
+
+                // 2) Try emailLower field (migrated users)
+                const lowerSnap = await db.collection('users')
+                    .where('emailLower', '==', emailLower)
+                    .limit(1)
+                    .get();
+                if (!lowerSnap.empty) {
+                    const doc = lowerSnap.docs[0];
+                    return { id: doc.id, ...doc.data() };
+                }
+
+                // 3) Fallback to legacy exact-case email field
+                const legacySnap = await db.collection('users')
                     .where('email', '==', email)
                     .limit(1)
                     .get();
-
-                if (snapshot.empty) {
-                    return null;
+                if (!legacySnap.empty) {
+                    const doc = legacySnap.docs[0];
+                    return { id: doc.id, ...doc.data() };
                 }
 
-                const doc = snapshot.docs[0];
-                return { id: doc.id, ...doc.data() };
+                return null;
             } catch (error) {
                 // Handle Firebase-specific errors gracefully
                 if (error.code === 'permission-denied') {
@@ -654,6 +654,33 @@
             await initializeFirebase();
             
             try {
+                // If email is being updated, keep emailLower and userEmails mapping in sync
+                if (updates && typeof updates.email === 'string') {
+                    const newEmailLower = updates.email.toLowerCase();
+                    updates.emailLower = newEmailLower;
+
+                    try {
+                        const userRef = db.collection('users').doc(userId);
+                        const currentSnap = await userRef.get();
+                        if (currentSnap.exists) {
+                            const current = currentSnap.data();
+                            const oldEmailLower = (current.emailLower || (current.email || '').toLowerCase());
+                            if (newEmailLower && newEmailLower !== oldEmailLower) {
+                                // Ensure new email is not taken
+                                const existing = await db.collection('userEmails').doc(newEmailLower).get();
+                                if (existing.exists) {
+                                    throw new Error('Email already in use by another account');
+                                }
+                                // Update mapping: remove old, set new
+                                try { await db.collection('userEmails').doc(oldEmailLower).delete(); } catch (e) { /* ignore */ }
+                                await db.collection('userEmails').doc(newEmailLower).set({ userId, email: updates.email, updatedAt: new Date().toISOString() }, { merge: true });
+                            }
+                        }
+                    } catch (mapErr) {
+                        console.warn('Could not update userEmails mapping during email update:', mapErr);
+                    }
+                }
+
                 await db.collection('users').doc(userId).update({
                     ...updates,
                     updatedAt: new Date().toISOString()
@@ -884,7 +911,7 @@
         const users = await FirebaseUserManager.getAllUsers();
         const groups = {};
         users.forEach(u => {
-            const key = (u.email || '').toLowerCase();
+            const key = (u.emailLower || u.email || '').toLowerCase();
             if (!key) return;
             if (!groups[key]) groups[key] = [];
             groups[key].push(u);
