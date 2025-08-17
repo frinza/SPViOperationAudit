@@ -107,6 +107,7 @@ firebase-debug.*.log
 .firebaserc
 ui-debug.log
 firebase-export-*
+firestore.rules
 
 # SPVi Project Specific
 CNAME.backup
