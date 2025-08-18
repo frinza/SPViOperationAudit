@@ -4102,8 +4102,7 @@ def calculate_serial_sku_score(text, pattern_type):
                             }
                         }
                     }
-                    
-                    // Serial/SKU combination logic (Power Query sequence step 3)
+                      // Serial/SKU combination logic (Power Query sequence step 3)
                     const isSerial = !!row.SERIAL_NO;
                     let combinedSku = String(isSerial ? row.SERIAL_NO : row.SKU || '');
                     
@@ -4119,7 +4118,7 @@ def calculate_serial_sku_score(text, pattern_type):
                     const sku = combinedSku.trim().toUpperCase();
                     if (!sku) return;
                     
-                    const isSerialControlled = row.SERIAL_CONTROL === 'Y' || isSerial;
+                    const isSerialControlled = isSerial; // If SERIAL_NO exists, it's serial-controlled
                     const qty = parseInt(String(row.AVAILABLE_QTY ?? 0).replace(/,/g, ''), 10);                    
                     const srpRaw = row.SRP_AMT_INC_VAT;
                     const srp = srpRaw === null || srpRaw === undefined || srpRaw === '' ? 0 : parseFloat(String(srpRaw).replace(/,/g, ''));
@@ -4146,7 +4145,8 @@ def calculate_serial_sku_score(text, pattern_type):
                         existing.category = existing.category === 'DEMO' ? 'DEMO' : category;
                     } else if (!lookup[sku]) {
                         lookup[sku] = {
-                            SKU: sku,                            Description: (row.DESCRIPTION || '').replace(/,/g, ' '),
+                            SKU: sku,                            
+                            Description: (row.DESCRIPTION || '').replace(/,/g, ' '),
                             SOH: qty,
                             Price: srp,
                             Age: row.AGE,
@@ -4233,7 +4233,8 @@ def calculate_serial_sku_score(text, pattern_type):
                 });
                 
                 return processedData;
-            }            function detectAdvancedDemo(originalSku, desc, family, groupCode, subclassCode, isIStudio) {
+            }            
+            function detectAdvancedDemo(originalSku, desc, family, groupCode, subclassCode, isIStudio) {
                 // Enhanced DEMO detection for advanced branches
                 
                 // Check family field first (highest priority)
