@@ -4059,22 +4059,21 @@ def calculate_serial_sku_score(text, pattern_type):
                     // Advanced Power Query sequence for iCenter/iStudio branches
                     processedData = processAdvancedBranchData(processedData, isICenter, isIStudio);
                 }
-                
-                // Step 4: Process each row with enhanced logic
+                  // Step 4: Process each row with enhanced logic
                 processedData.forEach(row => {
                     // Extract basic info first (Power Query sequence step 1)
                     const desc = String(row.DESCRIPTION || '').toUpperCase();
-                    const family = String(row.FAMILY || '').toUpperCase();
+                    const family = String(row.FAMILY_CODE || '').toUpperCase();
                     const originalSku = String(row.SKU || '').trim().toUpperCase();
                     const groupCode = String(row.GROUP_CODE || '').toUpperCase();
-                    const subclassCode = String(row.SUBCLASS_CODE || '').toUpperCase();
-                      // Advanced DEMO detection logic (Power Query sequence step 2)
+                    const subclassCode = String(row.SUBCLASS_CODE || '').toUpperCase();                    // Advanced DEMO detection logic (Power Query sequence step 2)
                     let isDemo;
                     if (useAdvancedMode) {
                         isDemo = detectAdvancedDemo(originalSku, desc, family, groupCode, subclassCode, isIStudio);
                     } else {
                         // Check family field first (highest priority)
                         if (family === 'DEMO') {
+                            console.log(`DEMO detected via FAMILY_CODE: SKU=${originalSku}, FAMILY_CODE=${family}`);
                             isDemo = true;
                         } else {
                             // Exclusion list for items that should NOT be flagged as DEMO
@@ -4097,6 +4096,10 @@ def calculate_serial_sku_score(text, pattern_type):
                                     desc.includes('DEMO')                    // Condition 3: Description contains "DEMO"
                                 )
                             );
+                            
+                            if (isDemo) {
+                                console.log(`DEMO detected via standard logic: SKU=${originalSku}, FAMILY_CODE=${family}`);
+                            }
                         }
                     }
                     
@@ -4143,13 +4146,12 @@ def calculate_serial_sku_score(text, pattern_type):
                         existing.category = existing.category === 'DEMO' ? 'DEMO' : category;
                     } else if (!lookup[sku]) {
                         lookup[sku] = {
-                            SKU: sku,
-                            Description: (row.DESCRIPTION || '').replace(/,/g, ' '),
+                            SKU: sku,                            Description: (row.DESCRIPTION || '').replace(/,/g, ' '),
                             SOH: qty,
                             Price: srp,
                             Age: row.AGE,
                             CLASS_NAME: row.CLASS_NAME || 'UNCATEGORIZED',
-                            FAMILY: row.FAMILY || '',
+                            FAMILY: row.FAMILY_CODE || '',
                             GROUP_CODE: groupCode,
                             SUBCLASS_CODE: subclassCode,
                             isSerialControlled,
@@ -4231,11 +4233,12 @@ def calculate_serial_sku_score(text, pattern_type):
                 });
                 
                 return processedData;
-            }              function detectAdvancedDemo(originalSku, desc, family, groupCode, subclassCode, isIStudio) {
+            }            function detectAdvancedDemo(originalSku, desc, family, groupCode, subclassCode, isIStudio) {
                 // Enhanced DEMO detection for advanced branches
                 
                 // Check family field first (highest priority)
                 if (family === 'DEMO') {
+                    console.log(`DEMO detected via FAMILY_CODE (advanced): SKU=${originalSku}, FAMILY_CODE=${family}`);
                     return true;
                 }
                 
@@ -4248,7 +4251,10 @@ def calculate_serial_sku_score(text, pattern_type):
                     )
                 );
                 
-                if (standardDemo) return true;
+                if (standardDemo) {
+                    console.log(`DEMO detected via standard logic (advanced): SKU=${originalSku}, FAMILY_CODE=${family}`);
+                    return true;
+                }
                 
                 // For iStudio branches with SPP items, do NOT treat them as DEMO
                 // They should be properly categorized as SPP items instead
