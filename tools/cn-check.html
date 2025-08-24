@@ -69,16 +69,16 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700">ช่วงเวลา (ชั่วโมง)</label>
                 <input id="window-hours" type="number" value="24" min="1" max="168" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
-                <p class="text-xs text-slate-500 mt-1">ระยะห่างสูงสุด Invoice/CN ที่เกี่ยวข้อง</p>
+                <p class="text-xs text-slate-500 mt-1">ระยะเวลาระหว่าง Invoice/CN</p>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">ยอมให้คลาดเคลื่อน (%)</label>
+                <label class="block text-sm font-medium text-gray-700">ความคลาดเคลื่อน (%)</label>
                 <input id="tolerance-pct" type="number" value="0.5" step="0.1" min="0" max="5" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
-                <p class="text-xs text-slate-500 mt-1">ใช้เปรียบเทียบยอดรวม เทียบเท่า</p>
+                <p class="text-xs text-slate-500 mt-1">กรณีไม่ตรงกัน 100% (Case insensitive)</p>
               </div>
             </div>
             <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-              <label class="inline-flex items-center gap-2 text-sm"><input id="require-same-bank" type="checkbox" checked class="rounded" /> ต้องเป็นบัตรธนาคารเดียวกัน</label>
+              <label class="inline-flex items-center gap-2 text-sm"><input id="require-same-bank" type="checkbox" checked class="rounded" /> เฉพาะบัตรธนาคารเดียวกัน</label>
               <label class="inline-flex items-center gap-2 text-sm"><input id="require-same-customer" type="checkbox" checked class="rounded" /> ลูกค้าคนเดิม</label>
               <label class="inline-flex items-center gap-2 text-sm"><input id="require-same-branch" type="checkbox" checked class="rounded" /> สาขาเดียวกัน</label>
               <label class="inline-flex items-center gap-2 text-sm"><input id="show-all-suspects" type="checkbox" class="rounded" /> แสดงกรณีไม่พบ CN บัตร</label>
@@ -94,7 +94,7 @@
       <!-- Results -->
       <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-2xl font-semibold text-slate-800">ผลการตรวจจับ</h2>
+          <h2 class="text-2xl font-semibold text-slate-800">ผลการตรวจสอบ</h2>
           <div class="actions flex gap-2">
             <button id="export-json" class="bg-slate-700 text-white text-sm py-2 px-3 rounded-md hover:bg-slate-800 disabled:opacity-50" disabled>ส่งออก JSON</button>
             <button id="export-csv" class="bg-slate-700 text-white text-sm py-2 px-3 rounded-md hover:bg-slate-800 disabled:opacity-50" disabled>ส่งออก CSV</button>
@@ -102,7 +102,7 @@
         </div>
         <div id="results" class="table-container">
           <div class="text-center text-slate-500 py-14">
-            <p>นำเข้าไฟล์แล้วกด "ประมวลผล" เพื่อเริ่มตรวจจับรูปแบบทุจริต</p>
+            <p>นำเข้าไฟล์เพื่อประมวลผล</p>
           </div>
         </div>
         <div id="loader" class="text-center text-slate-500 py-14 hidden">
