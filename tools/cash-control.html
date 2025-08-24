@@ -1070,6 +1070,24 @@
                 processAttachments('reimbursement-list', 'ภาคผนวก: หลักฐานรายการรอโอนเงินคืน');
             };
 
+            // Universal filename generator function
+            function generateFilename(toolName, branchName, dateStr, extension) {
+                // Get current date in YYYY-MM-DD format
+                const now = new Date();
+                const currentDate = now.getFullYear() + '-' + 
+                                   String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                                   String(now.getDate()).padStart(2, '0');
+                
+                // Clean branch name
+                const cleanBranchName = (branchName || '').replace(/[^a-zA-Z0-9ก-๙ _-]/g, '').replace(/\s+/g, ' ').trim();
+                const branchInfo = cleanBranchName ? ` ${cleanBranchName}` : '';
+                
+                // Use provided date or current date
+                const fileDate = dateStr || currentDate;
+                
+                return `${currentDate}${branchInfo} ${toolName}.${extension}`;
+            }
+
             const exportToJSON = () => {
                 const getVal = (id) => document.getElementById(id).value;
                 if (!getVal('department')) {
@@ -1114,7 +1132,8 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `Cash-Control_${getVal('department')}_${getVal('count-date')}.json`;
+                const filename = generateFilename('CASH-CONTROL', getVal('department'), getVal('count-date'), 'json');
+                a.download = filename;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -1518,10 +1537,8 @@
                     document.body.removeChild(pdfContent);
 
                     // Download PDF
-                    const departmentName = getVal('department').replace(/[^a-zA-Z0-9ก-๙\s]/g, '').replace(/\s+/g, '_').substring(0, 50);
-                    const dateStr = getVal('count-date') || new Date().toISOString().substring(0, 10);
-                    const fileName = `Cash-Control_${departmentName}_${dateStr}.pdf`;
-                    pdf.save(fileName);
+                    const filename = generateFilename('CASH-CONTROL', getVal('department'), getVal('count-date'), 'pdf');
+                    pdf.save(filename);
 
                 } catch (error) {
                     console.error('Error generating PDF:', error);
@@ -1620,11 +1637,9 @@
                 const link = document.createElement("a");
                 if (link.download !== undefined) {
                     const url = URL.createObjectURL(blob);
-                    const dateStr = getVal('count-date');
-                    const department = getVal('department');
-                    const safeDept = department.replace(/[^a-zA-Z0-9ก-๙ _-]/g, '').replace(/\s+/g, '_');
+                    const filename = generateFilename('CASH-CONTROL', getVal('department'), getVal('count-date'), 'csv');
                     link.setAttribute("href", url);
-                    link.setAttribute("download", `cash_count_report_${dateStr}_${safeDept}.csv`);
+                    link.setAttribute("download", filename);
                     link.style.visibility = 'hidden';
                     document.body.appendChild(link);
                     link.click();

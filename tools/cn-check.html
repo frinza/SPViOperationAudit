@@ -514,11 +514,42 @@
       try { const d = new Date(iso); return d.toLocaleString('th-TH'); } catch { return iso; }
     }
 
+    function generateFilename(cases, extension) {
+      // Get current date in YYYY-MM-DD format
+      const now = new Date();
+      const dateStr = now.getFullYear() + '-' + 
+                     String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                     String(now.getDate()).padStart(2, '0');
+      
+      // Extract branch information from cases
+      let branchInfo = '';
+      if (cases && cases.length > 0) {
+        // Get unique branches from the cases
+        const branches = [...new Set(cases.map(c => ({
+          code: c.branchCode || '',
+          name: c.branchName || ''
+        })).filter(b => b.code || b.name))];
+        
+        if (branches.length === 1) {
+          // Single branch
+          const branch = branches[0];
+          const cleanBranchName = (branch.name || '').replace(/[^a-zA-Z0-9ก-๙ _-]/g, '').replace(/\s+/g, ' ').trim();
+          branchInfo = ` ${branch.code}${cleanBranchName ? ' ' + cleanBranchName : ''}`;
+        } else if (branches.length > 1) {
+          // Multiple branches
+          branchInfo = ` Multiple-Branches`;
+        }
+      }
+      
+      return `${dateStr}${branchInfo} CN-CHECK FRAUD.${extension}`;
+    }
+
     function exportJSON(cases) {
       const blob = new Blob([JSON.stringify(cases, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'cn-fraud-cases.json'; a.click();
+      const filename = generateFilename(cases, 'json');
+      a.href = url; a.download = filename; a.click();
       URL.revokeObjectURL(url);
     }
 
@@ -541,7 +572,8 @@
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'cn-fraud-cases.csv'; a.click();
+      const filename = generateFilename(cases, 'csv');
+      a.href = url; a.download = filename; a.click();
       URL.revokeObjectURL(url);
     }
 

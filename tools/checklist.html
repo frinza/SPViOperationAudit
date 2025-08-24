@@ -971,6 +971,21 @@
                 };
             };
             
+            // Universal filename generator function
+            function generateFilename(toolName, branchName, dateStr, extension) {
+                // Get current date in YYYY-MM-DD format
+                const now = new Date();
+                const currentDate = now.getFullYear() + '-' + 
+                                   String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                                   String(now.getDate()).padStart(2, '0');
+                
+                // Clean branch name
+                const cleanBranchName = (branchName || '').replace(/[^a-zA-Z0-9ก-๙ _-]/g, '').replace(/\s+/g, ' ').trim();
+                const branchInfo = cleanBranchName ? ` ${cleanBranchName}` : '';
+                
+                return `${currentDate}${branchInfo} ${toolName}.${extension}`;
+            }
+
             const exportToJSON = () => {
                 if (!appState.details || !appState.details.branch) {
                     alert('กรุณากรอกชื่อสาขาก่อนทำการ Export');
@@ -989,7 +1004,7 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `Checklist_${appState.details.branch}_${appState.details.date}.json`;
+                a.download = generateFilename('CHECKLIST', appState.details.branch, appState.details.date, 'json');
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -1181,7 +1196,7 @@
                     document.body.removeChild(pdfContent);
 
                     // Download PDF
-                    const fileName = `Checklist_${appState.details.branch}_${appState.details.date}.pdf`;
+                    const fileName = generateFilename('CHECKLIST', appState.details.branch, appState.details.date, 'pdf');
                     pdf.save(fileName);
 
                 } catch (error) {

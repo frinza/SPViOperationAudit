@@ -4423,6 +4423,19 @@ def calculate_serial_sku_score(text, pattern_type):
                 document.body.removeChild(link);
             }
 
+            // ===== FILENAME GENERATION UTILITY =====
+            function generateFilename(toolName, branchName, dateStr, extension) {
+                const now = new Date();
+                const currentDate = now.getFullYear() + '-' + 
+                                   String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                                   String(now.getDate()).padStart(2, '0');
+                
+                const cleanBranchName = (branchName || '').replace(/[^a-zA-Z0-9ก-๙ _-]/g, '').replace(/\s+/g, ' ').trim();
+                const branchInfo = cleanBranchName ? ` ${cleanBranchName}` : '';
+                
+                return `${currentDate}${branchInfo} ${toolName}.${extension}`;
+            }
+
             // SPP CSV Export Functions
             
             function exportSppSparePartsTable() {
@@ -4443,9 +4456,8 @@ def calculate_serial_sku_score(text, pattern_type):
                         Counted: item.counted, 
                         Diff: item.counted === null ? '' : item.counted - item.SOH,
                         Remark: item.remark || ''
-                    }));
-                    const csv = Papa.unparse(dataToExport, { header: true });
-                    const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : (state.branchName ? state.branchName.replace(/\s+/g, '_') : 'Unknown_Branch');                    const fileName = `${state.countDate || 'Unknown_Date'}_SPP_SpareParts_Count_${branchInfo}.csv`;
+                    }));                    const csv = Papa.unparse(dataToExport, { header: true });
+                    const fileName = generateFilename('STOCK-COUNT-SPP-SPARE-PARTS', state.branchName, state.countDate, 'csv');
                     downloadFile(csv, fileName);
                 } catch (error) {
                     showModal("Export Error", `Failed to export SPP Spare Parts data: ${error.message}`);
@@ -4470,9 +4482,8 @@ def calculate_serial_sku_score(text, pattern_type):
                         Counted: item.counted, 
                         Diff: item.counted === null ? '' : item.counted - item.SOH,
                         Remark: item.remark || ''
-                    }));
-                    const csv = Papa.unparse(dataToExport, { header: true });
-                    const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : (state.branchName ? state.branchName.replace(/\s+/g, '_') : 'Unknown_Branch');                    const fileName = `${state.countDate || 'Unknown_Date'}_SPP_Glue_Count_${branchInfo}.csv`;
+                    }));                    const csv = Papa.unparse(dataToExport, { header: true });
+                    const fileName = generateFilename('STOCK-COUNT-SPP-GLUE', state.branchName, state.countDate, 'csv');
                     downloadFile(csv, fileName);
                 } catch (error) {
                     showModal("Export Error", `Failed to export SPP Glue/Adhesive data: ${error.message}`);
@@ -4497,10 +4508,8 @@ def calculate_serial_sku_score(text, pattern_type):
                         Counted: item.counted, 
                         Diff: item.counted === null ? '' : item.counted - item.SOH,
                         Remark: item.remark || ''
-                    }));
-                    const csv = Papa.unparse(dataToExport, { header: true });
-                    const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : (state.branchName ? state.branchName.replace(/\s+/g, '_') : 'Unknown_Branch');
-                    const fileName = `${state.countDate || 'Unknown_Date'}_SPP_Tools_Count_${branchInfo}.csv`;
+                    }));                    const csv = Papa.unparse(dataToExport, { header: true });
+                    const fileName = generateFilename('STOCK-COUNT-SPP-TOOLS', state.branchName, state.countDate, 'csv');
                     downloadFile(csv, fileName);
                 } catch (error) {
                     showModal("Export Error", `Failed to export SPP Tools data: ${error.message}`);
@@ -5202,10 +5211,9 @@ def calculate_serial_sku_score(text, pattern_type):
                     Diff: item.counted === null ? '' : item.counted - item.SOH,
                     Remark: item.remark || '',
                     Flag: item.isDemo ? 'DEMO' : 'NONE'
-                }));
-                const csv = Papa.unparse(dataToExport, { header: true });
-                const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
-                downloadFile(csv, `${state.countDate}_DEMO_Count_${branchInfo}.csv`);
+                }));                const csv = Papa.unparse(dataToExport, { header: true });
+                const fileName = generateFilename('STOCK-COUNT-DEMO', state.branchName, state.countDate, 'csv');
+                downloadFile(csv, fileName);
             }
 
             async function importDemoCountCsv() {
@@ -6575,9 +6583,9 @@ def calculate_serial_sku_score(text, pattern_type):
                     Remark: item.Remark || '', 
                     Reason: item.ReasonFinal,
                     Flag: item.isDemo ? 'DEMO' : 'NONE'
-                }));
-                const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
-                downloadFile(Papa.unparse(dataToExport, { header: true }), `${state.countDate}_Report_${branchInfo}.csv`);
+                }));                const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
+                const fileName = generateFilename('STOCK-COUNT-FINAL-REPORT', state.branchName, state.countDate, 'csv');
+                downloadFile(Papa.unparse(dataToExport, { header: true }), fileName);
             }            function exportStockCountToJSON() {
                 if (!state.reconciledData.length) {
                     alert('กรุณาประมวลผลข้อมูลให้ถึงขั้นตอนสุดท้ายก่อนทำการ Export');
@@ -6596,14 +6604,13 @@ def calculate_serial_sku_score(text, pattern_type):
                     },
                     summary: finalSummaryData,
                     data: sortedData
-                };
-                const jsonString = JSON.stringify(exportData, null, 2);
+                };                const jsonString = JSON.stringify(exportData, null, 2);
                 const blob = new Blob([jsonString], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
-                a.download = `${state.countDate}_Stock-Count_${branchInfo}.json`;
+                const fileName = generateFilename('STOCK-COUNT', state.branchName, state.countDate, 'json');
+                a.download = fileName;
                 document.body.appendChild(a);
                 a.click();                document.body.removeChild(a);
                 URL.revokeObjectURL(url);
@@ -6996,14 +7003,8 @@ def calculate_serial_sku_score(text, pattern_type):
                     }
 
                     // Clean up
-                    document.body.removeChild(pdfContent);
-
-                    // Generate filename and download PDF
-                    const branchInfo = state.branchCode ? 
-                        `${state.branchCode}_${state.branchName.replace(/[^a-zA-Z0-9ก-๙\s]/g, '').replace(/\s+/g, '_')}` : 
-                        state.branchName.replace(/[^a-zA-Z0-9ก-๙\s]/g, '').replace(/\s+/g, '_');
-                    const dateStr = state.countDate || new Date().toISOString().substring(0, 10);
-                    const fileName = `Stock-Count_${branchInfo}_${dateStr}.pdf`;
+                    document.body.removeChild(pdfContent);                    // Generate filename and download PDF
+                    const fileName = generateFilename('STOCK-COUNT-REPORT', state.branchName, state.countDate, 'pdf');
                     
                     pdf.save(fileName);
                     
@@ -7510,11 +7511,9 @@ def calculate_serial_sku_score(text, pattern_type):
                         });
                         const ws = XLSX.utils.json_to_sheet(rows);
                         const wb = XLSX.utils.book_new();
-                        XLSX.utils.book_append_sheet(wb, ws, "SOH Export");
-                        
-                        // Use new file naming convention: countdate_function_branchcode_branchname
-                        const branchInfo = state.branchCode ? `${state.branchCode}_${state.branchName.replace(/\s+/g, '_')}` : state.branchName.replace(/\s+/g, '_');
-                        const filename = `${state.countDate || new Date().toISOString().split('T')[0]}_SOH_Export_${branchInfo}.xlsx`;
+                        XLSX.utils.book_append_sheet(wb, ws, "SOH Export");                        
+                        // Use new file naming convention with generateFilename
+                        const filename = generateFilename('STOCK-COUNT-SOH-EXPORT', state.branchName, state.countDate, 'xlsx');
                         XLSX.writeFile(wb, filename);
                           showModal("Success", `Successfully exported ${allItems.length} items to ${filename}`);
                     } catch (error) {
